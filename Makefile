@@ -1,9 +1,9 @@
 NAME = webserv
 
 
-CXXFLAGS = -Wall -Wextra -Werror #-std=c++98 
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 
 CXX = c++
-CFILES = main.cpp client.cpp  server.cpp
+CFILES = server.cpp
 
 OBJ = ${CFILES:.cpp=.o}
 
