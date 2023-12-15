@@ -22,15 +22,21 @@ int main()
         close(clientSocket);
         exit(1);
     }
-
     // Step 4: Send data to the server
-    const char* message = "GET index.html";
-    send(clientSocket, message, strlen(message), 0);
-
-    // Step 5: Receive data from the server
-    char buff[1024] = {};
-    recv(clientSocket, buff, sizeof(buff), 0);
-    std::cout << "Server Response: " << buff << std::endl;
+    while(true)
+    {
+        //read data from the server.
+        char msg[1024];
+        memset(msg,0,1024);
+        printf("Input a message to server (Q to quit):");
+        scanf("%s",msg);
+        if(msg[0] == 'q' || msg[0] == 'Q')
+            break;
+        write(clientSocket,msg,strlen(msg));
+        read(clientSocket,msg,1024);
+        printf("recieve message from server : %s\n",msg);
+    }
+    printf("client is disconnectet\n");
 
     // Step 6: Close the client socket
     close(clientSocket);

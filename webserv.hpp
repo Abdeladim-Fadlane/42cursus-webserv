@@ -4,8 +4,12 @@
 #include <cstring>
 #include <unistd.h>
 #include <arpa/inet.h>
-
-#include <arpa/inet.h>
 #include <cstdlib>
-// int client();
-// int server();
+
+#include<sys/select.h>
+#include<sys/time.h>
+#define TRUE 1
+#define FALSE 0
+#define BUFFER_SISE 58
+
+
