@@ -13,7 +13,7 @@ int main()
     sockaddr_in serverAddress;
     
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_addr.s_addr = inet_addr("127.0.0.1");
+    serverAddress.sin_addr.s_addr = inet_addr("10.13.3.7");
     serverAddress.sin_port = htons(8080);
 
     // Step 3: Connect to the server
@@ -28,13 +28,12 @@ int main()
         //read data from the server.
         char msg[1024];
         memset(msg,0,1024);
-        printf("Input a message to server (Q to quit):");
         scanf("%s",msg);
         if(msg[0] == 'q' || msg[0] == 'Q')
             break;
         write(clientSocket,msg,strlen(msg));
         read(clientSocket,msg,1024);
-        printf("recieve message from server : %s\n",msg);
+        printf("%s\n",msg);
     }
     printf("client is disconnectet\n");
 

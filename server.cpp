@@ -12,13 +12,13 @@ int main()
     int option = true;
     setsockopt(serverSocketFD,SOL_SOCKET,SO_REUSEADDR,(void*)&option,sizeof(option));
 
-    // Stfor monitoring file descriptorsep 3: Bind the socket to an address and port
+    //  monitoring file descriptorsep 3: Bind the socket to an address and port
     sockaddr_in serverAdress;
     serverAdress.sin_family = AF_INET;
     serverAdress.sin_addr.s_addr = INADDR_ANY;
     serverAdress.sin_port = htons(8080);
     if(bind(serverSocketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) == 0)
-        std::cout<<"server bind to port 8080\n";
+        ;// std::cout<<"server bind to port 8080\n";
     else{std::cerr<<"Cannot bind to port 8080 line 20\n";exit(1);}
 
     //Step 4 : Listen to the client connection requests
@@ -85,6 +85,7 @@ int main()
                     {
                         memset(buffer,0,BUFFER_SISE);
                         int stringlength = read(i,buffer,BUFFER_SISE);
+                        printf("%s \n",buffer);
                         //buffer fih request dyal l3amil dyalna so hadxi khasna nsiftoh LCGI .
                         if(stringlength == 0)
                         {
@@ -94,7 +95,10 @@ int main()
                         }
                         else
                         {
-                            write(i,"Sir fihalatek mabitch nserbik lol ...",1024);
+                            char msg[1024];
+                            memset(msg,0,1024);
+                            scanf("%s",msg);
+                            write(i,msg,1024);
                         }
                     }
                 }
