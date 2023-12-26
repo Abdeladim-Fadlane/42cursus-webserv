@@ -1,7 +1,5 @@
 #include"webserv.hpp"
-#include <fstream>
-#include <sstream>
-#include <signal.h>
+
 std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nMethod, GET!\n";
 
 void multiplexing()
@@ -58,18 +56,15 @@ void multiplexing()
                     if(*it == events[i].data.fd)
                         break;
                 }
-                ssize_t bytesRead ;
-                char buffer[BUFFER_SIZE];
-                std::string httpResponse;
-                // std::cout << "------> " << events[i].data.fd << "-------" <<  clientSocketFD<< std::endl;
-                // if(events[i].events & EPOLLIN)
-                // {
-                    memset(buffer,0,BUFFER_SIZE);
-                    bytesRead = read(7, buffer, sizeof(buffer));
-                    // std::cout << "Client " << events[i].data.fd <<" send : "<< buffer << std::endl;
-                // }
+                if(events[i].events & EPOLLIN && getMethod(events[i].data.fd))
+                {
+                    /*
+                    readiing
+                    */
+                }
                 if (events[i].events & EPOLLOUT)
                 {
+                    std::string httpResponse;
                     fastCGI();
                     std::ifstream file ("tools/index.html");
                     if (!file.is_open())

@@ -1,5 +1,12 @@
 #pragma once
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <iostream>
+#include <sstream>
+#include <string>
 #include <iostream>
 #include <cstring>
 #include <unistd.h>
@@ -9,7 +16,7 @@
 #include <cerrno>
 #include <stdlib.h>
 #include <sys/epoll.h>
-#include<vector>
+#include <vector>
 #include <unistd.h>
 #include <fcntl.h> 
 #include <arpa/inet.h>
@@ -25,7 +32,11 @@
 #define  SERVER_IP "0.0.0.0"
 #define  BUFFER_SIZE 1024
 #define  SERVERS 3
-
+struct Get {
+    std::string method;
+    std::string path;
+    std::string version;
+};
 class Webserv
 {
     private:
@@ -36,3 +47,4 @@ class Webserv
 };
 void multiplexing();
 int fastCGI();
+int getMethod(int fd);
