@@ -1,26 +1,32 @@
 #include <iostream>
-#include <cstdio>
-#include <cstdlib>
+#include <sstream>
+#include <string>
+using std::istringstream;
+using std::string;
+using std::cout;
 
-int main() {
-    // Replace "example.txt" with your file path
-    const char* filePath = "webserv.hpp";
+// Driver Code
+int main()
+{
+	// Input string
+	string str("1, 2, 3");
 
-    // Open the file and get a file descriptor
-    FILE* fileStream = fopen(filePath, "r");
-    if (fileStream == NULL) {
-        perror("Error opening the file");
-        return 1;
-    }
+	// Object class of istringstream
+	istringstream my_stream(str);
 
-    // Read and print each line from the file
-    char line[256];  // Adjust the buffer size as needed
-    while (fgets(line, sizeof(line), fileStream) != NULL) {
-        std::cout << "Line: " << line;
-    }
+	// Variable to store the number n
+	// and character ch
+	char c;
+	int n;
 
-    // Clean up
-    fclose(fileStream);
+	// Traverse till input stream is valid
+	while (my_stream >> n >> c) {
 
-    return 0;
+		cout << "That stream was successful: "
+			<< n << " " << c << "\n";
+	}
+	cout << "The stream has failed."
+		<< "\n";
+
+	return 0;
 }
