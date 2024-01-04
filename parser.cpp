@@ -16,10 +16,11 @@ struct LocationConfig
     std::vector<std::string> cgiPath;
     std::string proxyReadTimeout;
 };
+int flag = true;
 
 struct ServerConfig
 {
-    std::string listen;
+    int listen;
     std::string host;
     std::string root;
     std::string clientMaxBodySize;
@@ -33,8 +34,10 @@ void printInfo(std::vector<ServerConfig> &servers)
         std::cout << "Listen: " << it->listen << std::endl;
         std::cout << "Host: " << it->host << std::endl;
         std::cout << "root: " << it->root << std::endl;
+        std::cout << "client max size: " << it->clientMaxBodySize << std::endl;
         for (std::vector<LocationConfig>::iterator locIt = it->locations.begin(); locIt != it->locations.end(); locIt++)
         {
+            std::cout << "--------------------------------------------------->" << std::endl;
             std::cout << "PathLocation: " << locIt->path << std::endl;
             std::cout << "autoindex: " << locIt->autoindex << std::endl;
             std::cout << "cgiPath: " << locIt->cgiPath[0] << std::endl;
@@ -50,20 +53,26 @@ void printInfo(std::vector<ServerConfig> &servers)
         }
     }
 }
-void splitArguments(const std::string& arguments, std::vector<std::string>& result) {
-    std::istringstream iss(arguments);
+
+void splitArguments(std::istringstream &wiss, std::vector<std::string>& result)
+{
     std::string token;
-    iss >> token;
-    while (iss >> token)
+    while (wiss >> token)
     {
         result.push_back(token);
     }
 }
 
+void    checkStreamEmty(std::istringstream &wiss)
+{
+    if(wiss.peek() != EOF || !wiss.fail())
+        throw std::runtime_error("Error block ..location..");
+}
+
 bool parseLocationBlock(LocationConfig &location,std::ifstream &file)
 { 
     std::string line;
-    std::string key;
+    std::string key ,data;
     while(std::getline(file,line))
     {
         std::istringstream wiss(line);
@@ -71,59 +80,101 @@ bool parseLocationBlock(LocationConfig &location,std::ifstream &file)
         {   
             // std::cout<<"<<<-"<<key<<"->>>\n";
             if (key == "}")
+            {
+                flag = false;
                 return true;
+            }
             else if (key == "autoindex")
+            {
                 wiss >> location.autoindex;
-            else if (key == "index")
-                splitArguments(line,location.index);
+                checkStreamEmty(wiss);
+            }
             else if (key == "upload")
+            {
                 wiss >> location.upload;
+                if(location.upload != "on" && location.upload != "off")
+                    throw std::runtime_error("Error location block2");
+                checkStreamEmty(wiss);
+            }
             else if (key == "path")
+            {
                 wiss >> location.path ;
+                checkStreamEmty(wiss);
+            }
             else if (key == "proxy_read_time_out")
+            {
                 wiss >> location.proxyReadTimeout ;
+                checkStreamEmty(wiss);
+            }
             else if (key == "root")
+            {
                 wiss >>  location.root ;
+                checkStreamEmty(wiss);
+            }
+            else if (key == "index")
+                splitArguments(wiss,location.index);
             else if (key == "methods")
-                splitArguments(line,location.methods);
+                splitArguments(wiss,location.methods);
             else if (key == "cgi_path")
-                splitArguments(line,location.cgiPath);
+                splitArguments(wiss,location.cgiPath);
+            else
+                throw std::runtime_error("Error./.../ location block");
         }   
     }
     return false;
 }
 
-bool parseServerBlock(std::string line, ServerConfig &server,std::ifstream &file)
+bool parseServerBlock( ServerConfig &server,std::ifstream &file)
 {
-    std::istringstream wiss(line);
+    std::string line;
+    //if works dont touch it.
     std::string key;
-    while (wiss >> key)
+    while(getline(file,line))
     {
-        if (key == "}")
-            return true;
-        else if(key == "server" || key == "{")
-            continue;
-        else if (key == "listen")
-            wiss >> server.listen ;
-        else if (key == "host")
-            wiss >> server.host;
-        else if (key == "root")
-            wiss >> server.root ;
-        else if (key == "client_max_body_size")
-            wiss >> server.clientMaxBodySize;
-        else if(key == "location")
+        std::istringstream wiss(line);
+        while (wiss >> key)
         {
-            LocationConfig location;
-            if(parseLocationBlock(location,file))
+            //  std::cout<<key<<"\n";
+            if (key == "}" || key == "{" )
+                return true;
+            else if (key == "listen")
             {
-                server.locations.push_back(location);
-                location = LocationConfig();
+                wiss >> server.listen;
+                checkStreamEmty(wiss);
+                if(server.listen <= 0 || server.listen >= 65000)
+                    throw std::runtime_error("Eroor port");
             }
-            else
-                throw std::runtime_error("Error location block...");
+            else if (key == "host")
+            {
+                wiss >> server.host;
+                checkStreamEmty(wiss);
+            }
+            else if (key == "root")
+            {
+                wiss >> server.root ;
+                checkStreamEmty(wiss);
+            }
+            else if (key == "client_max_body_size")
+            {
+                wiss >> server.clientMaxBodySize;
+                    checkStreamEmty(wiss);
+            }
+            else if(key == "location")
+            {
+            
+                LocationConfig location;
+                if(parseLocationBlock(location,file))
+                {
+                    server.locations.push_back(location);
+                    location = LocationConfig();
+                }
+                else
+                    throw std::runtime_error("Error location block... 1");
+            }
+            else 
+            {
+                throw std::runtime_error("Error server block ...2");}
         }
-        else
-            throw std::runtime_error("Error server block ...");
     }
     return false;
 }
@@ -135,15 +186,40 @@ void parseConfigFile(const std::string &fileName, std::vector<ServerConfig> &ser
         std::cout << "Error in file\n";
         return;
     }
+    int leftBracket = 0;
+    int rightBracket = 0;
     std::string line;
     ServerConfig server;
-
+    std::string token ;
     while (std::getline(file, line))
     {
-        if (parseServerBlock(line, server,file) == true)
+        std::istringstream wiss(line);  
+        while(wiss >> token)
         {
-            servers.push_back(server);
-            server = ServerConfig();
+            // std::cout<<"<<"<< flag <<">>\n"; 
+            if(token == "server")
+            {
+                if (parseServerBlock(server,file) == true)
+                {
+                    servers.push_back(server);
+                    server = ServerConfig();
+                    leftBracket = 0;
+                    rightBracket = 0;
+                }
+                else
+                throw std::runtime_error("Error Server block");
+            }
+            else if(token == "{")
+            {
+                rightBracket++;
+            }
+            else if(token == "}")
+            {
+                leftBracket++;
+                break;
+            }
+            else
+                throw std::runtime_error("Error Server block");
         }
     }
 
