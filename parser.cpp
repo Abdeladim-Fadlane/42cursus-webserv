@@ -68,7 +68,7 @@ void    checkStreamEmty(std::istringstream &wiss)
     if(wiss.peek() != EOF || !wiss.fail())
         throw std::runtime_error("Error block ..location..");
 }
-
+/* Don't repeat yourself. */
 bool parseLocationBlock(LocationConfig &location,std::ifstream &file)
 { 
     std::string line;
@@ -82,38 +82,38 @@ bool parseLocationBlock(LocationConfig &location,std::ifstream &file)
             // std::cout<<"<<<-"<<key<<"->>>\n";
             if (key == "}")
                 return true;
-            else if (key == "autoindex")
+            else if (key == "autoindex" && location.autoindex.empty())
             {
                 wiss >> location.autoindex;
                 checkStreamEmty(wiss);
             }
-            else if (key == "upload")
+            else if (key == "upload" && location.upload.empty())
             {
                 wiss >> location.upload;
                 if(location.upload != "on" && location.upload != "off")
                     throw std::runtime_error("Error location block2");
                 checkStreamEmty(wiss);
             }
-            else if (key == "path")
+            else if (key == "path" && location.path.empty())
             {
                 wiss >> location.path ;
                 checkStreamEmty(wiss);
             }
-            else if (key == "proxy_read_time_out")
+            else if (key == "proxy_read_time_out" && location.proxyReadTimeout.empty())
             {
                 wiss >> location.proxyReadTimeout ;
                 checkStreamEmty(wiss);
             }
-            else if (key == "root")
+            else if (key == "root" && location.root.empty())
             {
                 wiss >>  location.root ;
                 checkStreamEmty(wiss);
             }
-            else if (key == "index")
+            else if (key == "index" && location.index.empty())
                 splitArguments(wiss,location.index);
-            else if (key == "methods")
+            else if (key == "methods" && location.methods.empty())
                 splitArguments(wiss,location.methods);
-            else if (key == "cgi_path")
+            else if (key == "cgi_path" && location.cgiPath.empty())
                 splitArguments(wiss,location.cgiPath);
             else
                 throw std::runtime_error("Error./.../ location block");
@@ -125,8 +125,9 @@ bool parseLocationBlock(LocationConfig &location,std::ifstream &file)
 bool parseServerBlock( ServerConfig &server,std::ifstream &file)
 {
     std::string line;
-    //if works dont touch it.
+    /* Don't touch it if work !!! */
     std::string key;
+    // std::cout<<server.listen <<"\n";
     int bracketCount = 0;
     while(getline(file,line))
     {
@@ -148,24 +149,24 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
                 }
                 return true;
             }
-            else if (key == "listen")
+            else if (key == "listen" && server.listen == 0)
             {
                 wiss >> server.listen;
                 checkStreamEmty(wiss);
                 if(server.listen <= 0 || server.listen >= 65000)
                     throw std::runtime_error("Eroor port");
             }
-            else if (key == "host")
+            else if (key == "host" && server.host.empty())
             {
                 wiss >> server.host;
                 checkStreamEmty(wiss);
             }
-            else if (key == "root")
+            else if (key == "root" && server.root.empty())
             {
                 wiss >> server.root ;
                 checkStreamEmty(wiss);
             }
-            else if (key == "client_max_body_size")
+            else if (key == "client_max_body_size" && server.clientMaxBodySize.empty())
             {
                 wiss >> server.clientMaxBodySize;
                     checkStreamEmty(wiss);
@@ -199,7 +200,7 @@ void parseConfigFile(const std::string &fileName, std::vector<ServerConfig> &ser
         std::cout << "Error in file\n";
         return;
     }
-    
+    /* This is the way !! */
     std::string line;
     ServerConfig server;
     std::string token ;
@@ -235,6 +236,7 @@ void parseConfigFile(const std::string &fileName, std::vector<ServerConfig> &ser
 
 int main(int ac ,char *av[])
 {
+    /* Clean code !!!!!!! */
     try
     {
         if(ac > 2)
