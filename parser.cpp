@@ -76,14 +76,12 @@ bool parseLocationBlock(LocationConfig &location,std::ifstream &file)
     while(std::getline(file,line))
     {
         std::istringstream wiss(line);
+         int bracketCount = 0;
         while (wiss >> key)
         {   
             // std::cout<<"<<<-"<<key<<"->>>\n";
             if (key == "}")
-            {
-                flag = false;
                 return true;
-            }
             else if (key == "autoindex")
             {
                 wiss >> location.autoindex;
@@ -129,14 +127,27 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
     std::string line;
     //if works dont touch it.
     std::string key;
+    int bracketCount = 0;
     while(getline(file,line))
     {
         std::istringstream wiss(line);
         while (wiss >> key)
         {
             //  std::cout<<key<<"\n";
-            if (key == "}" || key == "{" )
+            if (key == "{" )
+            {
+                bracketCount++;
+                continue;
+            }
+            if (key == "}" )
+            {
+                bracketCount--;
+                if (bracketCount < 0)
+                {
+                    throw std::runtime_error("curly brackets in server block");
+                }
                 return true;
+            }
             else if (key == "listen")
             {
                 wiss >> server.listen;
@@ -161,9 +172,8 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
             }
             else if(key == "location")
             {
-            
                 LocationConfig location;
-                if(parseLocationBlock(location,file))
+                if(parseLocationBlock(location,file) == true)
                 {
                     server.locations.push_back(location);
                     location = LocationConfig();
@@ -172,9 +182,12 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
                     throw std::runtime_error("Error location block... 1");
             }
             else 
-            {
-                throw std::runtime_error("Error server block ...2");}
+                throw std::runtime_error("Error server block ...2");
         }
+    }
+    if (bracketCount != 0)
+    {
+        throw std::runtime_error("curly brackets in server block");
     }
     return false;
 }
@@ -186,8 +199,7 @@ void parseConfigFile(const std::string &fileName, std::vector<ServerConfig> &ser
         std::cout << "Error in file\n";
         return;
     }
-    int leftBracket = 0;
-    int rightBracket = 0;
+    
     std::string line;
     ServerConfig server;
     std::string token ;
@@ -196,30 +208,25 @@ void parseConfigFile(const std::string &fileName, std::vector<ServerConfig> &ser
         std::istringstream wiss(line);  
         while(wiss >> token)
         {
-            // std::cout<<"<<"<< flag <<">>\n"; 
+            // std::cout<<"<<"<< token <<">>\n";
             if(token == "server")
             {
                 if (parseServerBlock(server,file) == true)
                 {
                     servers.push_back(server);
                     server = ServerConfig();
-                    leftBracket = 0;
-                    rightBracket = 0;
                 }
                 else
-                throw std::runtime_error("Error Server block");
+                    throw std::runtime_error("Error Server block aaa");
             }
             else if(token == "{")
-            {
-                rightBracket++;
-            }
+                continue;
             else if(token == "}")
             {
-                leftBracket++;
                 break;
             }
             else
-                throw std::runtime_error("Error Server block");
+                throw std::runtime_error("Error Server block ..... ");
         }
     }
 
@@ -230,12 +237,14 @@ int main(int ac ,char *av[])
 {
     try
     {
-       std::vector<ServerConfig> servers;
+        if(ac > 2)
+            throw std::runtime_error("Error agements .");
+        std::vector<ServerConfig> servers;
         const char *file = "webserv.conf";
         if(ac == 2)
             file = av[1];
         parseConfigFile(file ,servers);
-        // printInfo(servers);
+        printInfo(servers);
     }
     catch(const std::exception& e)
     {

@@ -29,7 +29,7 @@ void multiplexing()
     }
     std::vector<int> readyFD;
     epoll_event events[MAX_EVENTS];
-    while (1337)
+    while (true)
     {
         int clientSocketFD;
         int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,-1); 
@@ -59,7 +59,7 @@ void multiplexing()
                 if(events[i].events & EPOLLIN && getMethod(events[i].data.fd))
                 {
                     /*
-                    readiing
+                        readiing
                     */
                 }
                 if (events[i].events & EPOLLOUT)
