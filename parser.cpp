@@ -190,6 +190,10 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
     {
         throw std::runtime_error("curly brackets in server block");
     }
+    if(server.listen == 0 || server.host.empty() || server.root.empty())
+    {
+        throw std::runtime_error("You forget basic instruction ...");
+    }
     return false;
 }
 
