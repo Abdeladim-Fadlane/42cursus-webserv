@@ -4,7 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <stdexcept>
-
+#include<unordered_map>
 struct LocationConfig
 {
     std::vector<std::string>index;
@@ -17,16 +17,16 @@ struct LocationConfig
     std::string proxyReadTimeout;
 };
 int flag = true;
-
 struct ServerConfig
 {
     int listen;
     std::string host;
-    std::string serverName;
+    std::string domainName;
     std::vector<std::string> errorPage;
     std::string clientMaxBodySize;
     std::vector<LocationConfig> locations;
 };
+
 void printInfo(std::vector<ServerConfig> &servers)
 {
     // std::cout << "Number of servers: " << servers.size() << std::endl;
@@ -34,7 +34,7 @@ void printInfo(std::vector<ServerConfig> &servers)
     {
         std::cout << "Listen: " << it->listen << std::endl;
         std::cout << "Host: " << it->host << std::endl;
-        std::cout << "serverName: " << it->serverName << std::endl;
+        std::cout << "domainName: " << it->domainName << std::endl;
         std::cout << "error page: " << it->errorPage[1] << std::endl;
         std::cout << "client max size: " << it->clientMaxBodySize << std::endl;
         for (std::vector<LocationConfig>::iterator locIt = it->locations.begin(); locIt != it->locations.end(); locIt++)
@@ -168,11 +168,15 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
             else if (key == "host" && server.host.empty())
             {
                 wiss >> server.host;
+                if(server.host.empty())
+                    throw std::runtime_error("Error emty host name... 1");
                 checkStreamEmty(wiss);
             }
-            else if (key == "server_name" && server.serverName.empty())
+            else if (key == "domain_name" && server.domainName.empty())
             {
-                wiss >> server.serverName ;
+                wiss >> server.domainName ;
+                if(server.domainName.empty())
+                    throw std::runtime_error("Error emty domain name... 1");
                 checkStreamEmty(wiss);
             }
             else if (key == "error_page" && server.errorPage.empty())
@@ -183,7 +187,9 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
             else if (key == "client_max_body_size" && server.clientMaxBodySize.empty())
             {
                 wiss >> server.clientMaxBodySize;
-                    checkStreamEmty(wiss);
+                if(server.clientMaxBodySize.empty())
+                    throw std::runtime_error("Error emty clinet body ... 1");
+                checkStreamEmty(wiss);
             }
             else if(key == "location")
             {
@@ -203,6 +209,19 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
     if (bracketCount != 0)
         throw std::runtime_error("curly brackets in server block");
     return false;
+}
+
+
+void checkForDuplicateDomainsAndPorts(const std::vector<ServerConfig>& servers)
+{
+    for (std::vector<ServerConfig>::const_iterator it = servers.begin(); it != servers.end(); ++it)
+    {
+        for (std::vector<ServerConfig>::const_iterator it1 = it + 1; it1 != servers.end(); ++it1)
+        {
+            if (it->domainName == it1->domainName && it->listen == it1->listen)
+                throw std::runtime_error("Error: Duplicate domain and port found for a server.");
+        }
+    }
 }
 
 void parseConfigFile(const std::string &fileName, std::vector<ServerConfig> &servers)
@@ -244,6 +263,7 @@ void parseConfigFile(const std::string &fileName, std::vector<ServerConfig> &ser
         }
     }
     file.close();
+    checkForDuplicateDomainsAndPorts(servers);
 }
 
 int main(int ac ,char *av[])
@@ -251,21 +271,17 @@ int main(int ac ,char *av[])
     /* Clean code !!!!!!! */
     try
     {
-        if(ac > 2)
+        if(ac != 2)
             throw std::runtime_error("Error argements .");
         std::vector<ServerConfig> servers;
-        const char *file = "webserv.conf";
-        if(ac == 2)
-            file = av[1];
+        const char *file = av[1];
         parseConfigFile(file ,servers);
-        printInfo(servers);
+        // printInfo(servers);
     }
     catch(const std::exception& e)
     {
         std::cerr << e.what() << "\n";
     }
 }
-
-
 
 /* AFADLANE */
