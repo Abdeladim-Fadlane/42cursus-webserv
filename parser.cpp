@@ -22,7 +22,8 @@ struct ServerConfig
 {
     int listen;
     std::string host;
-    std::string root;
+    std::string serverName;
+    std::vector<std::string> errorPage;
     std::string clientMaxBodySize;
     std::vector<LocationConfig> locations;
 };
@@ -33,7 +34,8 @@ void printInfo(std::vector<ServerConfig> &servers)
     {
         std::cout << "Listen: " << it->listen << std::endl;
         std::cout << "Host: " << it->host << std::endl;
-        std::cout << "root: " << it->root << std::endl;
+        std::cout << "serverName: " << it->serverName << std::endl;
+        std::cout << "error page: " << it->errorPage[1] << std::endl;
         std::cout << "client max size: " << it->clientMaxBodySize << std::endl;
         for (std::vector<LocationConfig>::iterator locIt = it->locations.begin(); locIt != it->locations.end(); locIt++)
         {
@@ -76,15 +78,22 @@ bool parseLocationBlock(LocationConfig &location,std::ifstream &file)
     while(std::getline(file,line))
     {
         std::istringstream wiss(line);
-         int bracketCount = 0;
+        int bracketCount = 0;
         while (wiss >> key)
         {   
-            // std::cout<<"<<<-"<<key<<"->>>\n";
+            /*  std::cout<<"<<<-"<<key<<"->>>\n"; */
+            if (key == "{" )
+            {
+                bracketCount++;
+                continue;
+            }
             if (key == "}")
                 return true;
             else if (key == "autoindex" && location.autoindex.empty())
             {
                 wiss >> location.autoindex;
+                if(location.autoindex != "on" && location.autoindex != "off")
+                    throw std::runtime_error("Error location autoindex");
                 checkStreamEmty(wiss);
             }
             else if (key == "upload" && location.upload.empty())
@@ -125,16 +134,16 @@ bool parseLocationBlock(LocationConfig &location,std::ifstream &file)
 bool parseServerBlock( ServerConfig &server,std::ifstream &file)
 {
     std::string line;
+    server.listen = 0;
     /* Don't touch it if work !!! */
     std::string key;
-    // std::cout<<server.listen <<"\n";
     int bracketCount = 0;
     while(getline(file,line))
     {
         std::istringstream wiss(line);
         while (wiss >> key)
-        {
-            //  std::cout<<key<<"\n";
+        { 
+            // std::cout<<"<<<-"<<key<<"->>>\n";
             if (key == "{" )
             {
                 bracketCount++;
@@ -142,11 +151,11 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
             }
             if (key == "}" )
             {
-                bracketCount--;
-                if (bracketCount < 0)
-                {
-                    throw std::runtime_error("curly brackets in server block");
-                }
+                // bracketCount--;
+                // if (bracketCount < 0)
+                // {
+                //     throw std::runtime_error("curly brackets in server block");
+                // }
                 return true;
             }
             else if (key == "listen" && server.listen == 0)
@@ -161,9 +170,14 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
                 wiss >> server.host;
                 checkStreamEmty(wiss);
             }
-            else if (key == "root" && server.root.empty())
+            else if (key == "server_name" && server.serverName.empty())
             {
-                wiss >> server.root ;
+                wiss >> server.serverName ;
+                checkStreamEmty(wiss);
+            }
+            else if (key == "error_page" && server.errorPage.empty())
+            {
+                splitArguments(wiss,server.errorPage);
                 checkStreamEmty(wiss);
             }
             else if (key == "client_max_body_size" && server.clientMaxBodySize.empty())
@@ -183,17 +197,11 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
                     throw std::runtime_error("Error location block... 1");
             }
             else 
-                throw std::runtime_error("Error server block ...2");
+                throw std::runtime_error("Error server block wa lhabsss");
         }
     }
     if (bracketCount != 0)
-    {
         throw std::runtime_error("curly brackets in server block");
-    }
-    if(server.listen == 0 || server.host.empty() || server.root.empty())
-    {
-        throw std::runtime_error("You forget basic instruction ...");
-    }
     return false;
 }
 
@@ -213,28 +221,28 @@ void parseConfigFile(const std::string &fileName, std::vector<ServerConfig> &ser
         std::istringstream wiss(line);  
         while(wiss >> token)
         {
-            // std::cout<<"<<"<< token <<">>\n";
             if(token == "server")
             {
                 if (parseServerBlock(server,file) == true)
                 {
+                    if(server.listen == 0 || server.host.empty())
+                    {
+                        throw std::runtime_error("You forget basic instruction ...");
+                    }
                     servers.push_back(server);
                     server = ServerConfig();
                 }
                 else
-                    throw std::runtime_error("Error Server block aaa");
+                    throw std::runtime_error("Error Server block ...");
             }
             else if(token == "{")
                 continue;
             else if(token == "}")
-            {
                 break;
-            }
             else
                 throw std::runtime_error("Error Server block ..... ");
         }
     }
-
     file.close();
 }
 
@@ -244,7 +252,7 @@ int main(int ac ,char *av[])
     try
     {
         if(ac > 2)
-            throw std::runtime_error("Error agements .");
+            throw std::runtime_error("Error argements .");
         std::vector<ServerConfig> servers;
         const char *file = "webserv.conf";
         if(ac == 2)
@@ -257,3 +265,7 @@ int main(int ac ,char *av[])
         std::cerr << e.what() << "\n";
     }
 }
+
+
+
+/* AFADLANE */
