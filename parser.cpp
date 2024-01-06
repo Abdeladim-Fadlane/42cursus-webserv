@@ -212,7 +212,7 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
 }
 
 
-void checkForDuplicateDomainsAndPorts(const std::vector<ServerConfig>& servers)
+void checkDuplicateDomainsAndPorts(const std::vector<ServerConfig>& servers)
 {
     for (std::vector<ServerConfig>::const_iterator it = servers.begin(); it != servers.end(); ++it)
     {
@@ -263,7 +263,7 @@ void parseConfigFile(const std::string &fileName, std::vector<ServerConfig> &ser
         }
     }
     file.close();
-    checkForDuplicateDomainsAndPorts(servers);
+    checkDuplicateDomainsAndPorts(servers);
 }
 
 int main(int ac ,char *av[])
