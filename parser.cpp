@@ -276,7 +276,7 @@ int main(int ac ,char *av[])
         std::vector<ServerConfig> servers;
         const char *file = av[1];
         parseConfigFile(file ,servers);
-        // printInfo(servers);
+        printInfo(servers);
     }
     catch(const std::exception& e)
     {

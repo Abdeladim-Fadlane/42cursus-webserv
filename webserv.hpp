@@ -32,7 +32,8 @@
 #define  SERVER_IP "0.0.0.0"
 #define  BUFFER_SIZE 1024
 #define  SERVERS 3
-struct Get {
+
+struct Method {
     std::string method;
     std::string path;
     std::string version;

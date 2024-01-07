@@ -58,25 +58,23 @@ void multiplexing()
                 }
                 if(events[i].events & EPOLLIN && getMethod(events[i].data.fd))
                 {
-                    /*
-                        readiing
-                    */
+                    /* readiing */
                 }
                 if (events[i].events & EPOLLOUT)
                 {
                     std::string httpResponse;
-                    fastCGI();
+                    // fastCGI();
                     std::ifstream file ("tools/index.html");
                     if (!file.is_open())
                         std::cerr << "Error opening file 'index.html'" << std::endl;
                     std::string line;
                     std::string content;
-                while (std::getline(file, line))
-                {
-                    if (line.find("Content-type: text/html; charset=UTF-8") != std::string::npos)
-                        continue;
-                    content += line + "\n";
-                }
+                    while (std::getline(file, line))
+                    {
+                        if (line.find("Content-type: text/html; charset=UTF-8") != std::string::npos)
+                            continue;
+                        content += line + "\n";
+                    }
                     std::stringstream ss;
                     ss << content.size();
                     
@@ -90,7 +88,7 @@ void multiplexing()
                     }
                     std::cout<<"Close Client ID : "<< events[i].data.fd <<std::endl;
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    close(events[i].data.fd);
+                    // close(events[i].data.fd);
                     // return ;
                 }
             }
