@@ -64,7 +64,7 @@ void sendChunk(int clientSocket, const char* data, ssize_t length)
 void    getMethod(Method &method,int cfd)
 {
     // int fd = open("/home/afadlane/webserv/tools/Nio.png", O_RDONLY);
-    int fd = open("/home/afadlane/webserv/test.mp4", O_RDONLY);
+    int fd = open("/home/afadlane/webserv/tools/test.mp4", O_RDONLY);
     if (fd == -1) {
         throw std::runtime_error("Error opening file");
     }
