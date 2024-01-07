@@ -37,9 +37,10 @@ int fastCGI() {
 
 int main()
 {
+    Method method;
     try
     {
-        multiplexing();
+        multiplexing(method);
     }
     catch(const std::exception& e)
     {

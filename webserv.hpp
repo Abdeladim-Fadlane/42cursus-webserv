@@ -46,6 +46,9 @@ class Webserv
         Webserv(/* args */){};
         ~Webserv(){};
 };
-void multiplexing();
+void multiplexing(Method&);
 int fastCGI();
-int Methods(int fd);
+int Methods(int ,Method&);
+
+void   deleteMethod(const std::string &path1,const std::string &version);
+void    getMethod(Method &method,int cfd);
