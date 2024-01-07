@@ -162,7 +162,7 @@ bool parseServerBlock( ServerConfig &server,std::ifstream &file)
             {
                 wiss >> server.listen;
                 checkStreamEmty(wiss);
-                if(server.listen <= 0 || server.listen >= 65000)
+                if(server.listen <= 0 || server.listen >= 65536)
                     throw std::runtime_error("Eroor port");
             }
             else if (key == "host" && server.host.empty())

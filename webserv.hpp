@@ -48,4 +48,4 @@ class Webserv
 };
 void multiplexing();
 int fastCGI();
-int getMethod(int fd);
+int Methods(int fd);

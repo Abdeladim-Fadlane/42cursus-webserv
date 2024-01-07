@@ -1,7 +1,7 @@
 #include"webserv.hpp"
 
 std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nMethod, GET!\n";
-
+/* Analyze, Douiri */
 void multiplexing()
 {
     int serverSocketFD ;
@@ -56,39 +56,40 @@ void multiplexing()
                     if(*it == events[i].data.fd)
                         break;
                 }
-                if(events[i].events & EPOLLIN && getMethod(events[i].data.fd))
+                if(events[i].events & EPOLLIN && Methods(events[i].data.fd))
                 {
                     /* readiing */
                 }
                 if (events[i].events & EPOLLOUT)
                 {
-                    std::string httpResponse;
-                    // fastCGI();
-                    std::ifstream file ("tools/index.html");
-                    if (!file.is_open())
-                        std::cerr << "Error opening file 'index.html'" << std::endl;
-                    std::string line;
-                    std::string content;
-                    while (std::getline(file, line))
-                    {
-                        if (line.find("Content-type: text/html; charset=UTF-8") != std::string::npos)
-                            continue;
-                        content += line + "\n";
-                    }
-                    std::stringstream ss;
-                    ss << content.size();
                     
-                    httpResponse = "HTTP/1.1 200 OK\r\nContent-Length: " + ss.str() + "\r\n\r\n" + content;
-                    // write(1,httpResponse.c_str(),httpResponse.size());
-                    ssize_t bytesWritten = write(events[i].data.fd,  httpResponse.c_str(),  httpResponse.size());
-                    if(bytesWritten == -1)
-                    {
-                        perror("write");
-                        continue;
-                    }
+                    // std::string httpResponse;
+                    // // fastCGI();
+                    // std::ifstream file ("tools/index.html");
+                    // if (!file.is_open())
+                    //     std::cerr << "Error opening file 'index.html'" << std::endl;
+                    // std::string line;
+                    // std::string content;
+                    // while (std::getline(file, line))
+                    // {
+                    //     if (line.find("Content-type: text/html; charset=UTF-8") != std::string::npos)
+                    //         continue;
+                    //     content += line + "\n";
+                    // }
+                    // std::stringstream ss;
+                    // ss << content.size();
+                    
+                    // httpResponse = "HTTP/1.1 200 OK\r\nContent-Length: " + ss.str() + "\r\n\r\n" + content;
+                    // // write(1,httpResponse.c_str(),httpResponse.size());
+                    // ssize_t bytesWritten = write(events[i].data.fd,  httpResponse.c_str(),  httpResponse.size());
+                    // if(bytesWritten == -1)
+                    // {
+                    //     perror("write");
+                    //     continue;
+                    // }
                     std::cout<<"Close Client ID : "<< events[i].data.fd <<std::endl;
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    // close(events[i].data.fd);
+                    close(events[i].data.fd);
                     // return ;
                 }
             }
@@ -97,3 +98,5 @@ void multiplexing()
     close(epollFD);
     close(serverSocketFD);
 }
+
+/* حلل يا دويري */

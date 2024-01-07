@@ -3,9 +3,10 @@
 #include<cstdio>
 #include<cstdlib>
 
-void   deleteMethod(const std::string &path,const std::string &version)
+void   deleteMethod(const std::string &path1,const std::string &version)
 {
-    struct stat file;
+    const char* path = path1.c_str();
+    struct stat fileStat;
     std::ofstream testfile("tools/index.html");
     if(!testfile.is_open())
     {
@@ -13,11 +14,12 @@ void   deleteMethod(const std::string &path,const std::string &version)
         return;
     }
     std::string response;
-    if(stat(path.c_str(),&file) == 0)
+    if(stat(path,&fileStat) == 0)
     {
-        if(S_ISREG(file.st_mode))
+        std::cout<<"here\n";
+        if(S_ISREG(fileStat.st_mode))
         {
-            if(remove(path.c_str()) == 0)
+            if(remove(path) == 0)
             {
                 testfile <<version+" 200 OK\r\n" + "{message: Resource deleted successfully}";
                 return; 
@@ -28,9 +30,9 @@ void   deleteMethod(const std::string &path,const std::string &version)
                 return ;
             }   
         }
-        else if(S_ISDIR(file.st_mode))
+        else if(S_ISDIR(fileStat.st_mode))
         {
-            if(rmdir(path.c_str()) == 0)
+            if(rmdir(path) == 0)
             {
 
                 testfile <<version+" 200 OK\r\n" + "{message: Resource deleted successfully}";
@@ -44,15 +46,32 @@ void   deleteMethod(const std::string &path,const std::string &version)
         }
         else
         {
-            testfile << version+" 404 NOT FOUND\r\n" + "{message: can't removing file/diroctory}";
+            testfile << version+" 404 NOT FOUND\r\n" + "{not such file or directory}";
             return;
         }
     }
     else
         testfile << version+" 404 NOT FOUND\r\n" + "{message: can't removing file/diroctory}";
+    testfile.close();
     return;
 }
+void    getMethod(Method &method,int cfd)
+{
+    int fd = open(method.method.c_str() + 1, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    if(fd == -1)
+    {
+        throw std::runtime_error("error file");
+    }
+    ssize_t bytesRead;
+    char  buffer[BUFFER_SIZE];
+    write(cfd,"HTTP/1.1 200 OK\r\nContent-Length: 10000 \r\n\r\n",44);
 
+    while(bytesRead= read(fd,buffer,BUFFER_SIZE) > 0)
+    {
+        write(cfd,buffer,BUFFER_SIZE);
+    }
+    // fastCGI();
+}
 int paceUrl(std::string line,Method *object)
 {
     std::istringstream wiss(line);
@@ -64,7 +83,7 @@ int paceUrl(std::string line,Method *object)
     return(1);
 }
 
-int getMethod(int fd)
+int Methods(int fd)
 {
     Method object;
     std::string line;
@@ -84,9 +103,24 @@ int getMethod(int fd)
     std::istringstream wiss(line);
     std::getline(wiss, firstLine);
     paceUrl(firstLine, &object);
-    std::cout << "Path: " << object.path << std::endl;
     if(object.method == "DELETE")
+    {
+        /* DELETE METHOD */
         deleteMethod(object.path,object.version);
+    }
+    else if(object.method == "POST")
+    {
+        /* POST METHOD */
+        return (1);
+    }
+    else if(object.method == "GET")
+    {
+        /* GET METHOD */
+        getMethod(object,fd);
+    }
+    else
+        return(false);
+    std::cout << "Path: " << object.path << std::endl;
     std::cout << "Method: " << object.method << std::endl;
     
     std::cout << "Version: " << object.version << std::endl;

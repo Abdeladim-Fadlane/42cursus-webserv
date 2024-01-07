@@ -3,7 +3,7 @@ NAME = webserv
 
 CXXFLAGS =  -std=c++98 -fsanitize=address -g3
 CXX = c++
-CFILES = server.cpp main.cpp get.cpp
+CFILES = server.cpp main.cpp methods.cpp
 OBJ = ${CFILES:.cpp=.o}
 
 all: ${NAME}
