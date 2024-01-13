@@ -196,7 +196,6 @@ void getMethod(Method &method, int cfd)
     if(method.path == "/favicon.ico" )
         return;
     int i = isFileOrDirectory(method);
-    // std::cout<<"i = "<<i<<"\n";
     if(i == 2)
     {
         /* hundle DIRECTORY */
@@ -254,7 +253,6 @@ int Methods(int fd,Method &object)
     std::istringstream wiss(line);
     std::getline(wiss, firstLine);
     paceUrl(firstLine, &object);
-    // std::cout << "-----------Path------: " << object.path << std::endl;
     // std::cout << "Method: " << object.method << std::endl;
     // std::cout << "Version: " << object.version << std::endl;
     return 1;
