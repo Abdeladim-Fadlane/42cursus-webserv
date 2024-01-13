@@ -1,0 +1,1 @@
+COPY index.html .
