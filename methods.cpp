@@ -100,15 +100,14 @@ std::string    getContentType(Method &method)
 }
 int isFileOrDirectory(Method &method)
 {
-    std::string locationPath = "/";
-    
+    // std::cout<<"<<<<<"<<method.path<<">>>>>>\n";
     // Ensure there is no double slash in the path
-    // if (method.path != "/" && method.path.back() == '/')
-    //     method.path.pop_back();
+    if (method.path != "/" && method.path.back() == '/')
+        method.path.pop_back();
     
-    std::string fullPath = locationPath + method.path;
+    std::string fullPath = method.rootLocation + method.path;
     struct stat file;
-    
+    std::cout<<fullPath<<"----------------\n";
     if (stat(fullPath.c_str(), &file) != 0)
         return(0);
     if (S_ISREG(file.st_mode))
@@ -127,37 +126,44 @@ int    listingDirectory(Method &method,int cfd)
     list << "<html><head><title>Directory Listing</title></head><body>";
     list << "<h1>Index of: " << method.path << "</h1>";
     list << "<table>";
-    DIR *dir =  opendir(method.path.c_str());
+    std::string directoryPath = method.rootLocation + method.path + "/";
+    directoryPath = directoryPath.substr(1);
+    std::cout<<"f = "<<directoryPath <<"\n";
+    DIR *dir =  opendir(directoryPath.c_str());
     struct dirent *it;
     if(dir)
     {
         while((it = readdir(dir)) != NULL)
         {
+            if(strcmp(it->d_name , ".") == 0 || strcmp(it->d_name , "..") == 0)
+                continue;
             if(strcmp(it->d_name,autoFile) == 0)
             {
                 method.path = method.path + "/" + autoFile;
                 serveFIle(method,cfd);
                 return (1);
             }
-            if (!method.path.empty() && method.path.back() == '/')
-                method.path.pop_back();
-            std::string filePath = method.path + "/" + it->d_name;
+            // if (!method.path.empty() && method.path.back() == '/')
+            //     method.path.pop_back();
+            std::string directoryChildPath = directoryPath  + it->d_name;
             struct stat file;
-            if (stat(filePath.c_str(), &file) == 0)
+            if (stat(directoryChildPath .c_str(), &file) == 0)
             {
                 list << "<tr>";
-                list << "<td>"<< "<a href='" << filePath << "'>" << it->d_name << "</a></td>";
+                list << "<td>"<< "<a href='" << it->d_name << "/" << "'>" << it->d_name << "</a></td>";
                 list << "<td>"<< ctime(&file.st_mtime) <<"</td>";
                 list << "<td>"<< file.st_size << " bytes</td>";
                 list << "</tr>";
             }
             else
                 list<< "<p>Error  opening directory</p>";
+            // std::cout<<"--------------------------------------"<<"\n";
+            
         }
         closedir(dir);
     }
     else
-        list<< "<p>Forbident </p>";
+        list<< "<p>Directory not found </p>";
     list << "</table></body></html>";
     method.buff =  list.str();
     return(0);
@@ -193,6 +199,7 @@ void serveFIle(Method &method, int cfd)
 
 void getMethod(Method &method, int cfd)
 {
+    method.rootLocation = "/";
     if(method.path == "/favicon.ico" )
         return;
     int i = isFileOrDirectory(method);
