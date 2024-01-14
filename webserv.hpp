@@ -41,6 +41,7 @@ struct Method {
     std::string path;
     std::string version;
     std::string buff;
+    std::string rootLocation;
 };
 class Webserv
 {

@@ -56,17 +56,15 @@ void multiplexing(Method &method)
                 //     if(*it == events[i].data.fd)
                 //         break;
                 // }
-                // if(events[i].events & EPOLLIN )
-                // {
-                    Methods(events[i].data.fd,method);
-                    /* readiing */
-                // }
-                if (events[i].events & EPOLLOUT)
+                if( EPOLLIN )
                 {
-
+                    /* readiing */
+                    Methods(events[i].data.fd,method);
+                }
+                if ( EPOLLOUT)
+                {
+                    /* writing */
                     getMethod(method,events[i].data.fd);
-                    /* end writing */
-                    // std::cout<<"Close Client ID : "<< events[i].data.fd <<std::endl;
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
                 }
