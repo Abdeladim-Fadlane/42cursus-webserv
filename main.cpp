@@ -35,7 +35,7 @@ int fastCGI() {
 
 int main()
 {
-    /* here we go */
+    ////////////////////////////////////
     Method method;
     try
     {
