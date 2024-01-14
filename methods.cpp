@@ -225,7 +225,6 @@ void getMethod(Method &method, int cfd)
     {
         /* hundle file */
         serveFIle(method,cfd);
-        /* here we go */
     }
 }
 

@@ -29,7 +29,6 @@ struct ServerConfig
 
 void printInfo(std::vector<ServerConfig> &servers)
 {
-    // std::cout << "Number of servers: " << servers.size() << std::endl;
     for (std::vector<ServerConfig>::iterator it = servers.begin(); it != servers.end(); it++)
     {
         std::cout << "Listen: " << it->listen << std::endl;

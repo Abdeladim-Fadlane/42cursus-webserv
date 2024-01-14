@@ -7,7 +7,7 @@ WORKDIR /
 RUN apt install -y nginx 
 
 COPY tools .
-# COPY profile-image.jpg .
+
 
 COPY ./ngnix.conf /etc/nginx/sites-enabled/default.conf 
 
