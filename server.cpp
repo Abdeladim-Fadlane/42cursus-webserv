@@ -1,6 +1,5 @@
 #include"webserv.hpp"
 
-std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nMethod, GET!\n";
 /* Analyze, Douiri */
 void multiplexing(Method &method)
 {
