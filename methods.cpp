@@ -100,22 +100,15 @@ std::string    getContentType(Method &method)
 }
 int isFileOrDirectory(Method &method)
 {
-    // std::cout<<"<<<<<"<<method.path<<">>>>>>\n";
-    // Ensure there is no double slash in the path
-    if (method.path != "/" && method.path.back() == '/')
-        method.path.pop_back();
-    
     std::string fullPath = method.rootLocation + method.path;
     struct stat file;
-    std::cout<<fullPath<<"----------------\n";
+    std::cout<<"<<<"<<fullPath<<">>>\n";
     if (stat(fullPath.c_str(), &file) != 0)
         return(0);
     if (S_ISREG(file.st_mode))
         return 1;
-
     if (S_ISDIR(file.st_mode))
         return 2;
-
     return 0;
 }
 void serveFIle(Method &method, int cfd);
@@ -127,8 +120,8 @@ int    listingDirectory(Method &method,int cfd)
     list << "<h1>Index of: " << method.path << "</h1>";
     list << "<table>";
     std::string directoryPath = method.rootLocation + method.path + "/";
-    directoryPath = directoryPath.substr(1);
-    std::cout<<"f = "<<directoryPath <<"\n";
+    
+    // std::cout<<"f = "<<directoryPath <<"\n";
     DIR *dir =  opendir(directoryPath.c_str());
     struct dirent *it;
     if(dir)
@@ -137,9 +130,9 @@ int    listingDirectory(Method &method,int cfd)
         {
             if(strcmp(it->d_name , ".") == 0 || strcmp(it->d_name , "..") == 0)
                 continue;
-            if(strcmp(it->d_name,autoFile) == 0)
+            if(strcmp(it->d_name,autoFile) == 0 && autoFile != NULL)
             {
-                method.path = method.path + "/" + autoFile;
+                method.path = method.path + autoFile;
                 serveFIle(method,cfd);
                 return (1);
             }
@@ -148,9 +141,12 @@ int    listingDirectory(Method &method,int cfd)
             std::string directoryChildPath = directoryPath  + it->d_name;
             struct stat file;
             if (stat(directoryChildPath .c_str(), &file) == 0)
-            {
+            { 
                 list << "<tr>";
-                list << "<td>"<< "<a href='" << it->d_name << "/" << "'>" << it->d_name << "</a></td>";
+                if (S_ISREG(file.st_mode))
+                    list << "<td>"<< "<a href='" << it->d_name << "'>" << it->d_name << "</a></td>";
+                if (S_ISDIR(file.st_mode))
+                    list << "<td>"<< "<a href='" << it->d_name << "/" << "'>" << it->d_name << "</a></td>";
                 list << "<td>"<< ctime(&file.st_mtime) <<"</td>";
                 list << "<td>"<< file.st_size << " bytes</td>";
                 list << "</tr>";
@@ -172,6 +168,7 @@ int    listingDirectory(Method &method,int cfd)
 void serveFIle(Method &method, int cfd)
 {
     std::string contentType = getContentType(method);
+    method.path = method.rootLocation + method.path;
     int fd = open(method.path.c_str(), O_RDONLY);
     if (fd == -1)
         throw std::runtime_error("Error opening file");
@@ -199,7 +196,7 @@ void serveFIle(Method &method, int cfd)
 
 void getMethod(Method &method, int cfd)
 {
-    method.rootLocation = "/";
+    method.rootLocation = "/home/afadlane/webserv/tools/game";
     if(method.path == "/favicon.ico" )
         return;
     int i = isFileOrDirectory(method);
@@ -231,10 +228,10 @@ void getMethod(Method &method, int cfd)
     }
 }
 
-int paceUrl(std::string line,Method *object)
+int paceUrl(std::string line,Method &object)
 {
     std::istringstream wiss(line);
-    if (!(wiss >> object->method >> object->path >> object->version))
+    if (!(wiss >> object.method >> object.path >> object.version))
     {
         std::cerr << "Error parsing the request." << std::endl;
         return 0;
@@ -259,7 +256,7 @@ int Methods(int fd,Method &object)
     std::string firstLine;
     std::istringstream wiss(line);
     std::getline(wiss, firstLine);
-    paceUrl(firstLine, &object);
+    paceUrl(firstLine, object);
     // std::cout << "Method: " << object.method << std::endl;
     // std::cout << "Version: " << object.version << std::endl;
     return 1;
