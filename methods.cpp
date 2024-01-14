@@ -102,7 +102,7 @@ int isFileOrDirectory(Method &method)
 {
     std::string fullPath = method.rootLocation + method.path;
     struct stat file;
-    std::cout<<"<<<"<<fullPath<<">>>\n";
+    // std::cout<<"<<<"<<fullPath<<">>>\n";
     if (stat(fullPath.c_str(), &file) != 0)
         return(0);
     if (S_ISREG(file.st_mode))
@@ -196,7 +196,7 @@ void serveFIle(Method &method, int cfd)
 
 void getMethod(Method &method, int cfd)
 {
-    method.rootLocation = "/home/afadlane/webserv/tools/game";
+    method.rootLocation = "/home/afadlane/webserv/tools/BlastSphere";
     if(method.path == "/favicon.ico" )
         return;
     int i = isFileOrDirectory(method);
