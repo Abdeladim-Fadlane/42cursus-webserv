@@ -2,7 +2,7 @@
 
 int fastCGI()
 {
-    
+     // here we go   // 
     std::string path ="/home/afadlane/webserv/tools/phpinfo.php";
     pid_t cgi_pid;
     int fd = open("tools/index.html", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
