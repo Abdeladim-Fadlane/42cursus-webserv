@@ -1,6 +1,5 @@
 NAME = webserv
 
-
 CXXFLAGS = -Wall -Wextra -Werror #-fsanitize=address -g3
 CXX = c++
 CFILES = server.cpp main.cpp methods.cpp
