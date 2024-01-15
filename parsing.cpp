@@ -5,6 +5,7 @@
 #include <vector>
 #include <stdexcept>
 #include<unordered_map>
+
 struct LocationConfig
 {
     std::vector<std::string>index;
@@ -16,7 +17,8 @@ struct LocationConfig
     std::vector<std::string> cgiPath;
     std::string proxyReadTimeout;
 };
-int flag = true;
+
+
 struct ServerConfig
 {
     int listen;
@@ -26,7 +28,7 @@ struct ServerConfig
     std::string clientMaxBodySize;
     std::vector<LocationConfig> locations;
 };
-
+int flag = true;
 void printInfo(std::vector<ServerConfig> &servers)
 {
     // std::cout << "Number of servers: " << servers.size() << std::endl;
