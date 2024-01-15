@@ -24,11 +24,10 @@ int fastCGI() {
         waitpid(cgi_pid, &status, 0);
 
         if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-        } else {
+        } else{
             std::cerr << "Error executing CGI process" << std::endl;
         }
     }
-
     close(fd);
     return fd;
 }
