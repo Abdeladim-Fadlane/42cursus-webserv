@@ -166,15 +166,16 @@ int    listingDirectory(Method &method,int cfd)
 
 void serveFIle(Method &method, int cfd)
 {
-    bool headersProcessed = 1; 
+    bool flag = 1; 
     std::string contentType = getContentType(method);
     if(contentType == ".php")
     {
         /* hundle CGI */
         contentType == "text/html";
+        std::string tmp  = method.rootLocation + method.path;
+        fastCGI(tmp);
         method.path = "/tmp/tmpFile";
-        fastCGI();
-        headersProcessed = 0; 
+        flag = 0; 
     }
     else
         method.path = method.rootLocation + method.path;
@@ -192,12 +193,12 @@ void serveFIle(Method &method, int cfd)
         try
         {
             std::string responseChunk(buffer, bytesRead);
-            if (headersProcessed == 0)
+            if (flag == 0)
             {  
                 size_t headerEndPos = responseChunk.find("\r\n\r\n");
                 if (headerEndPos != std::string::npos)
                 {
-                    headersProcessed = true;
+                    flag = true;
                     std::string htmlContent = responseChunk.substr(headerEndPos + 4);
                     sendChunk(cfd, htmlContent.c_str(), htmlContent.size());
                 }
@@ -213,6 +214,7 @@ void serveFIle(Method &method, int cfd)
             return;
         }
     }
+    remove("/tmp/tmpFile");
     close(fd);
     write(cfd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1);
 }

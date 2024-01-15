@@ -34,7 +34,7 @@
 #define  PORT  8080
 #define  SERVER_IP "0.0.0.0"
 #define  BUFFER_SIZE 1024
-#define  SERVERS 4
+#define  SERVERS 6
 
 struct Method {
     std::string method;
@@ -52,7 +52,7 @@ class Webserv
         ~Webserv(){};
 };
 void multiplexing(Method&);
-void fastCGI();
+void fastCGI(std::string &);
 int Methods(int ,Method&);
 
 void   deleteMethod(const std::string &path1,const std::string &version);

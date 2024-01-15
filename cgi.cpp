@@ -1,6 +1,6 @@
 #include"webserv.hpp"
 
-void fastCGI()
+void fastCGI(std::string &path)
 {
     pid_t cgi_pid;
     int fd = open("/tmp/tmpFile", O_WRONLY | O_CREAT ,777);
@@ -13,7 +13,7 @@ void fastCGI()
     if (cgi_pid == 0)
     {
         dup2(fd, 1);
-        const char *args[] = {"/usr/bin/php-cgi8.2", "/home/afadlane/webserv/tools/utils/phpinfo.php", NULL};
+        const char *args[] = {"/usr/bin/php-cgi8.2", path.c_str(), NULL};
         char *env[] = {NULL};
         close(fd);
         execve("/usr/bin/php-cgi8.2", const_cast<char* const*>(args), env);
