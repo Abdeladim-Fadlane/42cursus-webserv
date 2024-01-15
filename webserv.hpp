@@ -52,7 +52,7 @@ class Webserv
         ~Webserv(){};
 };
 void multiplexing(Method&);
-int fastCGI();
+void fastCGI();
 int Methods(int ,Method&);
 
 void   deleteMethod(const std::string &path1,const std::string &version);

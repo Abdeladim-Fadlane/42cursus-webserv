@@ -1,10 +1,9 @@
 #include"webserv.hpp"
 
-int fastCGI()
+void fastCGI()
 {
     pid_t cgi_pid;
     int fd = open("/tmp/tmpFile", O_WRONLY | O_CREAT ,777);
-    // std::cout<<"fd == "<<fd<<"\n";
     if (fd == -1)
     {
         std::cerr << "Error opening file /tmp/tmpFile" << std::endl;
@@ -22,16 +21,6 @@ int fastCGI()
         exit(EXIT_FAILURE);
     } 
     else
-    {
-        // int status;
-        // waitpid(cgi_pid, &status, 0);
-
-        // if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-        // } else{
-        //     std::cerr << "Error executing CGI process" << std::endl;
-        // }
         wait(NULL);
-    }
-    // close(f)
-    return fd;
+    close(fd);
 }

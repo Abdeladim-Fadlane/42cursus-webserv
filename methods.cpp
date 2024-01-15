@@ -168,7 +168,6 @@ void serveFIle(Method &method, int cfd)
 {
     bool headersProcessed = 1; 
     std::string contentType = getContentType(method);
-    // int fd;
     if(contentType == ".php")
     {
         /* hundle CGI */
@@ -214,7 +213,6 @@ void serveFIle(Method &method, int cfd)
             return;
         }
     }
-    
     close(fd);
     write(cfd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1);
 }
