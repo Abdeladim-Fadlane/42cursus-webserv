@@ -121,7 +121,6 @@ int    listingDirectory(Method &method,int cfd)
     list << "<table>";
     std::string directoryPath = method.rootLocation + method.path + "/";
     
-    // std::cout<<"f = "<<directoryPath <<"\n";
     DIR *dir =  opendir(directoryPath.c_str());
     struct dirent *it;
     if(dir)
@@ -130,8 +129,10 @@ int    listingDirectory(Method &method,int cfd)
         {
             if(strcmp(it->d_name , ".") == 0 || strcmp(it->d_name , "..") == 0)
                 continue;
-            if(strcmp(it->d_name,autoFile) == 0 && autoFile != NULL)
+            if(strcmp(it->d_name,autoFile) == 0)
             {
+                std::cout<<"f = "<<it->d_name <<"\n";
+
                 method.path = method.path + autoFile;
                 serveFIle(method,cfd);
                 return (1);
