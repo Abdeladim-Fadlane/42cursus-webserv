@@ -2,7 +2,7 @@ NAME = webserv
 
 CXXFLAGS = -Wall -Wextra -Werror #-fsanitize=address -g3
 CXX = c++
-CFILES = server.cpp main.cpp methods.cpp
+CFILES = server.cpp main.cpp methods.cpp cgi.cpp
 OBJ = ${CFILES:.cpp=.o}
 
 all: ${NAME}

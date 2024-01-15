@@ -84,7 +84,7 @@ std::string    getContentType(Method &method)
     contentTypeMap[".png"] = "image/png";
     contentTypeMap[".gif"] = "image/gif";
     contentTypeMap[".mp4"] = "video/mp4";
-    contentTypeMap[".php"] = "text/html";
+    contentTypeMap[".php"] = ".php";
     contentTypeMap[".css"] = "text/css";
     contentTypeMap[".js"] = "application/javascript";
 
@@ -131,8 +131,6 @@ int    listingDirectory(Method &method,int cfd)
                 continue;
             if(strcmp(it->d_name,autoFile) == 0)
             {
-                std::cout<<"f = "<<it->d_name <<"\n";
-
                 method.path = method.path + autoFile;
                 serveFIle(method,cfd);
                 return (1);
@@ -168,8 +166,19 @@ int    listingDirectory(Method &method,int cfd)
 
 void serveFIle(Method &method, int cfd)
 {
+    bool headersProcessed = 1; 
     std::string contentType = getContentType(method);
-    method.path = method.rootLocation + method.path;
+    // int fd;
+    if(contentType == ".php")
+    {
+        /* hundle CGI */
+        contentType == "text/html";
+        method.path = "/tmp/tmpFile";
+        fastCGI();
+        headersProcessed = 0; 
+    }
+    else
+        method.path = method.rootLocation + method.path;
     int fd = open(method.path.c_str(), O_RDONLY);
     if (fd == -1)
         throw std::runtime_error("Error opening file");
@@ -178,26 +187,41 @@ void serveFIle(Method &method, int cfd)
     ssize_t bytesRead;
     std::string httpResponse = method.version + " 200 OK\r\nContent-Type:" + contentType+" \r\nTransfer-Encoding: chunked\r\n\r\n";
     write(cfd, httpResponse.c_str(), httpResponse.size());  
+
     while ((bytesRead = read(fd, buffer, BUFFER_SIZE)) > 0)
     {
         try
         {
-            sendChunk(cfd, buffer, bytesRead);
-
-        } catch (const std::runtime_error& e)
+            std::string responseChunk(buffer, bytesRead);
+            if (headersProcessed == 0)
+            {  
+                size_t headerEndPos = responseChunk.find("\r\n\r\n");
+                if (headerEndPos != std::string::npos)
+                {
+                    headersProcessed = true;
+                    std::string htmlContent = responseChunk.substr(headerEndPos + 4);
+                    sendChunk(cfd, htmlContent.c_str(), htmlContent.size());
+                }
+            }
+            else
+                sendChunk(cfd, responseChunk.c_str(), responseChunk.size());
+            memset(buffer, 0, sizeof(buffer));
+        }
+        catch (const std::runtime_error &e)
         {
-            std::cout<<e.what()<<std::endl;
+            std::cout << e.what() << std::endl;
             close(fd);
             return;
         }
     }
+    
     close(fd);
     write(cfd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1);
 }
 
 void getMethod(Method &method, int cfd)
 {
-    method.rootLocation = "/home/afadlane/webserv/tools/BlastSphere";
+    method.rootLocation = "/home/afadlane/webserv/tools/utils";
     if(method.path == "/favicon.ico" )
         return;
     int i = isFileOrDirectory(method);

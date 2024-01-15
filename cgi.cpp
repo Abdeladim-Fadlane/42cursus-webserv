@@ -2,36 +2,36 @@
 
 int fastCGI()
 {
-     // here we go   // 
-    std::string path ="/home/afadlane/webserv/tools/phpinfo.php";
     pid_t cgi_pid;
-    int fd = open("tools/index.html", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-
+    int fd = open("/tmp/tmpFile", O_WRONLY | O_CREAT ,777);
+    // std::cout<<"fd == "<<fd<<"\n";
     if (fd == -1)
     {
-        std::cerr << "Error opening file 'index.html'" << std::endl;
+        std::cerr << "Error opening file /tmp/tmpFile" << std::endl;
         exit(EXIT_FAILURE);
     }
     cgi_pid = fork();
-    if (cgi_pid == 0) {
+    if (cgi_pid == 0)
+    {
         dup2(fd, 1);
-        const char *args[] = {"/usr/bin/php-cgi8.2", path.c_str(), NULL};
+        const char *args[] = {"/usr/bin/php-cgi8.2", "/home/afadlane/webserv/tools/utils/phpinfo.php", NULL};
         char *env[] = {NULL};
         close(fd);
         execve("/usr/bin/php-cgi8.2", const_cast<char* const*>(args), env);
         perror("Error executing CGI");
         exit(EXIT_FAILURE);
-    } else {
-        int status;
-        waitpid(cgi_pid, &status, 0);
+    } 
+    else
+    {
+        // int status;
+        // waitpid(cgi_pid, &status, 0);
 
-        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-            // Successfully executed the CGI process
-        } else {
-            std::cerr << "Error executing CGI process" << std::endl;
-            // Handle the error if needed
-        }
+        // if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        // } else{
+        //     std::cerr << "Error executing CGI process" << std::endl;
+        // }
+        wait(NULL);
     }
-    close(fd);
+    // close(f)
     return fd;
 }
