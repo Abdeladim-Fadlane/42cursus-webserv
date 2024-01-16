@@ -50,12 +50,6 @@ void multiplexing(Method &method)
             } 
             else
             {
-                // std::vector<int>::iterator it ;
-                // for(it = readyFD.begin(); it != readyFD.end() ;it++)
-                // {
-                //     if(*it == events[i].data.fd)
-                //         break;
-                // }
                 if( EPOLLIN )
                 {
                     /* readiing */

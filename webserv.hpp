@@ -34,7 +34,7 @@
 #define  PORT  8080
 #define  SERVER_IP "0.0.0.0"
 #define  BUFFER_SIZE 1024
-#define  SERVERS 6
+#define  SERVERS 3
 
 struct Method {
     std::string method;
@@ -42,6 +42,9 @@ struct Method {
     std::string version;
     std::string buff;
     std::string rootLocation;
+    std::string host;
+    std::string port;
+    std::string addressIp;
 };
 class Webserv
 {

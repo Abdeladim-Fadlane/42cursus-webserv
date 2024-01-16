@@ -256,12 +256,19 @@ void getMethod(Method &method, int cfd)
 
 int paceUrl(std::string line,Method &object)
 {
+    std::string firstLine;
+    std::string secondLine;
+    std::string host;
     std::istringstream wiss(line);
-    if (!(wiss >> object.method >> object.path >> object.version))
-    {
-        std::cerr << "Error parsing the request." << std::endl;
-        return 0;
-    }
+    std::getline(wiss, firstLine);
+    std::istringstream iss(firstLine);
+    iss >> object.method >> object.path >> object.version; 
+    std::getline(wiss, secondLine);
+    std::istringstream ciss(secondLine);
+    ciss >> firstLine >> host;
+    size_t pos = host.find(':');
+    object.addressIp = host.substr(0,pos);
+    object.port = host.substr(pos + 1);
     return(1);
 }
 
@@ -279,11 +286,9 @@ int Methods(int fd,Method &object)
         }
     }
     // std::cout << line << std::endl;
-    std::string firstLine;
-    std::istringstream wiss(line);
-    std::getline(wiss, firstLine);
-    paceUrl(firstLine, object);
-    // std::cout << "Method: " << object.method << std::endl;
-    // std::cout << "Version: " << object.version << std::endl;
+
+    paceUrl(line, object);
+    std::cout << "Method: " << object.addressIp << std::endl;
+    std::cout << "Version: " << object.port << std::endl;
     return 1;
 }
