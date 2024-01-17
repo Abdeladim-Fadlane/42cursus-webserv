@@ -32,7 +32,7 @@
 
 #define  MAX_EVENTS 10
 #define  PORT  8080
-#define  SERVER_IP "0.0.0.0"
+// #define  SERVER_IP "0.0.0.0"
 #define  BUFFER_SIZE 1024
 #define  SERVERS 3
 

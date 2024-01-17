@@ -1,14 +1,46 @@
 #include"webserv.hpp"
 
-std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 12\r\n\r\nMethod, GET!\n";
-/* Analyze, Douiri */
-void multiplexing(Method &method)
+struct ServerConfig
 {
+    int port ;
+    std::string listen;
+    std::string host;
+    std::string domainName;
+    std::vector<std::string> errorPage;
+    std::string clientMaxBodySize;
+    int size ;
+    // std::vector<LocationConfig> locations;
+};
+    
+void example(std::vector<ServerConfig> &vec)
+{
+    int i = 0;
+    ServerConfig conf;
+
+    while (i < SERVERS)
+    {
+        conf.listen = "127.0.0.0:8080";
+        conf.port = 8080 + i;
+        vec.push_back(conf);
+        i++;
+    }
+}
+/* Analyze, Douiri */
+
+void multiplexing(Method &method)
+{ 
+    std::map<std::string,ServerConfig> Servers;
+    std::vector<ServerConfig> vec;
+    example(vec);
+   
     int serverSocketFD ;
     int epollFD = epoll_create(5);
     epoll_event event;
     int socketFD ;
-    for(int i = 0 ;i < SERVERS; i++)
+    
+    /* INSTED OF LOOP ON VECTOR  */
+   
+    for(size_t i = 0 ;i < vec.size(); i++)
     {
         socketFD = socket(AF_INET,SOCK_STREAM,0);
         if (socketFD == -1) {
@@ -16,16 +48,17 @@ void multiplexing(Method &method)
         sockaddr_in serverAdress;
         serverAdress.sin_family = AF_INET;
         serverAdress.sin_addr.s_addr = INADDR_ANY;
-        serverAdress.sin_port = htons(PORT + i);
+        serverAdress.sin_port = htons(vec[i].port);
         if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
-            std::cerr<<"Cannot bind to port : "<<PORT + i << "\n" ;
+            std::cerr<<"Cannot bind to port : "<<vec[i].port << "\n" ;
         if(listen(socketFD,10) == 0)
-            std::cout<<"listenning to "<< PORT + i <<" [...]" <<std::endl;
+            std::cout<<"listenning to "<< vec[i].port <<" [...]" <<std::endl;
         else{std::cerr<<"Error listen\n";exit(1);}
         event.events = EPOLLIN ;
         event.data.fd = socketFD;
         if(epoll_ctl(epollFD,EPOLL_CTL_ADD,socketFD,&event) == -1)
             exit(1);
+        Servers[vec[i].listen] = vec[i]; 
     }
     std::vector<int> readyFD;
     epoll_event events[MAX_EVENTS];
@@ -38,7 +71,6 @@ void multiplexing(Method &method)
             if( events[i].data.fd <= SERVERS + 3)
             {
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
-                
                 // std::cout<<"New connections Id : "<< clientSocketFD<<std::endl;
                 if(clientSocketFD == -1)
                 {std::cerr << "Failed to accept connection ." << std::endl;break;}

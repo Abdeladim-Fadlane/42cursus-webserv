@@ -286,7 +286,6 @@ int Methods(int fd,Method &object)
         }
     }
     // std::cout << line << std::endl;
-
     paceUrl(line, object);
     std::cout << "Method: " << object.addressIp << std::endl;
     std::cout << "Version: " << object.port << std::endl;
