@@ -1,17 +1,19 @@
 NAME = webserv
 
-CXXFLAGS = -Wall -Wextra -Werror #-fsanitize=address -g3
+CXXFLAGS =  -Wall -Wextra -Werror -fsanitize=address -g3
 CXX = c++
-CFILES = server.cpp main.cpp methods.cpp cgi.cpp
+CFILES = afadlane/server.cpp \
+ 		 afadlane/main.cpp \
+ 		 afadlane/methods.cpp \
+ 		 afadlane/cgi.cpp \
+ 		 afadlane/parsingRequest.cpp \
+
 OBJ = ${CFILES:.cpp=.o}
 
 all: ${NAME}
 
 ${NAME} : ${OBJ}
-	@${CXX} ${CXXFLAGS} -o $@ $^
-
-%.o:%.cpp webserv.hpp
-	@${CXX} ${CXXFLAGS} -c $<
+	@${CXX} ${CXXFLAGS}  ${OBJ} -o ${NAME}
 
 clean :
 	@rm -rf ${OBJ}
