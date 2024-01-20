@@ -11,7 +11,7 @@ void example(std::vector<ServerConfig> &vec)
         conf.port = 8080 + i;
         conf.clientMaxBodySize = "10";
         conf.domainName = "afadlane1337.ma";
-        conf.root = "/home/afadlane/webserv/afadlane/tools";
+        conf.root = "/";
         conf.autoFile = "index.html";
         vec.push_back(conf);
         i++;
@@ -19,18 +19,14 @@ void example(std::vector<ServerConfig> &vec)
 }
 /* Analyze, Douiri */
 
-void sigpipe_handler(int n ) {
-    std::cerr <<n<< "SIGPIPE received. Ignoring." << std::endl;
-}
 void multiplexing(Method &method)
 { 
-    // signal(SIGPIPE, sigpipe_handler);
     std::vector<std::pair<std::string,ServerConfig> > Servers;
     std::vector<ServerConfig> vec;
     example(vec);
    
     int serverSocketFD ;
-    int epollFD = epoll_create(1);
+    int epollFD = epoll_create(5);
     epoll_event event;
     int socketFD ;
     
@@ -56,8 +52,7 @@ void multiplexing(Method &method)
         {
             std::cerr<<"Error add to event : ";
             exit(1);
-        }
-            
+        } 
         Servers.push_back(std::make_pair(vec[i].listen,vec[i]));
     }
 

@@ -40,5 +40,5 @@ void parceRequest(Data & Data,Method &method,int fd)
     // std::cout << "host: " << method.host << std::endl;
     // std::cout << "Version: " << method.version << std::endl;
     // std::cout << "method: " << method.method << std::endl;
-    // std::cout << "path: " << method.rootLocation << std::endl;
+    std::cout << "path: " << method.path << std::endl;
 }
