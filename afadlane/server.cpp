@@ -11,7 +11,7 @@ void example(std::vector<ServerConfig> &vec)
         conf.port = 8080 + i;
         conf.clientMaxBodySize = "10";
         conf.domainName = "afadlane1337.ma";
-        conf.root = "/home/afadlane/webserv/afadlane/tools/utils/v0.mp4";
+        conf.root = "/home/afadlane/webserv/afadlane/tools";
         conf.autoFile = "index.html";
         vec.push_back(conf);
         i++;
@@ -66,7 +66,7 @@ void multiplexing(Method &method)
     while (true)
     {
         int clientSocketFD;
-        int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,-1); 
+        int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,500); 
         for (int i = 0; i < numEvent; ++i)
         {
             if(events[i].data.fd <=  SERVERS + 3)
@@ -88,14 +88,13 @@ void multiplexing(Method &method)
             } 
             else
             {
-                if(events[i].events & EPOLLIN)
+                if(events[i].events & EPOLLIN )
                 {
-        
                     /* readiing AND parsing request and POST METHOUD*/
                     if(Request[events[i].data.fd].data.Alreadparce == 0)
                         parceRequest(Request[events[i].data.fd].data,method,events[i].data.fd);
                 }
-                if (events[i].events & EPOLLOUT)
+                else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.Alreadparce == 1)
                 {
                     /* writing and Get methoud */
                     // std::cout<<"he enter to write\n";
@@ -113,5 +112,3 @@ void multiplexing(Method &method)
     close(epollFD);
     close(serverSocketFD);
 }
-
-/* حلل يا دويري */

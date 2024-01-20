@@ -31,7 +31,7 @@
 
 #define  MAX_EVENTS 1024
 #define  PORT  8080
-#define  BUFFER_SIZE 2000
+#define  BUFFER_SIZE 1024
 #define  SERVERS 3
 struct Data
 {  

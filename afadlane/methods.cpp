@@ -211,13 +211,13 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
     method.path = method.rootLocation + method.path;
     memset(buffer,0,sizeof(buffer));
     // std::cout<<"----"<< method.path <<"\n";
-    datacleint.fd = open(method.path.c_str(), O_RDONLY);
+    datacleint.fd = open("afadlane/tools/utils/taha.mp4", O_RDONLY);
     if (datacleint.fd == -1)
     {
         close(datacleint.fd);
         throw std::runtime_error("Error opening file");
     }
-        
+    // method.version = "HTTP/1.1";
     std::string httpResponse = method.version + " 200 OK\r\nContent-Type:" +contentType+ " \r\nTransfer-Encoding: chunked\r\n\r\n";
     if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
     {
@@ -288,57 +288,58 @@ void serveFIle(Data& datacleint, int cfd)
 
 void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::string,ServerConfig> >&Servers,int cfd)
 {
+    (void)Servers;
     try
     {    
         if(datacleint.isReading == 0)
         {
-            ServerConfig config =  getServer(Servers,method.host);
-            method.autoFile = config.autoFile;
-            method.rootLocation = config.root;
-            if(method.path == "/favicon.ico" )
-            {
-                datacleint.readyForClose = 1;
-                return;
-            }
-            int i = isFileOrDirectory(method);
-            if(i == 2)
-            {
-                /* hundle DIRECTORY */
-                if(listingDirectory(datacleint,method,cfd) == 0)
-                {
-                    const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + method.buff;
-                    if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-                    {
-                        datacleint.readyForClose = 1;
-                        throw std::runtime_error("An error aka client disconnect");
-                    }
-                    method.buff.clear(); 
-                    datacleint.readyForClose = 1;
-                }
-            }
-            if(i == 0)
-            {
-                /* hundle  not found*/
-                std::string httpResponse = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n" ;
-                httpResponse += "<html>\r\n<head>\r\n<title>404 - Page Not Found</title>\r\n</head>\r\n<body>\r\n";
-                httpResponse += "<div style=\"text-align: center;\">\r\n"; 
-                httpResponse += "<h1>404 - Page Not Found</h1>\r\n";
-                httpResponse += "<p>The requested page could not be found.</p>\r\n";
-                httpResponse += "</div>\r\n"; 
-                httpResponse += "</body>\r\n</html>";
-                if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-                {
-                    datacleint.readyForClose = 1;
-                    throw std::runtime_error("An error aka client disconnect");
-                }
-                datacleint.readyForClose = 1;
-            }
-            if(i == 1)
-            {
+        //     ServerConfig config =  getServer(Servers,method.host);
+        //     method.autoFile = config.autoFile;
+        //     method.rootLocation = config.root;
+        //     if(method.path == "/favicon.ico" )
+        //     {
+        //         datacleint.readyForClose = 1;
+        //         return;
+        //     }
+        //     int i = isFileOrDirectory(method);
+        //     if(i == 2)
+        //     {
+        //         /* hundle DIRECTORY */
+        //         if(listingDirectory(datacleint,method,cfd) == 0)
+        //         {
+        //             const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + method.buff;
+        //             if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
+        //             {
+        //                 datacleint.readyForClose = 1;
+        //                 throw std::runtime_error("An error aka client disconnect");
+        //             }
+        //             method.buff.clear(); 
+        //             datacleint.readyForClose = 1;
+        //         }
+        //     }
+        //     if(i == 0)
+        //     {
+        //         /* hundle  not found*/
+        //         std::string httpResponse = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n" ;
+        //         httpResponse += "<html>\r\n<head>\r\n<title>404 - Page Not Found</title>\r\n</head>\r\n<body>\r\n";
+        //         httpResponse += "<div style=\"text-align: center;\">\r\n"; 
+        //         httpResponse += "<h1>404 - Page Not Found</h1>\r\n";
+        //         httpResponse += "<p>The requested page could not be found.</p>\r\n";
+        //         httpResponse += "</div>\r\n"; 
+        //         httpResponse += "</body>\r\n</html>";
+        //         if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
+        //         {
+        //             datacleint.readyForClose = 1;
+        //             throw std::runtime_error("An error aka client disconnect");
+        //         }
+        //         datacleint.readyForClose = 1;
+        //     }
+        //     if(i == 1)
+        //     {
                 /* opning file and send hedear */
                 openFileAndSendHeader(datacleint,method,cfd);
                 /* here we go */
-            }
+        //     }
         }
         else
         {
