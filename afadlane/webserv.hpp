@@ -29,14 +29,16 @@
 #include <map>
 #include <stdexcept>
 
-#define  MAX_EVENTS 10
+#define  MAX_EVENTS 1024
 #define  PORT  8080
-#define  BUFFER_SIZE 1024
+#define  BUFFER_SIZE 2000
 #define  SERVERS 3
 struct Data
 {  
-    int Alreadyopen;
     int fd ;
+    int isReading;
+    int Alreadyopen;
+    int Alreadparce;
     int readyForClose;
 };
 
@@ -81,6 +83,6 @@ class Webserv
 
 void multiplexing(Method&);
 void fastCGI(std::string &);
-int Methods(int ,Method&);
-void   deleteMethod(const std::string &,const std::string &);
+void    parceRequest(Data & Data,Method &method,int fd);
+void    deleteMethod(const std::string &,const std::string &);
 void    getMethod(Data & datacleint,Method &,std::vector<std::pair<std::string,ServerConfig> > &,int );

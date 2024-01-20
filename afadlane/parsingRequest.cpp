@@ -20,19 +20,25 @@ int paceUrl(std::string line,Method &object)
     return(1);
 }
 
-int Methods(int fd,Method &object)
+void parceRequest(Data & Data,Method &method,int fd)
 {
-    std::string line;
-    // ssize_t bytesRead;
+    Data.Alreadparce = 1;
     char buffer[BUFFER_SIZE];
     memset(buffer, 0, BUFFER_SIZE);
-    read(fd, buffer, sizeof(buffer));
-    line == buffer;
+    if(read(fd, buffer, sizeof(buffer)) <= 0)
+    {
+        Data.readyForClose = 1;
+        std::runtime_error("error read");
+    }
+    std::string line(buffer,BUFFER_SIZE);
     ssize_t pos = line.find("\r\n\r\n") ;
     line = line.substr(0,pos);
+    paceUrl(line, method);
     // std::cout << line << std::endl;
-    paceUrl(line, object);
-    // std::cout << "Method: " << object.addressIp << std::endl;
-    // std::cout << "Version: " << object.port << std::endl;
-    return 1;
+    // std::cout << "ip: " << method.addressIp << std::endl;
+    // std::cout << "port: " << method.port << std::endl;
+    // std::cout << "host: " << method.host << std::endl;
+    // std::cout << "Version: " << method.version << std::endl;
+    // std::cout << "method: " << method.method << std::endl;
+    // std::cout << "path: " << method.rootLocation << std::endl;
 }

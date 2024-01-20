@@ -11,7 +11,7 @@ void example(std::vector<ServerConfig> &vec)
         conf.port = 8080 + i;
         conf.clientMaxBodySize = "10";
         conf.domainName = "afadlane1337.ma";
-        conf.root = "/home/afadlane/webserv/afadlane/tools";
+        conf.root = "/home/afadlane/webserv/afadlane/tools/utils/v0.mp4";
         conf.autoFile = "index.html";
         vec.push_back(conf);
         i++;
@@ -19,15 +19,18 @@ void example(std::vector<ServerConfig> &vec)
 }
 /* Analyze, Douiri */
 
-
+void sigpipe_handler(int n ) {
+    std::cerr <<n<< "SIGPIPE received. Ignoring." << std::endl;
+}
 void multiplexing(Method &method)
 { 
+    // signal(SIGPIPE, sigpipe_handler);
     std::vector<std::pair<std::string,ServerConfig> > Servers;
     std::vector<ServerConfig> vec;
     example(vec);
    
     int serverSocketFD ;
-    int epollFD = epoll_create(5);
+    int epollFD = epoll_create(1);
     epoll_event event;
     int socketFD ;
     
@@ -50,12 +53,15 @@ void multiplexing(Method &method)
         event.events = EPOLLIN ;
         event.data.fd = socketFD;
         if(epoll_ctl(epollFD,EPOLL_CTL_ADD,socketFD,&event) == -1)
+        {
+            std::cerr<<"Error add to event : ";
             exit(1);
+        }
+            
         Servers.push_back(std::make_pair(vec[i].listen,vec[i]));
     }
 
-
-    std::map<int,dataClient> readyFD;
+    std::map<int,dataClient> Request;
     epoll_event events[MAX_EVENTS];
     while (true)
     {
@@ -71,27 +77,32 @@ void multiplexing(Method &method)
                 {std::cerr << "Failed to accept connection ." << std::endl;break;}
                 event.events = EPOLLIN | EPOLLOUT;
                 data.data.Alreadyopen = 0;
+                data.data.isReading = 0;
                 data.data.readyForClose = 0;
-                readyFD[clientSocketFD] = data;
+                data.data.Alreadparce = 0;
+                Request[clientSocketFD] = data;
                 event.data.fd = clientSocketFD;
+                // if(clientSocketFD > 0)
                 if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
                 {printf("error epoll_ctl ");continue;}
             } 
             else
             {
-                if(events[i].data.fd & EPOLLIN)
+                if(events[i].events & EPOLLIN)
                 {
+        
                     /* readiing AND parsing request and POST METHOUD*/
-                    // Methods(events[i].data.fd,method);
+                    if(Request[events[i].data.fd].data.Alreadparce == 0)
+                        parceRequest(Request[events[i].data.fd].data,method,events[i].data.fd);
                 }
-                if (events[i].data.fd & EPOLLOUT)
+                if (events[i].events & EPOLLOUT)
                 {
                     /* writing and Get methoud */
-                    getMethod(readyFD[events[i].data.fd].data,method,Servers,events[i].data.fd);
-                    
-                    if(readyFD[events[i].data.fd].data.readyForClose == 1)
+                    // std::cout<<"he enter to write\n";
+                    getMethod(Request[events[i].data.fd].data,method,Servers,events[i].data.fd);
+                    if(Request[events[i].data.fd].data.readyForClose == 1)
                     {
-                        readyFD.erase(events[i].data.fd);
+                        Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
                     }
