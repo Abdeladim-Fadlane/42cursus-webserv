@@ -45,6 +45,8 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd);
 
 int    listingDirectory(Data data,Method &method,int cfd)
 {
+    (void)data;
+    (void)cfd;
     std::ostringstream list;
     list << "<html><head><title>Directory Listing</title></head><body>";
     list << "<h1>Index of: " << method.path << "</h1>";
@@ -56,20 +58,18 @@ int    listingDirectory(Data data,Method &method,int cfd)
     if(dir)
     {
         while((it = readdir(dir)) != NULL)
-        {
+        {   
+            std::string directoryChildPath = directoryPath  + it->d_name;
+            struct stat file;
             if(strcmp(it->d_name , ".") == 0 || strcmp(it->d_name , "..") == 0)
                 continue;
             if(strcmp(it->d_name,method.autoFile.c_str()) == 0)
             {
                 method.path = method.path + method.autoFile;
-                if(data.isReading == 0)
-                    openFileAndSendHeader(data,method,cfd);
-                serveFIle(data,cfd);/* big problemmmmmmm */
+                data.modeAutoIndex = 1;
                 return (1);
             }
-            std::string directoryChildPath = directoryPath  + it->d_name;
-            struct stat file;
-            if (stat(directoryChildPath .c_str(), &file) == 0)
+            else if   (stat(directoryChildPath .c_str(), &file) == 0)
             { 
                 list << "<tr>";
                 if (S_ISREG(file.st_mode))
@@ -90,9 +90,6 @@ int    listingDirectory(Data data,Method &method,int cfd)
     list << "</table></body></html>";
     method.buff =  list.str();
     return(0);
-
-
-    /* here */
 }
 
 ServerConfig    getServer(std::vector<std::pair<std::string,ServerConfig> >& Servers,std::string &requestHost)
@@ -132,6 +129,7 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
     datacleint.isReading = 1;
     method.path = method.rootLocation + method.path;
     memset(buffer,0,sizeof(buffer));
+    // std::cout<<"her "<<method.path<<"\n";
     datacleint.fd = open(method.path.c_str(), O_RDONLY);
     if (datacleint.fd == -1)
     {
@@ -174,10 +172,16 @@ void serveFIle(Data& datacleint, int cfd)
 
 void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::string,ServerConfig> >&Servers,int cfd)
 {
-    // (void)Servers;
     try
-    {    
-        if(datacleint.isReading == 0)
+    {
+        if(datacleint.modeAutoIndex == 1)
+        {
+            if(datacleint.isReading == 0)
+                openFileAndSendHeader(datacleint,method,cfd);
+            else
+                serveFIle(datacleint,cfd);
+        }
+        else if(datacleint.isReading == 0)
         {
             ServerConfig config =  getServer(Servers,method.host);
             method.autoFile = config.autoFile;
@@ -197,6 +201,11 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
                     method.buff.clear(); 
                     datacleint.readyForClose = 1;
                 }
+                // else
+                // {
+                //     serveFIle(datacleint,cfd);
+                //     return;
+                // }
             }
             if(i == 0)
             {
@@ -224,6 +233,7 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
         }
         else
         {
+            // std::cout<<"marramjin hona\n";
             serveFIle(datacleint,cfd);
         }
     }

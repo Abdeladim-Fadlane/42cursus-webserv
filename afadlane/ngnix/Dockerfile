@@ -8,7 +8,7 @@ RUN apt install -y nginx
 RUN apt install -y nano
 
 RUN chmod 777 -R /var/www/html
-COPY afadlane .
+COPY tools .
 
 
 COPY ./ngnix.conf /etc/nginx/sites-enabled/default.conf 

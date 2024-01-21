@@ -11,8 +11,8 @@ void example(std::vector<ServerConfig> &vec)
         conf.port = 8080 + i;
         conf.clientMaxBodySize = "10";
         conf.domainName = "afadlane1337.ma";
-        conf.root = "/";
-        conf.autoFile = "index.html";
+        conf.root = "/home/afadlane/webserv/afadlane/tools";
+        conf.autoFile = "taha.mp4";
         vec.push_back(conf);
         i++;
     }
@@ -75,6 +75,7 @@ void multiplexing(Method &method)
                 data.data.isReading = 0;
                 data.data.readyForClose = 0;
                 data.data.Alreadparce = 0;
+                data.data.modeAutoIndex = 0;
                 Request[clientSocketFD] = data;
                 event.data.fd = clientSocketFD;
                 // if(clientSocketFD > 0)
@@ -96,6 +97,7 @@ void multiplexing(Method &method)
                     getMethod(Request[events[i].data.fd].data,method,Servers,events[i].data.fd);
                     if(Request[events[i].data.fd].data.readyForClose == 1)
                     {
+                        // std::cout<<"connection closed \n";
                         Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);

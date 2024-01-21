@@ -41,6 +41,7 @@ struct Data
     int isReading;
     int Alreadyopen;
     int Alreadparce;
+    int modeAutoIndex;
     int readyForClose;
 };
 
