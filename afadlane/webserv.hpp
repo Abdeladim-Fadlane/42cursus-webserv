@@ -31,6 +31,8 @@
 #include <sys/stat.h>
 #include<cstdio>
 #include<cstdlib>
+#include "../akatfi/PostMethod.hpp"
+#include"../akatfi/Requeste.hpp"
 #define  MAX_EVENTS 1024
 #define  PORT  8080
 #define  BUFFER_SIZE 5120
@@ -43,12 +45,16 @@ struct Data
     int Alreadparce;
     int modeAutoIndex;
     int readyForClose;
+    int AlreadyRequestHeader;
+    Requeste *requeste = NULL;
 };
+
 
 struct dataClient
 {
     Data data; 
 };
+
 struct ServerConfig
 {
     int port ;
@@ -62,7 +68,9 @@ struct ServerConfig
     std::string autoFile ;
     // std::vector<LocationConfig> locations;
 };
-struct Method {
+
+struct Method
+{
     std::string method;
     std::string path;
     std::string version;
@@ -72,7 +80,6 @@ struct Method {
     std::string port;
     std::string addressIp;
     std::string autoFile;
-
 };
 
 class Webserv

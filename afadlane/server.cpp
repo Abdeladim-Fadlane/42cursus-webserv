@@ -76,8 +76,10 @@ void multiplexing(Method &method)
                 data.data.readyForClose = 0;
                 data.data.Alreadparce = 0;
                 data.data.modeAutoIndex = 0;
+                data.data.AlreadyRequestHeader  = 0;
                 Request[clientSocketFD] = data;
                 event.data.fd = clientSocketFD;
+                data.data.requeste = new Requeste(clientSocketFD);
                 // if(clientSocketFD > 0)
                 if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
                 {printf("error epoll_ctl ");continue;}
@@ -87,10 +89,28 @@ void multiplexing(Method &method)
                 if(events[i].events & EPOLLIN )
                 {
                     /* readiing AND parsing request and POST METHOUD*/
-                    if(Request[events[i].data.fd].data.Alreadparce == 0)
-                        parceRequest(Request[events[i].data.fd].data,method,events[i].data.fd);
+                    if(Request[events[i].data.fd].data.AlreadyRequestHeader == 0)
+                    {
+                        // parceRequest(Request[events[i].data.fd].data,method,events[i].data.fd);
+                        Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader);
+
+                    }
+                    else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == 1 && Request[events[i].data.fd].data.requeste->method == "POST")
+                    {
+                        /* POST METHOD  */
+                        // Request[events[i].data.fd].data.Alreadparce = 1;
+                        Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.readyForClose);
+                        if(Request[events[i].data.fd].data.readyForClose == 1)
+                        {
+                            Request.erase(events[i].data.fd);
+                            delete Request[events[i].data.fd].data.requeste;
+                            epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                            close(events[i].data.fd);
+                        }
+                    }
+                    
                 }
-                else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.Alreadparce == 1)
+                else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == 1 && Request[events[i].data.fd].data.requeste->method == "GET")
                 {
                     /* writing and Get methoud */
                     // std::cout<<"he enter to write\n";

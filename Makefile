@@ -8,6 +8,8 @@ CFILES = afadlane/server.cpp \
  		 afadlane/methods.cpp \
  		 afadlane/cgi.cpp \
  		 afadlane/parsingRequest.cpp \
+		 akatfi/Requeste.cpp \
+		 akatfi/PostMethod.cpp \
 
 OBJ = ${CFILES:.cpp=.o}
 
