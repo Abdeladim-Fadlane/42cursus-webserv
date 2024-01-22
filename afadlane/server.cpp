@@ -11,13 +11,21 @@ void example(std::vector<ServerConfig> &vec)
         conf.port = 8080 + i;
         conf.clientMaxBodySize = "10";
         conf.domainName = "afadlane1337.ma";
-        conf.root = "/home/afadlane/webserv/afadlane/tools";
+        conf.root = "/home/afadlane/webserv/";
         conf.autoFile = "taha.mp4";
         vec.push_back(conf);
         i++;
     }
 }
 /* Analyze, Douiri */
+void    insialStruct(Method &method,Data & datacleint)
+{
+    method.path =  datacleint.requeste->path;
+    // method.path =  datacleint.requeste->path;
+    // std::cout<<"path = "<<  method.path<<std::endl;
+    method.version = datacleint.requeste->http_v;
+    method.host = "127.0.0.1:8080";
+}
 
 void multiplexing()
 {
@@ -93,12 +101,14 @@ void multiplexing()
                     {
                         // parceRequest(Request[events[i].data.fd].data,method,events[i].data.fd);
                         Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader,events[i].data.fd);
+                        insialStruct(method,Request[events[i].data.fd].data);
 
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
                     {
                         /* POST METHOD  */
                         // Request[events[i].data.fd].data.Alreadparce = 1;
+                        // std::cout << "posting files" << std::endl;
                         Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.readyForClose);
                         if(Request[events[i].data.fd].data.readyForClose == true)
                         {
@@ -117,7 +127,7 @@ void multiplexing()
                     getMethod(Request[events[i].data.fd].data,method,Servers,events[i].data.fd);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
-                        // std::cout<<"connection closed \n";
+                        std::cout<<"connection closed \n";
                         Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);

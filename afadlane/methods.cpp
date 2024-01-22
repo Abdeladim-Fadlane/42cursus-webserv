@@ -52,7 +52,7 @@ int    listingDirectory(Data data,Method &method,int cfd)
     list << "<h1>Index of: " << method.path << "</h1>";
     list << "<table>";
     std::string directoryPath = method.rootLocation + method.path + "/";
-    
+    std::cout<<"--------"<<directoryPath<<"\n";
     DIR *dir =  opendir(directoryPath.c_str());
     struct dirent *it;
     if(dir)
@@ -69,7 +69,7 @@ int    listingDirectory(Data data,Method &method,int cfd)
                 data.modeAutoIndex = true;
                 return (1);
             }
-            else if   (stat(directoryChildPath .c_str(), &statInfo) == 0)
+            else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
             { 
                 list << "<tr>";
                 if (S_ISREG(statInfo.st_mode))
@@ -171,6 +171,7 @@ void serveFIle(Data& datacleint, int cfd)
 
 void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::string,ServerConfig> >&Servers,int cfd)
 {
+    // insialStruct(method,datacleint);
     try
     {
         if(datacleint.modeAutoIndex == true)

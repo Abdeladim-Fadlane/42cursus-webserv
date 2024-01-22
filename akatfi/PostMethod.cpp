@@ -104,7 +104,8 @@ void PostMethod::boundary(std::string buffer)
                 Postfile.close();
             content_type = init_contentType(buffer);
             gettimeofday(&Time, nullptr) ;
-            Postfile.open(std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
+            std::cout << " ========" << std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type << std::endl;
+            Postfile.open(std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + ".mp4" , std::fstream::out);
             boundary(buffer);
         }
         else if (buffer.find(boundary_separator) != std::string::npos)

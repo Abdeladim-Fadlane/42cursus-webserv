@@ -24,14 +24,14 @@ class Requeste
     private:
         int                                 fd_socket;
         std::string                         head;
-        std::string                         http_v;
-        std::string                         path;
         std::string                         body;
         // int                                 port;
         // std::string                         host;
         // std
     public:
+        std::string                         path;
         PostMethod              *post;
+        std::string                         http_v;
         std::string                         method;
         bool                                RunMethod;
         std::map<std::string, std::string>  requeste_map;

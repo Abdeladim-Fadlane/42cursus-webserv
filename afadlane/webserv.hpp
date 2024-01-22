@@ -72,14 +72,11 @@ struct ServerConfig
 
 struct Method
 {
-    std::string method;
     std::string path;
     std::string version;
     std::string buff;
     std::string rootLocation;
     std::string host;
-    std::string port;
-    std::string addressIp;
     std::string autoFile;
 };
 
