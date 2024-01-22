@@ -60,7 +60,7 @@ int    listingDirectory(Data data,Method &method,int cfd)
         while((it = readdir(dir)) != NULL)
         {   
             std::string directoryChildPath = directoryPath  + it->d_name;
-            struct stat file;
+            struct stat statInfo;
             if(strcmp(it->d_name , ".") == 0 || strcmp(it->d_name , "..") == 0)
                 continue;
             if(strcmp(it->d_name,method.autoFile.c_str()) == 0)
@@ -69,19 +69,19 @@ int    listingDirectory(Data data,Method &method,int cfd)
                 data.modeAutoIndex = true;
                 return (1);
             }
-            else if   (stat(directoryChildPath .c_str(), &file) == 0)
+            else if   (stat(directoryChildPath .c_str(), &statInfo) == 0)
             { 
                 list << "<tr>";
-                if (S_ISREG(file.st_mode))
+                if (S_ISREG(statInfo.st_mode))
                     list << "<td>"<< "<a href='" << it->d_name << "'>" << it->d_name << "</a></td>";
-                if (S_ISDIR(file.st_mode))
+                if (S_ISDIR(statInfo.st_mode))
                     list << "<td>"<< "<a href='" << it->d_name << "/" << "'>" << it->d_name << "</a></td>";
-                list << "<td>"<< ctime(&file.st_mtime) <<"</td>";
-                list << "<td>"<< file.st_size << " bytes</td>";
+                list << "<td>"<< ctime(&statInfo.st_mtime) <<"</td>";
+                list << "<td>"<< statInfo.st_size << " bytes</td>";
                 list << "</tr>";
             }
             else
-                list<< "<p>Error  opening directory</p>";
+                list<< "<p>Error  listling directory</p>";
         }
         closedir(dir);
     }

@@ -1,56 +1,67 @@
 
+#include"webserv.hpp"
+using namespace std;
 
-// void   deleteMethod(const std::string &path1,const std::string &version)
-// {
-//     struct stat fileStat;
-//     std::ofstream testfile("tools/index.html");
-//     if(!testfile.is_open())
-//     {
-//         testfile << version+" 404 NOT FOUND\r\n" + "{message: can't opning file}";
-//         return;
-//     }
-//     std::string response;
-//     std::string dir = "www/wordpress";
-//     std::string fullPath = dir + "/" + path1;
-//     const char* path = fullPath.c_str();
-//     if(stat(path,&fileStat) == 0)
-//     {
-//         if(S_ISREG(fileStat.st_mode))
-//         {
-//             if(remove(path) == 0)
-//             {
-//                 testfile <<version+" 200 OK\r\n" + "{message: Resource deleted successfully}";
-//                 return; 
-//             }
-//             else
-//             {
-//                 testfile<< version+" 404 NOT FOUND\r\n" + "{message: can't removing file}";
-//                 return ;
-//             }   
-//         }
-//         else if(S_ISDIR(fileStat.st_mode))
-//         {
-//             if(rmdir(path) == 0)
-//             {
+void   deleteMethod(int fd ,const char *path)
+{
+    std::string htttpresponce = "<h>NOT ALLOWED</h>"; 
+    if(access(path,W_OK) != 0)
+    {
+        write(fd,htttpresponce.c_str(),htttpresponce.size());
+        return;
+    }
 
-//                 testfile <<version+" 200 OK\r\n" + "{message: Resource deleted successfully}";
-//                 return ;
-//             }
-//             else
-//             {
-//                 testfile<< version+" 404 NOT FOUND\r\n" + "{message: can't removing directory}";
-//                 return ;
-//             }
-//         }
-//         else
-//         {
-//             testfile << version+" 404 NOT FOUND\r\n" + "{not such file or directory}";
-//             return;
-//         }
-//     }
-//     else
-//         testfile << version+" 404 NOT FOUND\r\n" + "{message: can't removing file/diroctory}";
-//     testfile.close();
-//     return;
-// }
+    DIR *dir = opendir(path);
+    if(!dir)
+    {
+        htttpresponce.clear();
+        htttpresponce = "<p>Error opning dir</p>";
+        write(fd,htttpresponce.c_str(),htttpresponce.size());
+        return ;
+    }
+    struct dirent * it;
+    struct stat statInfo;
 
+    while((it = readdir(dir)) != NULL)
+    {
+        std::string itPath  = std::string(path) + "/" + it->d_name;
+        if(strcmp(it->d_name,".") != 0 && strcmp(it->d_name,"..") != 0)
+        {
+            if(stat(itPath.c_str(),&statInfo) == -1)
+            {
+                htttpresponce.clear();
+                htttpresponce = "<p>Error statting  dir</p>";
+                write(fd,htttpresponce.c_str(),htttpresponce.size());
+                closedir(dir);
+                return ;
+            }
+            if(S_ISDIR(statInfo.st_mode))
+            {
+                deleteMethod(fd,itPath.c_str());
+            }
+            else
+            {
+                if(unlink(itPath.c_str()) == -1)
+                {
+                    htttpresponce.clear();
+                    htttpresponce = "<p>Error removing file </p>";
+                    write(fd,htttpresponce.c_str(),htttpresponce.size());
+                }
+            }
+        }
+    }
+    closedir(dir);
+    if (rmdir(path) == -1)
+    {
+        htttpresponce.clear();
+        htttpresponce = "<p>Error removing directory </p>";
+        write(fd,htttpresponce.c_str(),htttpresponce.size());
+    }
+    return ;
+}
+
+int main()
+{
+    const char* path = "test";
+    deleteMethod(1,path);
+}
