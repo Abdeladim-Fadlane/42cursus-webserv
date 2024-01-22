@@ -22,7 +22,7 @@ class PostMethod;
 class Requeste
 {
     private:
-        int                                 fd_socket;
+        int                                 &fd_socket;
         std::string                         head;
         std::string                         http_v;
         std::string                         path;
@@ -38,7 +38,7 @@ class Requeste
         Requeste(int fd);
         void    MakeMapOfHeader();
         // void    readFromSocketFd();
-        void readFromSocketFd(int &flag);
+        void readFromSocketFd(bool &flag);
         // void    writeToSocketFd(const std::string& buffer);
         // void    MakeValue();
         std::pair<std::string, std::string> MakePair(std::string& line);

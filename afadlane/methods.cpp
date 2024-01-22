@@ -66,7 +66,7 @@ int    listingDirectory(Data data,Method &method,int cfd)
             if(strcmp(it->d_name,method.autoFile.c_str()) == 0)
             {
                 method.path = method.path + method.autoFile;
-                data.modeAutoIndex = 1;
+                data.modeAutoIndex = true;
                 return (1);
             }
             else if   (stat(directoryChildPath .c_str(), &file) == 0)
@@ -126,10 +126,9 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
     char buffer[BUFFER_SIZE];
     std::string contentType = getContentType(method);
 
-    datacleint.isReading = 1;
+    datacleint.isReading = true;
     method.path = method.rootLocation + method.path;
     memset(buffer,0,sizeof(buffer));
-    // std::cout<<"her "<<method.path<<"\n";
     datacleint.fd = open(method.path.c_str(), O_RDONLY);
     if (datacleint.fd == -1)
     {
@@ -140,7 +139,7 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
     if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
     {
         close(datacleint.fd);
-        datacleint.readyForClose = 1;
+        datacleint.readyForClose = true;
         throw std::runtime_error("An errror aka client disconnect"); 
     } 
 }
@@ -153,14 +152,14 @@ void serveFIle(Data& datacleint, int cfd)
     if(byteRead == -1)
     {
         close(datacleint.fd);
-        datacleint.readyForClose = 1;
+        datacleint.readyForClose = true;
         throw std::runtime_error("EROOR !!!");
     }
         
     if(byteRead == 0)
     {
         close(datacleint.fd);
-        datacleint.readyForClose = 1;
+        datacleint.readyForClose = true;
         if(send(cfd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
            throw std::runtime_error("An error aka client disconnect");
         return ;
@@ -174,14 +173,14 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
 {
     try
     {
-        if(datacleint.modeAutoIndex == 1)
+        if(datacleint.modeAutoIndex == true)
         {
-            if(datacleint.isReading == 0)
+            if(datacleint.isReading == false)
                 openFileAndSendHeader(datacleint,method,cfd);
             else
                 serveFIle(datacleint,cfd);
         }
-        else if(datacleint.isReading == 0)
+        else if(datacleint.isReading == false)
         {
             ServerConfig config =  getServer(Servers,method.host);
             method.autoFile = config.autoFile;
@@ -195,17 +194,12 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
                     const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + method.buff;
                     if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
                     {
-                        datacleint.readyForClose = 1;
+                        datacleint.readyForClose = true;
                         throw std::runtime_error("An error aka client disconnect");
                     }
                     method.buff.clear(); 
-                    datacleint.readyForClose = 1;
+                    datacleint.readyForClose = true;
                 }
-                // else
-                // {
-                //     serveFIle(datacleint,cfd);
-                //     return;
-                // }
             }
             if(i == 0)
             {
@@ -219,10 +213,10 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
                 httpResponse += "</body>\r\n</html>";
                 if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
                 {
-                    datacleint.readyForClose = 1;
+                    datacleint.readyForClose = true;
                     throw std::runtime_error("An error aka client disconnect");
                 }
-                datacleint.readyForClose = 1;
+                datacleint.readyForClose = true;
             }
             if(i == 1)
             {
@@ -233,7 +227,7 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
         }
         else
         {
-            // std::cout<<"marramjin hona\n";
+            // std::cout<<"marra min hona\n";
             serveFIle(datacleint,cfd);
         }
     }

@@ -19,8 +19,9 @@ void example(std::vector<ServerConfig> &vec)
 }
 /* Analyze, Douiri */
 
-void multiplexing(Method &method)
-{ 
+void multiplexing()
+{
+    Method method;
     std::vector<std::pair<std::string,ServerConfig> > Servers;
     std::vector<ServerConfig> vec;
     example(vec);
@@ -56,7 +57,7 @@ void multiplexing(Method &method)
         Servers.push_back(std::make_pair(vec[i].listen,vec[i]));
     }
 
-    std::map<int,dataClient> Request;
+    std::map<int,struct Webserv> Request;
     epoll_event events[MAX_EVENTS];
     while (true)
     {
@@ -66,21 +67,20 @@ void multiplexing(Method &method)
         {
             if(events[i].data.fd <=  SERVERS + 3)
             {
-                dataClient data;
+                Webserv data;
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
                 if(clientSocketFD == -1)
                 {std::cerr << "Failed to accept connection ." << std::endl;break;}
                 event.events = EPOLLIN | EPOLLOUT;
-                data.data.Alreadyopen = 0;
-                data.data.isReading = 0;
-                data.data.readyForClose = 0;
-                data.data.Alreadparce = 0;
-                data.data.modeAutoIndex = 0;
-                data.data.AlreadyRequestHeader  = 0;
+                data.data.Alreadyopen = false;
+                data.data.isReading = false;
+                data.data.readyForClose = false;
+                data.data.Alreadparce = false;
+                data.data.modeAutoIndex = false;
+                data.data.AlreadyRequestHeader  = false;
+                data.data.requeste = new Requeste(clientSocketFD);
                 Request[clientSocketFD] = data;
                 event.data.fd = clientSocketFD;
-                data.data.requeste = new Requeste(clientSocketFD);
-                // if(clientSocketFD > 0)
                 if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
                 {printf("error epoll_ctl ");continue;}
             } 
@@ -89,18 +89,18 @@ void multiplexing(Method &method)
                 if(events[i].events & EPOLLIN )
                 {
                     /* readiing AND parsing request and POST METHOUD*/
-                    if(Request[events[i].data.fd].data.AlreadyRequestHeader == 0)
+                    if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
                         // parceRequest(Request[events[i].data.fd].data,method,events[i].data.fd);
                         Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader);
 
                     }
-                    else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == 1 && Request[events[i].data.fd].data.requeste->method == "POST")
+                    else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
                     {
                         /* POST METHOD  */
                         // Request[events[i].data.fd].data.Alreadparce = 1;
                         Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.readyForClose);
-                        if(Request[events[i].data.fd].data.readyForClose == 1)
+                        if(Request[events[i].data.fd].data.readyForClose == true)
                         {
                             Request.erase(events[i].data.fd);
                             delete Request[events[i].data.fd].data.requeste;
@@ -110,12 +110,12 @@ void multiplexing(Method &method)
                     }
                     
                 }
-                else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == 1 && Request[events[i].data.fd].data.requeste->method == "GET")
+                else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "GET")
                 {
                     /* writing and Get methoud */
                     // std::cout<<"he enter to write\n";
                     getMethod(Request[events[i].data.fd].data,method,Servers,events[i].data.fd);
-                    if(Request[events[i].data.fd].data.readyForClose == 1)
+                    if(Request[events[i].data.fd].data.readyForClose == true)
                     {
                         // std::cout<<"connection closed \n";
                         Request.erase(events[i].data.fd);

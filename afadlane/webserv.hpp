@@ -37,20 +37,21 @@
 #define  PORT  8080
 #define  BUFFER_SIZE 5120
 #define  SERVERS 3
+
 struct Data
 {  
     int fd ;
-    int isReading;
-    int Alreadyopen;
-    int Alreadparce;
-    int modeAutoIndex;
-    int readyForClose;
-    int AlreadyRequestHeader;
-    Requeste *requeste = NULL;
+    bool isReading;
+    bool Alreadyopen;
+    bool Alreadparce;
+    bool modeAutoIndex;
+    bool readyForClose;
+    bool AlreadyRequestHeader;
+    Requeste *requeste ;
 };
 
 
-struct dataClient
+struct Webserv
 {
     Data data; 
 };
@@ -82,16 +83,16 @@ struct Method
     std::string autoFile;
 };
 
-class Webserv
-{
-    private:
-        std::vector<int> servers;
-    public:
-        Webserv(/* args */){};
-        ~Webserv(){};
-};
+// class Webserv
+// {
+//     private:
+//         std::vector<int> servers;
+//     public:
+//         Webserv(/* args */){};
+//         ~Webserv(){};
+// };
 
-void multiplexing(Method&);
+void multiplexing();
 void fastCGI(std::string &);
 void    parceRequest(Data & Data,Method &method,int fd);
 void    deleteMethod(const std::string &,const std::string &);

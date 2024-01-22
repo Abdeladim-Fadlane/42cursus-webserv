@@ -41,7 +41,7 @@ class PostMethod
     public:
         std::string         path;
         PostMethod(const Requeste& r);
-        void    PostingFileToServer(int &flag); 
+        void    PostingFileToServer(bool &flag); 
         void    chunked(std::string &buffer);   
         void    boundary(std::string buffer);
         size_t getContentLength(void) const;

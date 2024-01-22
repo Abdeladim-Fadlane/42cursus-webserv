@@ -163,7 +163,7 @@ void PostMethod::chunked(std::string &buffer)
 
 
 
-void    PostMethod::PostingFileToServer(int &flag)
+void    PostMethod::PostingFileToServer(bool &flag)
 {
     std::string buffer;
     char buffer_read[1024];
@@ -172,7 +172,7 @@ void    PostMethod::PostingFileToServer(int &flag)
     memset(buffer_read, 0, sizeof(buffer_read));
     x = read(req.getSocketFd(), buffer_read, 1023);
     if (x == 0)
-        flag = 1;
+        flag = true;
     buffer.append(buffer_read, x);
     if (!Transfer_Encoding.compare("chunked"))
     {

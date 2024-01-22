@@ -1,12 +1,11 @@
 #include"webserv.hpp"
 
-// #include"../mkatfi/Server.hpp"
+
 int main()
 {
-    Method method;
     try
     {
-        multiplexing(method);
+        multiplexing();
     }
     catch(const std::exception& e)
     {

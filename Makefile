@@ -26,4 +26,4 @@ fclean :clean
 re : fclean all
 
 run : all clean
-	@ ./webserv
+	@  ./webserv
