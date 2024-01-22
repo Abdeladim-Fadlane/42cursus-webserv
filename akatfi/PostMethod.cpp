@@ -21,7 +21,7 @@ PostMethod::PostMethod(const Requeste& r) : req(r)
     separator_size = 0;
     size = 0;
     path = r.getPath();
-    setFileextation("fileExtation", map_extation);
+    setFileextation("/home/afadlane/webserv/akatfi/fileExtation", map_extation);
     content_type = this->req.requeste_map.find("Content-Type")->second;
     // content_type = map_extation.find(content_type)->second;
     content_length = atoi((this->req.requeste_map.find("Content-Length")->second).c_str());
@@ -104,8 +104,8 @@ void PostMethod::boundary(std::string buffer)
                 Postfile.close();
             content_type = init_contentType(buffer);
             gettimeofday(&Time, nullptr) ;
-            std::cout << " ========" << std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type << std::endl;
-            Postfile.open(std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + ".mp4" , std::fstream::out);
+            // std::cout << " ========" <<content_type << std::endl;
+            Postfile.open(std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type , std::fstream::out);
             boundary(buffer);
         }
         else if (buffer.find(boundary_separator) != std::string::npos)

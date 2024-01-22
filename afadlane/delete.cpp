@@ -4,13 +4,16 @@ using namespace std;
 
 void   deleteMethod(int fd ,const char *path)
 {
-    std::string htttpresponce = "<h>NOT ALLOWED</h>"; 
+    /* success 204 No Content*/
+    std::string html = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n" ;
+    std::string htttpresponce = "<center><h1>403 Forbidden</h1></center>"; 
     if(access(path,W_OK) != 0)
     {
         write(fd,htttpresponce.c_str(),htttpresponce.size());
         return;
     }
-
+    /* <center><h1>409 Conflict</h1></center> */
+    /* if path di=ont end with / */
     DIR *dir = opendir(path);
     if(!dir)
     {
@@ -57,6 +60,7 @@ void   deleteMethod(int fd ,const char *path)
         htttpresponce = "<p>Error removing directory </p>";
         write(fd,htttpresponce.c_str(),htttpresponce.size());
     }
+    write(fd,htttpresponce.c_str(),htttpresponce.size());
     return ;
 }
 

@@ -52,7 +52,7 @@ int    listingDirectory(Data data,Method &method,int cfd)
     list << "<h1>Index of: " << method.path << "</h1>";
     list << "<table>";
     std::string directoryPath = method.rootLocation + method.path + "/";
-    std::cout<<"--------"<<directoryPath<<"\n";
+    // std::cout<<"--------"<<directoryPath<<"\n";
     DIR *dir =  opendir(directoryPath.c_str());
     struct dirent *it;
     if(dir)

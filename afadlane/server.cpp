@@ -11,7 +11,7 @@ void example(std::vector<ServerConfig> &vec)
         conf.port = 8080 + i;
         conf.clientMaxBodySize = "10";
         conf.domainName = "afadlane1337.ma";
-        conf.root = "/home/afadlane/webserv/";
+        conf.root = "/home/afadlane/webserv/afadlane";
         conf.autoFile = "taha.mp4";
         vec.push_back(conf);
         i++;
