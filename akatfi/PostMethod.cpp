@@ -192,8 +192,9 @@ void    PostMethod::PostingFileToServer(bool &flag)
         if (first_time)
         {
             gettimeofday(&Time, NULL) ;
+            std::cout << content_type << std::endl;
             content_type = map_extation.find(content_type)->second; 
-            Postfile.open(std::string(FILE) + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
+            Postfile.open(std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
         }
         first_time = false;
         buffer = buffer_add + buffer;

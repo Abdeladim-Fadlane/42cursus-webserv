@@ -18,7 +18,8 @@
 #include <string.h>
 #include <ctime>
 #include <sys/time.h>
-#define FILE "/Users/akatfi/Desktop/vovvo/"
+#define FILE "/home/afadlane/webserv"
+
 #include "Requeste.hpp"
 
 class PostMethod

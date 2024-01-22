@@ -92,7 +92,7 @@ void multiplexing()
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
                         // parceRequest(Request[events[i].data.fd].data,method,events[i].data.fd);
-                        Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader);
+                        Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader,events[i].data.fd);
 
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")

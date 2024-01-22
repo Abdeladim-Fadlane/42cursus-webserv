@@ -12,10 +12,10 @@
 
 #include "Requeste.hpp"
 #include "PostMethod.hpp"
-Requeste::Requeste(int fd):fd_socket(fd)
+Requeste::Requeste(int fd)
 {
-    // fd_socket = fd;
-    std::cout << fd_socket<< std::endl;
+    fd_socket = fd;
+    // std::cout << fd_socket<< std::endl;
     RunMethod = false;
     post = NULL;
 }
@@ -33,15 +33,15 @@ std::pair<std::string, std::string> Requeste::MakePair(std::string& line)
     return (std::pair<std::string, std::string>(first, line));
 }
 
-void    Requeste::readFromSocketFd(bool &flag)
+void    Requeste::readFromSocketFd(bool &flag,int fd)
 {
     char buffer[1024];
     int x;
-
+    (void)fd;
     memset(buffer,0, sizeof(buffer));
-    // std::cout <<  "====== "<< fd_socket << std::endl;
+    // std::cout <<  "====== ============================================="<< fd << std::endl;
     x = read(fd_socket, buffer, 1023);
-    head += std::string("").append(buffer, x);
+    head.append(buffer, x);
     if (head.find("\r\n\r\n") != std::string::npos)
     {
         this->MakeMapOfHeader();
