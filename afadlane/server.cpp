@@ -134,9 +134,10 @@ void multiplexing()
                         close(events[i].data.fd);
                     }
                 }
-                else if((events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "DELETE"))
+                else if(events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "DELETE")
                 {
-                    deleteMethod(events[i].data.fd,"afadlane/test",Request[events[i].data.fd].data.readyForClose);
+                    std::string msg = std::string("/home/afadlane/webserv") + Request[events[i].data.fd].data.method.path;
+                    deleteMethod(events[i].data.fd,msg,Request[events[i].data.fd].data.readyForClose);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
                         // std::cout<<"connection closed \n";

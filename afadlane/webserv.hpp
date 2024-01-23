@@ -92,6 +92,6 @@ struct ServerConfig
 
 void multiplexing();
 void fastCGI(std::string &);
-void    parceRequest(Data & Data,Method &method,int fd);
-void   deleteMethod(int fd ,const char *path,bool &ready);
-void    getMethod(Data & datacleint,Method &,std::vector<std::pair<std::string,ServerConfig> > &,int );
+void    parceRequest(Data & ,Method &,int );
+bool   deleteMethod(int ,std::string &,bool &);
+void    getMethod(Data & ,Method &,std::vector<std::pair<std::string,ServerConfig> > &,int );
