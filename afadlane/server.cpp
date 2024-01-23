@@ -18,18 +18,18 @@ void example(std::vector<ServerConfig> &vec)
     }
 }
 /* Analyze, Douiri */
-void    insialStruct(Method &method,Data & datacleint)
+void    insialStruct(Data & datacleint)
 {
-    method.path =  datacleint.requeste->path;
+    datacleint.method.path =  datacleint.requeste->path;
     // method.path =  datacleint.requeste->path;
     // std::cout<<"path = "<<  method.path<<std::endl;
-    method.version = datacleint.requeste->http_v;
-    method.host = "127.0.0.1:8080";
+    datacleint.method.version = datacleint.requeste->http_v;
+    datacleint.method.host = "127.0.0.1:8080";
 }
 
 void multiplexing()
 {
-    Method method;
+    // Method method;
     std::vector<std::pair<std::string,ServerConfig> > Servers;
     std::vector<ServerConfig> vec;
     example(vec);
@@ -99,9 +99,10 @@ void multiplexing()
                     /* readiing AND parsing request and POST METHOUD*/
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
+                       
                         // parceRequest(Request[events[i].data.fd].data,method,events[i].data.fd);
                         Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader,events[i].data.fd);
-                        insialStruct(method,Request[events[i].data.fd].data);
+                        insialStruct(Request[events[i].data.fd].data);
 
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
@@ -124,10 +125,21 @@ void multiplexing()
                 {
                     /* writing and Get methoud */
                     // std::cout<<"he enter to write\n";
-                    getMethod(Request[events[i].data.fd].data,method,Servers,events[i].data.fd);
+                    getMethod(Request[events[i].data.fd].data,Request[events[i].data.fd].data.method,Servers,events[i].data.fd);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
-                        std::cout<<"connection closed \n";
+                        // std::cout<<"connection closed \n";
+                        Request.erase(events[i].data.fd);
+                        epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                        close(events[i].data.fd);
+                    }
+                }
+                else if((events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "DELETE"))
+                {
+                    deleteMethod(events[i].data.fd,"afadlane/test",Request[events[i].data.fd].data.readyForClose);
+                    if(Request[events[i].data.fd].data.readyForClose == true)
+                    {
+                        // std::cout<<"connection closed \n";
                         Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);

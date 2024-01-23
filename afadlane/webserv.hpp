@@ -37,7 +37,15 @@
 #define  PORT  8080
 #define  BUFFER_SIZE 5120
 #define  SERVERS 3
-
+struct Method
+{
+    std::string path;
+    std::string version;
+    std::string buff;
+    std::string rootLocation;
+    std::string host;
+    std::string autoFile;
+};
 struct Data
 {  
     int fd ;
@@ -48,6 +56,7 @@ struct Data
     bool readyForClose;
     bool AlreadyRequestHeader;
     Requeste *requeste ;
+    Method   method;
 };
 
 
@@ -70,15 +79,7 @@ struct ServerConfig
     // std::vector<LocationConfig> locations;
 };
 
-struct Method
-{
-    std::string path;
-    std::string version;
-    std::string buff;
-    std::string rootLocation;
-    std::string host;
-    std::string autoFile;
-};
+
 
 // class Webserv
 // {
@@ -92,5 +93,5 @@ struct Method
 void multiplexing();
 void fastCGI(std::string &);
 void    parceRequest(Data & Data,Method &method,int fd);
-void    deleteMethod(const std::string &,const std::string &);
+void   deleteMethod(int fd ,const char *path,bool &ready);
 void    getMethod(Data & datacleint,Method &,std::vector<std::pair<std::string,ServerConfig> > &,int );

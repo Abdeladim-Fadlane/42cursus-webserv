@@ -1,25 +1,44 @@
 
 #include"webserv.hpp"
-using namespace std;
 
-void   deleteMethod(int fd ,const char *path)
+void    internalServerError(bool &ready ,std::string version,int fd)
 {
-    /* success 204 No Content*/
-    std::string html = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n" ;
-    std::string htttpresponce = "<center><h1>403 Forbidden</h1></center>"; 
+    std::string htmlMessage = "<html><head><center><h1>500 Internal Server Error/h1></center></head></html>";
+    std::string  htttpresponce = version + "500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + htmlMessage;
+    send(fd,htttpresponce.c_str(),htttpresponce.size(),0);
+    ready = true;
+}
+
+void   deleteMethod(int fd ,const char *path,bool &ready)
+{
+    /* success 204 No Content*/    
+    std::string version = "HTTP/1.1";
+    std::string htmlMessage ;
+    std::string htttpresponce ;
+    
+    if(access(path,F_OK) != 0)
+    {
+        htmlMessage = "<html><head><center><h1>404 NOT FOUND/h1></center></head></html>";
+        htttpresponce = version + "404 404 Not Found\r\nContent-Type: text/html\r\n\r\n" + htmlMessage;
+        send(fd,htttpresponce.c_str(),htttpresponce.size(),0);
+        ready = true;
+        return ;
+    }
     if(access(path,W_OK) != 0)
     {
-        write(fd,htttpresponce.c_str(),htttpresponce.size());
-        return;
+        htmlMessage = "<html><head><center><h1>403 FORBIDDEN/h1></center></head></html>";
+        htttpresponce = version + "403 Forbidden\r\nContent-Type: text/html\r\n\r\n" + htmlMessage;
+        send(fd,htttpresponce.c_str(),htttpresponce.size(),0);
+        ready = true;
+        return ;
     }
+
     /* <center><h1>409 Conflict</h1></center> */
     /* if path di=ont end with / */
     DIR *dir = opendir(path);
     if(!dir)
     {
-        htttpresponce.clear();
-        htttpresponce = "<p>Error opning dir</p>";
-        write(fd,htttpresponce.c_str(),htttpresponce.size());
+        internalServerError(ready,version,fd);
         return ;
     }
     struct dirent * it;
@@ -32,23 +51,19 @@ void   deleteMethod(int fd ,const char *path)
         {
             if(stat(itPath.c_str(),&statInfo) == -1)
             {
-                htttpresponce.clear();
-                htttpresponce = "<p>Error statting  dir</p>";
-                write(fd,htttpresponce.c_str(),htttpresponce.size());
-                closedir(dir);
+                internalServerError(ready,version,fd);
                 return ;
             }
             if(S_ISDIR(statInfo.st_mode))
             {
-                deleteMethod(fd,itPath.c_str());
+                deleteMethod(fd,itPath.c_str(),ready);
             }
             else
             {
                 if(unlink(itPath.c_str()) == -1)
                 {
-                    htttpresponce.clear();
-                    htttpresponce = "<p>Error removing file </p>";
-                    write(fd,htttpresponce.c_str(),htttpresponce.size());
+                    internalServerError(ready,version,fd);
+                    return ;
                 }
             }
         }
@@ -56,16 +71,10 @@ void   deleteMethod(int fd ,const char *path)
     closedir(dir);
     if (rmdir(path) == -1)
     {
-        htttpresponce.clear();
-        htttpresponce = "<p>Error removing directory </p>";
-        write(fd,htttpresponce.c_str(),htttpresponce.size());
+        internalServerError(ready,version,fd);
+        return ;
     }
-    write(fd,htttpresponce.c_str(),htttpresponce.size());
-    return ;
-}
-
-int main()
-{
-    const char* path = "test";
-    deleteMethod(1,path);
+    htttpresponce = version + "204 No Content\r\nContent-Type: text/html\r\n\r\n";
+    send(fd,htttpresponce.c_str(),htttpresponce.size(),0);
+    ready = true;
 }

@@ -6,8 +6,7 @@ CXX = c++
 CFILES = afadlane/server.cpp \
  		 afadlane/main.cpp \
  		 afadlane/methods.cpp \
- 		 afadlane/cgi.cpp \
- 		 afadlane/parsingRequest.cpp \
+ 		 afadlane/delete.cpp \
 		 akatfi/Requeste.cpp \
 		 akatfi/PostMethod.cpp \
 
