@@ -10,6 +10,7 @@ CFILES = afadlane/server.cpp \
 		 akatfi/Requeste.cpp \
 		 akatfi/PostMethod.cpp \
 
+
 OBJ = ${CFILES:.cpp=.o}
 
 all: ${NAME}
