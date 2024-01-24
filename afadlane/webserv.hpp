@@ -95,5 +95,5 @@ void multiplexing();
 void fastCGI(std::string &);
 void    parceRequest(Data & ,Method &,int );
 bool   deleteMethod(int ,std::string &,bool &);
-bool checkPermission(const char *path,int fd,std::string &version,int type);
+bool checkPermission(const char *path,int fd,std::string &version,int type,bool &);
 void    getMethod(Data & ,Method &,std::vector<std::pair<std::string,ServerConfig> > &,int );

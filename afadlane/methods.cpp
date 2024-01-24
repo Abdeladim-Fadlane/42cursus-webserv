@@ -28,13 +28,13 @@ std::string    getContentType(Method &method)
     return "application/json";
 }
 
-int isFileOrDirectory(Method &method,int fd)
+int isFileOrDirectory(Method &method)
 {
     std::string fullPath = method.rootLocation + method.path;
     if(access(fullPath.c_str(),F_OK) != 0)
         return 0;
-    if(checkPermission(fullPath.c_str(),fd,method.version,R_OK) == true)
-        return 4;
+    // if(checkPermission(fullPath.c_str(),fd,method.version,R_OK,ready) == true)
+    //     return 4;
     struct stat file;
     stat(fullPath.c_str(), &file) ;
     if (S_ISREG(file.st_mode))
@@ -129,11 +129,8 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
     datacleint.isReading = true;
     method.path = method.rootLocation + method.path;
     memset(buffer,0,sizeof(buffer));
-    if(checkPermission(method.path.c_str(),cfd,method.version,R_OK) == true)
-    {
-        datacleint.readyForClose = true;
+    if(checkPermission(method.path.c_str(),cfd,method.version,R_OK,datacleint.readyForClose) == true)
         return;
-    }
     datacleint.fd = open(method.path.c_str(), O_RDONLY);
     if (datacleint.fd == -1)
     {
@@ -158,7 +155,7 @@ void serveFIle(Data& datacleint, int cfd)
     {
         close(datacleint.fd);
         datacleint.readyForClose = true;
-        throw std::runtime_error("EROOR readin from file");
+        throw std::runtime_error("EROOR reading from file");
     }
     if(byteRead == 0)
     {
@@ -187,16 +184,24 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
             ServerConfig config =  getServer(Servers,method.host);
             method.autoFile = config.autoFile;
             method.rootLocation = config.root;
-            int i = isFileOrDirectory(method,cfd);
-            if( i == 4)
-            {
-                datacleint.readyForClose = true;
-                return;
-            }
-            else if(i == 2)
+            int i = isFileOrDirectory(method);
+            // if( i == 4)
+            // {
+            //     datacleint.readyForClose = true;
+            //     return;
+            // }
+            if(i == 2)
             {
                 /* hundle DIRECTORY */
-                if(checkPermission(method.fullPath.c_str(),cfd,method.version,X_OK) == true)
+                /* problem here */
+                if(checkPermission(method.fullPath.c_str(),cfd,method.version,R_OK,datacleint.readyForClose) == true &&
+                    checkPermission(method.fullPath.c_str(),cfd,method.version,W_OK,datacleint.readyForClose) == true)
+                {
+                    std::cout<<"dgvdcb\n";
+                    // datacleint.readyForClose = true;
+                    return;
+                }
+                if(checkPermission(method.fullPath.c_str(),cfd,method.version,X_OK,datacleint.readyForClose) == true)
                 {
                     datacleint.readyForClose = true;
                     return;
@@ -211,6 +216,7 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
                     }
                     method.buff.clear(); 
                     datacleint.readyForClose = true;
+                    return ;
                 }
             }
             else if(i == 0)
