@@ -135,7 +135,7 @@ void multiplexing()
                 }
                 else if(events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "DELETE")
                 {
-                    std::string msg = std::string("/home/afadlane/webserv") + Request[events[i].data.fd].data.method.path;
+                    std::string msg = std::string("/home/afadlane/webserv/webserv") + Request[events[i].data.fd].data.method.path;
                     deleteMethod(events[i].data.fd,msg,Request[events[i].data.fd].data.readyForClose);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
