@@ -1,8 +1,5 @@
 #include"webserv.hpp"
 
-
-
-
 void fastCGI(std::string &path)
 {
     pid_t cgi_pid;
