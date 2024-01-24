@@ -28,18 +28,22 @@ std::string    getContentType(Method &method)
     return "application/json";
 }
 
-int isFileOrDirectory(Method &method)
+int isFileOrDirectory(Method &method,int fd)
 {
     std::string fullPath = method.rootLocation + method.path;
+    if(access(fullPath.c_str(),F_OK) != 0)
+        return 0;
+    if(checkPermission(fullPath.c_str(),fd,method.version,R_OK) == true)
+        return 4;
     struct stat file;
-    if (stat(fullPath.c_str(), &file) != 0)
-        return(0);
+    stat(fullPath.c_str(), &file) ;
     if (S_ISREG(file.st_mode))
         return 1;
     if (S_ISDIR(file.st_mode))
         return 2;
-    return 0;
+    return 3;
 }
+
 void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd);
 // void serveFIle(,Method &method, int cfd);
 
@@ -52,7 +56,7 @@ int    listingDirectory(Data data,Method &method,int cfd)
     list << "<h1>Index of: " << method.path << "</h1>";
     list << "<table>";
     std::string directoryPath = method.rootLocation + method.path + "/";
-    // std::cout<<"--------"<<directoryPath<<"\n";
+
     DIR *dir =  opendir(directoryPath.c_str());
     struct dirent *it;
     if(dir)
@@ -80,13 +84,9 @@ int    listingDirectory(Data data,Method &method,int cfd)
                 list << "<td>"<< statInfo.st_size << " bytes</td>";
                 list << "</tr>";
             }
-            else
-                list<< "<p>Error  listling directory</p>";
         }
         closedir(dir);
     }
-    else
-        list<< "<p>Directory not found </p>";
     list << "</table></body></html>";
     method.buff =  list.str();
     return(0);
@@ -129,6 +129,11 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
     datacleint.isReading = true;
     method.path = method.rootLocation + method.path;
     memset(buffer,0,sizeof(buffer));
+    if(checkPermission(method.path.c_str(),cfd,method.version,R_OK) == true)
+    {
+        datacleint.readyForClose = true;
+        return;
+    }
     datacleint.fd = open(method.path.c_str(), O_RDONLY);
     if (datacleint.fd == -1)
     {
@@ -153,9 +158,8 @@ void serveFIle(Data& datacleint, int cfd)
     {
         close(datacleint.fd);
         datacleint.readyForClose = true;
-        throw std::runtime_error("EROOR !!!");
+        throw std::runtime_error("EROOR readin from file");
     }
-        
     if(byteRead == 0)
     {
         close(datacleint.fd);
@@ -167,11 +171,8 @@ void serveFIle(Data& datacleint, int cfd)
     sendChunk(cfd,buffer,byteRead,datacleint);  
 }
 
-
-
 void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::string,ServerConfig> >&Servers,int cfd)
 {
-    // insialStruct(method,datacleint);
     try
     {
         if(datacleint.modeAutoIndex == true)
@@ -186,10 +187,20 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
             ServerConfig config =  getServer(Servers,method.host);
             method.autoFile = config.autoFile;
             method.rootLocation = config.root;
-            int i = isFileOrDirectory(method);
-            if(i == 2)
+            int i = isFileOrDirectory(method,cfd);
+            if( i == 4)
+            {
+                datacleint.readyForClose = true;
+                return;
+            }
+            else if(i == 2)
             {
                 /* hundle DIRECTORY */
+                if(checkPermission(method.fullPath.c_str(),cfd,method.version,X_OK) == true)
+                {
+                    datacleint.readyForClose = true;
+                    return;
+                }
                 if(listingDirectory(datacleint,method,cfd) == 0)
                 {
                     const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + method.buff;
@@ -202,16 +213,11 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
                     datacleint.readyForClose = true;
                 }
             }
-            if(i == 0)
+            else if(i == 0)
             {
                 /* hundle  not found*/
                 std::string httpResponse = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n" ;
-                httpResponse += "<html>\r\n<head>\r\n<title>404 - Page Not Found</title>\r\n</head>\r\n<body>\r\n";
-                httpResponse += "<div style=\"text-align: center;\">\r\n"; 
-                httpResponse += "<h1>404 - Page Not Found</h1>\r\n";
-                httpResponse += "<p>The requested page could not be found.</p>\r\n";
-                httpResponse += "</div>\r\n"; 
-                httpResponse += "</body>\r\n</html>";
+                httpResponse += "<html><head><center><h1>404 NOT FOUND</h1></center></head></html>";
                 if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
                 {
                     datacleint.readyForClose = true;
@@ -219,18 +225,14 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
                 }
                 datacleint.readyForClose = true;
             }
-            if(i == 1)
+            else if(i == 1)
             {
-                /* opning file and send hedear */
+                /* hundle file */
                 openFileAndSendHeader(datacleint,method,cfd);
-                /* here we go */
             }
         }
         else
-        {
-            // std::cout<<"marra min hona\n";
             serveFIle(datacleint,cfd);
-        }
     }
     catch (const std::runtime_error &e)
     {

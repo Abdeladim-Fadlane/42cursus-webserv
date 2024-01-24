@@ -12,7 +12,7 @@ void example(std::vector<ServerConfig> &vec)
         conf.clientMaxBodySize = "10";
         conf.domainName = "afadlane1337.ma";
         conf.root = "/home/afadlane/webserv/afadlane";
-        conf.autoFile = "taha.mp4";
+        conf.autoFile = "index.html";
         vec.push_back(conf);
         i++;
     }
@@ -25,6 +25,7 @@ void    insialStruct(Data & datacleint)
     // std::cout<<"path = "<<  method.path<<std::endl;
     datacleint.method.version = datacleint.requeste->http_v;
     datacleint.method.host = "127.0.0.1:8080";
+    datacleint.method.fullPath = std::string("/home/afadlane/webserv/afadlane") + datacleint.method.path;
 }
 
 void multiplexing()
@@ -108,8 +109,6 @@ void multiplexing()
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
                     {
                         /* POST METHOD  */
-                        // Request[events[i].data.fd].data.Alreadparce = 1;
-                        // std::cout << "posting files" << std::endl;
                         Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.readyForClose);
                         if(Request[events[i].data.fd].data.readyForClose == true)
                         {
@@ -124,11 +123,11 @@ void multiplexing()
                 else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "GET")
                 {
                     /* writing and Get methoud */
-                    // std::cout<<"he enter to write\n";
+            
                     getMethod(Request[events[i].data.fd].data,Request[events[i].data.fd].data.method,Servers,events[i].data.fd);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
-                        // std::cout<<"connection closed \n";
+            
                         Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
@@ -140,7 +139,7 @@ void multiplexing()
                     deleteMethod(events[i].data.fd,msg,Request[events[i].data.fd].data.readyForClose);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
-                        // std::cout<<"connection closed \n";
+        
                         Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);

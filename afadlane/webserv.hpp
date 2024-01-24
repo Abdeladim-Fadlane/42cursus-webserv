@@ -45,6 +45,7 @@ struct Method
     std::string rootLocation;
     std::string host;
     std::string autoFile;
+    std::string fullPath;
 };
 struct Data
 {  
@@ -94,4 +95,5 @@ void multiplexing();
 void fastCGI(std::string &);
 void    parceRequest(Data & ,Method &,int );
 bool   deleteMethod(int ,std::string &,bool &);
+bool checkPermission(const char *path,int fd,std::string &version,int type);
 void    getMethod(Data & ,Method &,std::vector<std::pair<std::string,ServerConfig> > &,int );
