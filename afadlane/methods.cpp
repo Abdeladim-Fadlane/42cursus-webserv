@@ -28,24 +28,8 @@ std::string    getContentType(Method &method)
     return "application/json";
 }
 
-int isFileOrDirectory(Method &method)
-{
-    std::string fullPath = method.rootLocation + method.path;
-    if(access(fullPath.c_str(),F_OK) != 0)
-        return 0;
-    // if(checkPermission(fullPath.c_str(),fd,method.version,R_OK,ready) == true)
-    //     return 4;
-    struct stat file;
-    stat(fullPath.c_str(), &file) ;
-    if (S_ISREG(file.st_mode))
-        return 1;
-    if (S_ISDIR(file.st_mode))
-        return 2;
-    return 3;
-}
-
 void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd);
-// void serveFIle(,Method &method, int cfd);
+
 
 int    listingDirectory(Data data,Method &method,int cfd)
 {
@@ -168,6 +152,26 @@ void serveFIle(Data& datacleint, int cfd)
     sendChunk(cfd,buffer,byteRead,datacleint);  
 }
 
+int checkFileOrDirectoryPermission(Method &method,int fd,bool &radyForClose)
+{
+    std::string fullPath = method.rootLocation + method.path;
+    if(access(fullPath.c_str(),F_OK) != 0)
+        return 0;
+    if(checkPermission(fullPath.c_str(),fd,method.version,R_OK,radyForClose) == true)
+        return 4;
+    struct stat file;
+    stat(fullPath.c_str(), &file);
+    if (S_ISREG(file.st_mode))
+        return 1;
+    if (S_ISDIR(file.st_mode))
+    {
+        if(checkPermission(fullPath.c_str(),fd,method.version,X_OK,radyForClose) == true)
+            return 4;;
+        return 2;
+    }
+    return 3;
+}
+
 void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::string,ServerConfig> >&Servers,int cfd)
 {
     try
@@ -184,28 +188,12 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
             ServerConfig config =  getServer(Servers,method.host);
             method.autoFile = config.autoFile;
             method.rootLocation = config.root;
-            int i = isFileOrDirectory(method);
-            // if( i == 4)
-            // {
-            //     datacleint.readyForClose = true;
-            //     return;
-            // }
+            int i = checkFileOrDirectoryPermission(method,cfd,datacleint.readyForClose);
+            if( i == 4)
+                return;
             if(i == 2)
             {
                 /* hundle DIRECTORY */
-                /* problem here */
-                if(checkPermission(method.fullPath.c_str(),cfd,method.version,R_OK,datacleint.readyForClose) == true &&
-                    checkPermission(method.fullPath.c_str(),cfd,method.version,W_OK,datacleint.readyForClose) == true)
-                {
-                    std::cout<<"dgvdcb\n";
-                    // datacleint.readyForClose = true;
-                    return;
-                }
-                if(checkPermission(method.fullPath.c_str(),cfd,method.version,X_OK,datacleint.readyForClose) == true)
-                {
-                    datacleint.readyForClose = true;
-                    return;
-                }
                 if(listingDirectory(datacleint,method,cfd) == 0)
                 {
                     const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + method.buff;

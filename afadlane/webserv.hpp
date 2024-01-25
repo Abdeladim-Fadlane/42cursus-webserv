@@ -97,3 +97,4 @@ void    parceRequest(Data & ,Method &,int );
 bool   deleteMethod(int ,std::string &,bool &);
 bool checkPermission(const char *path,int fd,std::string &version,int type,bool &);
 void    getMethod(Data & ,Method &,std::vector<std::pair<std::string,ServerConfig> > &,int );
+void    sendResponse(int fd,std::string &version,std::string &status,bool &isReadyForClose);
