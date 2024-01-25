@@ -34,34 +34,43 @@ void multiplexing()
     std::vector<std::pair<std::string,ServerConfig> > Servers;
     std::vector<ServerConfig> vec;
     example(vec);
-   
-    int serverSocketFD ;
-    int epollFD = epoll_create(5);
+    int epollFD = epoll_create(1024);
     epoll_event event;
     int socketFD ;
-    
-    /* INSTED OF LOOP ON VECTOR  */
-   
+
     for(size_t i = 0 ;i < vec.size(); i++)
     {
         socketFD = socket(AF_INET,SOCK_STREAM,0);
-        if (socketFD == -1) {
-            std::cerr << "Error creating socket" << std::endl;exit(1);}
+        if (socketFD == -1)
+        {
+            std::cerr << "Error creating socket" << std::endl;
+            exit(EXIT_FAILURE);
+        }
         sockaddr_in serverAdress;
         serverAdress.sin_family = AF_INET;
         serverAdress.sin_addr.s_addr = INADDR_ANY;
         serverAdress.sin_port = htons(vec[i].port);
         if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
-            std::cerr<<"Cannot bind to port : "<<vec[i].port << "\n" ;
-        if(listen(socketFD,10) == 0)
+        {
+            close(socketFD);
+            std::cerr<<"Cannot bind to port : "<<vec[i].port << std::endl ;
+            continue;
+        }
+        if(listen(socketFD,128) == 0)
             std::cout<<"listenning to "<< vec[i].port <<" [...]" <<std::endl;
-        else{std::cerr<<"Error listen\n";exit(1);}
+        else
+        {
+            close(socketFD);
+            std::cerr<<"Error listen\n";
+            exit(EXIT_FAILURE);
+        }
         event.events = EPOLLIN ;
         event.data.fd = socketFD;
         if(epoll_ctl(epollFD,EPOLL_CTL_ADD,socketFD,&event) == -1)
         {
-            std::cerr<<"Error add to event : ";
-            exit(1);
+            close(socketFD);
+            perror("Error add to epoll : ");
+            exit(EXIT_FAILURE);
         } 
         Servers.push_back(std::make_pair(vec[i].listen,vec[i]));
     }
@@ -74,13 +83,16 @@ void multiplexing()
         int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,500); 
         for (int i = 0; i < numEvent; ++i)
         {
-            if(events[i].data.fd <=  SERVERS + 3)
+            if(static_cast<int>(events[i].data.fd) <=  static_cast<int>(Servers.size() + 3))
             {
                 Webserv data;
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
                 if(clientSocketFD == -1)
-                {std::cerr << "Failed to accept connection ." << std::endl;break;}
-                event.events = EPOLLIN | EPOLLOUT;
+                {
+                    std::cerr << "Failed to accept connection .2" << std::endl;
+                    continue;
+                }
+                event.events = EPOLLIN | EPOLLOUT ;
                 data.data.Alreadyopen = false;
                 data.data.isReading = false;
                 data.data.readyForClose = false;
@@ -91,7 +103,11 @@ void multiplexing()
                 Request[clientSocketFD] = data;
                 event.data.fd = clientSocketFD;
                 if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
-                {printf("error epoll_ctl ");continue;}
+                {
+                    perror("error epoll_ctl ");
+                    close(clientSocketFD);
+                    continue;
+                }
             } 
             else
             {
@@ -115,13 +131,11 @@ void multiplexing()
                             epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                             close(events[i].data.fd);
                         }
-                    }
-                    
+                    } 
                 }
                 else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "GET")
                 {
                     /* Get Methoud */
-            
                     getMethod(Request[events[i].data.fd].data,Request[events[i].data.fd].data.method,Servers,events[i].data.fd);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
@@ -138,15 +152,31 @@ void multiplexing()
                     deleteMethod(events[i].data.fd,msg,Request[events[i].data.fd].data.readyForClose);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
-        
                         Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
                     }
                 }
+                else if(events[i].events & EPOLLERR)
+                {
+                    /* an error has occurred */
+                    const char *error_message = "Opss an error occurred. Please try again later.";
+                    send(events[i].data.fd, error_message, strlen(error_message), 0);
+                    Request.erase(events[i].data.fd);
+                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                    close(events[i].data.fd);
+                }
+                else if(events[i].events & EPOLLHUP)
+                {
+                    /* client closed the connection */
+                    perror("An error aka client disconnect");
+                    Request.erase(events[i].data.fd);
+                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                    close(events[i].data.fd);
+                }
             }
         }
     }
     close(epollFD);
-    close(serverSocketFD);
+    close(socketFD);
 }
