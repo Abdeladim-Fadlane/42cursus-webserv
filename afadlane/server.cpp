@@ -100,8 +100,6 @@ void multiplexing()
                     /* readiing AND parsing request and POST METHOUD*/
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
-                       
-                        // parceRequest(Request[events[i].data.fd].data,method,events[i].data.fd);
                         Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader,events[i].data.fd);
                         insialStruct(Request[events[i].data.fd].data);
 
@@ -122,7 +120,7 @@ void multiplexing()
                 }
                 else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "GET")
                 {
-                    /* writing and Get methoud */
+                    /* Get Methoud */
             
                     getMethod(Request[events[i].data.fd].data,Request[events[i].data.fd].data.method,Servers,events[i].data.fd);
                     if(Request[events[i].data.fd].data.readyForClose == true)
@@ -135,6 +133,7 @@ void multiplexing()
                 }
                 else if(events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "DELETE")
                 {
+                    /* Delete Method */
                     std::string msg = std::string("/home/afadlane/webserv") + Request[events[i].data.fd].data.method.path;
                     deleteMethod(events[i].data.fd,msg,Request[events[i].data.fd].data.readyForClose);
                     if(Request[events[i].data.fd].data.readyForClose == true)
