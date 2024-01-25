@@ -41,8 +41,9 @@ void fastCGI(std::string &path)
     cgi_pid = fork();
     if (cgi_pid == 0)
     {
+        const char *p = "/usr/bin/php-cgi8.2";
         dup2(fd, 1);
-        const char *args[] = {"/usr/bin/php-cgi8.2", path.c_str(), NULL};
+        const char *args[] = {p, path.c_str(), NULL};
         close(fd);
         execve("/usr/bin/php-cgi8.2", const_cast<char* const*>(args), env);
         // perror("Error executing CGI");
