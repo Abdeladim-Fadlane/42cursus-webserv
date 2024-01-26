@@ -1,13 +1,14 @@
 #include"webserv.hpp"
 void environmentStore(std::vector<std::string>& environment,std::string path)
 {
-    std::string REQUEST_METHOD = "POST";
+    std::string REQUEST_METHOD = "GET";
     std::string CONTENT_TYPE = "text/html";
     std::string CONTENT_LENGTH = "";
     std::string QUERY_STRING = "?first_name=Abdeladim&last_name=Fadlane";
     std::string SCRIPT_FILENAM = path;
     std::string SERVER_PROTOCOL = "HTTP/1.1";
     std::string SERVER_ADDR = "127.0.0.1";
+    std::string SERVER_PORT = "8080";
 
     environment.push_back("REQUEST_METHOD=" + REQUEST_METHOD);
     environment.push_back("CONTENT_TYPE=" + CONTENT_TYPE);
@@ -16,7 +17,7 @@ void environmentStore(std::vector<std::string>& environment,std::string path)
     environment.push_back("SCRIPT_FILENAME="+ SCRIPT_FILENAM); 
     environment.push_back("SERVER_PROTOCOL=" + SERVER_PROTOCOL);
     environment.push_back("SERVER_ADDR=" + SERVER_ADDR);
-    // environment.push_back("SERVER_PORT=80"); 
+    environment.push_back("SERVER_PORT=" + SERVER_PORT); 
 }
 
 void fastCGI(std::string &path,std::string &type)
