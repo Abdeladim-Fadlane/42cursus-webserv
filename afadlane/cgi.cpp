@@ -15,8 +15,8 @@ void environmentStore(std::vector<std::string>& environment,std::string path)
     environment.push_back("QUERY_STRING=" + QUERY_STRING);
     environment.push_back("SCRIPT_FILENAME="+ SCRIPT_FILENAM); 
     environment.push_back("SERVER_PROTOCOL=" + SERVER_PROTOCOL);
-    environment.push_back("SERVER_ADDR=" + SERVER_ADDR);  // Update this IP address
-    // environment.push_back("SERVER_PORT=80");  // Update this port number
+    environment.push_back("SERVER_ADDR=" + SERVER_ADDR);
+    // environment.push_back("SERVER_PORT=80"); 
 }
 
 void fastCGI(std::string &path,std::string &type)
