@@ -160,8 +160,9 @@ void multiplexing()
                 else if(events[i].events & EPOLLERR)
                 {
                     /* an error has occurred */
-                    const char *error_message = "Opss an error occurred. Please try again later.";
-                    send(events[i].data.fd, error_message, strlen(error_message), 0);
+                    std::string body = "<html><body><h1>Opss an error occurred. Please try again later.</h1></body></html>";
+                    const std::string httpResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + body;
+                    send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
