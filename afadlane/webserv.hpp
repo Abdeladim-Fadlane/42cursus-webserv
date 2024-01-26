@@ -81,17 +81,6 @@ struct ServerConfig
     // std::vector<LocationConfig> locations;
 };
 
-
-
-// class Webserv
-// {
-//     private:
-//         std::vector<int> servers;
-//     public:
-//         Webserv(/* args */){};
-//         ~Webserv(){};
-// };
-
 void multiplexing();
 void fastCGI(std::string &,std::string &);
 void    parceRequest(Data & ,Method &,int );

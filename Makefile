@@ -3,11 +3,11 @@ NAME = webserv
 CXXFLAGS =  -Wall -Wextra -Werror -fsanitize=address -g3
 CXX = c++
 
-CFILES = afadlane/server.cpp \
- 		 afadlane/main.cpp \
- 		 afadlane/methods.cpp \
- 		 afadlane/cgi.cpp \
- 		 afadlane/delete.cpp \
+CFILES = afadlane/SERVER.cpp \
+ 		 afadlane/MAIN.cpp \
+ 		 afadlane/GET.cpp \
+ 		 afadlane/CGI.cpp \
+ 		 afadlane/DELETE.cpp \
 		 akatfi/Requeste.cpp \
 		 akatfi/PostMethod.cpp \
 
