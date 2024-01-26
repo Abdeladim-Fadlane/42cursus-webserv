@@ -9,7 +9,6 @@ void environmentStore(std::vector<std::string>& environment,std::string path)
     std::string SERVER_PROTOCOL = "HTTP/1.1";
     std::string SERVER_ADDR = "127.0.0.1";
 
-    std::vector<std::string> environment;
     environment.push_back("REQUEST_METHOD=" + REQUEST_METHOD);
     environment.push_back("CONTENT_TYPE=" + CONTENT_TYPE);
     environment.push_back("CONTENT_LENGTH=" + CONTENT_LENGTH);
@@ -28,26 +27,22 @@ void fastCGI(std::string &path)
     {
         env[i] = const_cast<char*>(environment[i].c_str());
     }
-
     env[environment.size()] = NULL;
-
-    pid_t cgi_pid;
-    int fd = open("/tmp/tmpFile", O_WRONLY | O_CREAT ,777);
+    pid_t pid;
+    int fd = open("/tmp/tmpFile",O_RDONLY | O_WRONLY | O_CREAT ,777);
     if (fd == -1)
     {
-        std::cerr << "Error opening file /tmp/tmpFile" << std::endl;
-        exit(EXIT_FAILURE);
+        throw std::runtime_error ("Error opening file /tmp/tmpFile");
     }
-    cgi_pid = fork();
-    if (cgi_pid == 0)
+    pid = fork();
+    if (pid == 0)
     {
         const char *p = "/usr/bin/php-cgi8.2";
         dup2(fd, 1);
         const char *args[] = {p, path.c_str(), NULL};
         close(fd);
-        execve("/usr/bin/php-cgi8.2", const_cast<char* const*>(args), env);
-        // perror("Error executing CGI");
-        // exit(EXIT_FAILURE);
+        execve(p, const_cast<char* const*>(args), env);
+        throw std::runtime_error ("Cannot exectue script");
     } 
     else
         wait(NULL);

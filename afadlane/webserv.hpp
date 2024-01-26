@@ -35,7 +35,7 @@
 #include"../akatfi/Requeste.hpp"
 #define  MAX_EVENTS 1024
 #define  PORT  8080
-#define  BUFFER_SIZE 5120
+#define  BUFFER_SIZE 1024
 #define  SERVERS 3
 struct Method
 {
@@ -56,6 +56,7 @@ struct Data
     bool modeAutoIndex;
     bool readyForClose;
     bool AlreadyRequestHeader;
+    bool isCgi;
     Requeste *requeste ;
     Method   method;
 };

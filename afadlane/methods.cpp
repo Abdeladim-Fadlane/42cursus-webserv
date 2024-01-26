@@ -109,12 +109,17 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
 {
     char buffer[BUFFER_SIZE];
     std::string contentType = getContentType(method);
-
-    datacleint.isReading = true;
     method.path = method.rootLocation + method.path;
+    if(contentType == ".php")
+    {
+        fastCGI(method.path);
+        method.path = "/tmp/tmpFile";
+        datacleint.isCgi = true;
+    }
     memset(buffer,0,sizeof(buffer));
     if(checkPermission(method.path.c_str(),cfd,method.version,R_OK,datacleint.readyForClose) == true)
         return;
+    datacleint.isReading = true;
     datacleint.fd = open(method.path.c_str(), O_RDONLY);
     if (datacleint.fd == -1)
     {
@@ -147,9 +152,20 @@ void serveFIle(Data& datacleint, int cfd)
         datacleint.readyForClose = true;
         if(send(cfd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
            throw std::runtime_error("An error aka client disconnect");
+        unlink("/tmp/tmpFile");
         return ;
     }
-    sendChunk(cfd,buffer,byteRead,datacleint);  
+    std::string httpresponse(buffer,byteRead);
+    if(datacleint.isCgi == true)
+    {
+        size_t pos = httpresponse.find("\r\n\r\n");
+        if(pos != std::string::npos)
+        {
+            httpresponse = httpresponse.substr(pos);
+        }
+        datacleint.isCgi = false;
+    }
+    sendChunk(cfd,httpresponse.c_str(),httpresponse.size(),datacleint);  
 }
 
 int checkFileOrDirectoryPermission(Method &method,int fd,bool &radyForClose)
@@ -230,6 +246,11 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
     }
     catch (const std::runtime_error &e)
     {
+        if(strcmp(e.what() ,"An error aka client disconnect") != 0)
+        {
+            std::string status = " 500 Internal Server Error";
+            sendResponse(cfd,method.version,status,datacleint.readyForClose);
+        }
         std::cout << e.what() << std::endl;
     }
 }
