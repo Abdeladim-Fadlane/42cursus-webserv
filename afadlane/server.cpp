@@ -57,7 +57,7 @@ void multiplexing()
             continue;
         }
         if(listen(socketFD,128) == 0)
-            std::cout<<"listenning to "<< vec[i].port <<" ..." <<std::endl;
+            std::cout<<"listenning to "<< vec[i].port <<" [...]" <<std::endl;
         else
         {
             close(socketFD);
