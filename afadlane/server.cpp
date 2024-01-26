@@ -12,7 +12,7 @@ void example(std::vector<ServerConfig> &vec)
         conf.clientMaxBodySize = "10";
         conf.domainName = "afadlane1337.ma";
         conf.root = "/home/afadlane/webserv/afadlane";
-        conf.autoFile = "phpinfo.php";
+        conf.autoFile = "index.html";
         vec.push_back(conf);
         i++;
     }
@@ -57,7 +57,7 @@ void multiplexing()
             continue;
         }
         if(listen(socketFD,128) == 0)
-            std::cout<<"listenning to "<< vec[i].port <<" [...]" <<std::endl;
+            std::cout<<"listenning to "<< vec[i].port <<" ..." <<std::endl;
         else
         {
             close(socketFD);

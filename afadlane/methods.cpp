@@ -14,6 +14,7 @@ std::string    getContentType(Method &method)
     contentTypeMap[".gif"] = "image/gif";
     contentTypeMap[".mp4"] = "video/mp4";
     contentTypeMap[".php"] = ".php";
+    contentTypeMap[".py"] = ".py";
     contentTypeMap[".css"] = "text/css";
     contentTypeMap[".js"] = "application/javascript";
 
@@ -110,9 +111,14 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
     char buffer[BUFFER_SIZE];
     std::string contentType = getContentType(method);
     method.path = method.rootLocation + method.path;
-    if(contentType == ".php")
+    if(contentType == ".php" || contentType == ".py")
     {
-        fastCGI(method.path);
+        std::string type;
+        if(contentType == ".php")
+            type = "php";
+        else
+            type = "py";
+        fastCGI(method.path,type);
         method.path = "/tmp/tmpFile";
         datacleint.isCgi = true;
     }
@@ -124,7 +130,7 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
     if (datacleint.fd == -1)
     {
         close(datacleint.fd);
-        throw std::runtime_error("Error opening file");
+        throw std::runtime_error("internal server error");
     }
     std::string httpResponse = method.version + " 200 OK\r\nContent-Type:" +contentType+ " \r\nTransfer-Encoding: chunked\r\n\r\n";
     if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
@@ -246,11 +252,11 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
     }
     catch (const std::runtime_error &e)
     {
-        if(strcmp(e.what() ,"An error aka client disconnect") != 0)
+        if(strcmp(e.what() ,"internal server error") == 0)
         {
             std::string status = " 500 Internal Server Error";
             sendResponse(cfd,method.version,status,datacleint.readyForClose);
         }
-        std::cout << e.what() << std::endl;
+        // std::cout << e.what() << std::endl;
     }
 }

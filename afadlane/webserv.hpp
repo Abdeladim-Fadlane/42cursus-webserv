@@ -93,7 +93,7 @@ struct ServerConfig
 // };
 
 void multiplexing();
-void fastCGI(std::string &);
+void fastCGI(std::string &,std::string &);
 void    parceRequest(Data & ,Method &,int );
 bool   deleteMethod(int ,std::string &,bool &);
 bool checkPermission(const char *path,int fd,std::string &version,int type,bool &);
