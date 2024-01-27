@@ -100,12 +100,12 @@ void multiplexing()
                     close(clientSocketFD);
                     continue;
                 }
-                data.data.Alreadyopen = false;
-                data.data.isReading = false;
-                data.data.readyForClose = false;
-                data.data.Alreadparce = false;
-                data.data.modeAutoIndex = false;
-                data.data.isCgi = false;
+                data.data.Alreadyopen           = false;
+                data.data.isReading             = false;
+                data.data.readyForClose         = false;
+                data.data.Alreadparce           = false;
+                data.data.modeAutoIndex         = false;
+                data.data.isCgi                 = false;
                 data.data.AlreadyRequestHeader  = false;
                 data.data.requeste = new Requeste(clientSocketFD);
                 Request[clientSocketFD] = data;
