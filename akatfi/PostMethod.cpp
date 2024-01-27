@@ -21,7 +21,7 @@ PostMethod::PostMethod(const Requeste& r) : req(r)
     separator_size = 0;
     size = 0;
     path = r.getPath();
-    setFileextation("/home/afadlane/webserv/akatfi/fileExtation", map_extation);
+    setFileextation("akatfi/fileExtation", map_extation);
     content_type = this->req.requeste_map.find("Content-Type")->second;
     // content_type = map_extation.find(content_type)->second;
     content_length = atoi((this->req.requeste_map.find("Content-Length")->second).c_str());
@@ -172,7 +172,8 @@ void    PostMethod::PostingFileToServer(bool &flag)
 
     memset(buffer_read, 0, sizeof(buffer_read));
     x = read(req.getSocketFd(), buffer_read, 1023);
-    if (x == 0)
+    // std::cout << x <<
+    if (x < 1023)
         flag = true;
     buffer.append(buffer_read, x);
     if (!Transfer_Encoding.compare("chunked"))

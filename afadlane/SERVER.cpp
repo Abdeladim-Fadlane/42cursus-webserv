@@ -125,35 +125,29 @@ void multiplexing()
                     {
                         /* POST METHOD  */
                         Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.readyForClose);
-                        if(Request[events[i].data.fd].data.readyForClose == true)
-                        {
-                            Request.erase(events[i].data.fd);
-                            delete Request[events[i].data.fd].data.requeste;
-                            epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                            close(events[i].data.fd);
-                        }
-                    } 
-                }
-                else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "GET")
-                {
-                    /* Get Methoud */
-                    getMethod(Request[events[i].data.fd].data,Request[events[i].data.fd].data.method,Servers,events[i].data.fd);
-                    if(Request[events[i].data.fd].data.readyForClose == true)
-                    {
-            
-                        Request.erase(events[i].data.fd);
-                        epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                        close(events[i].data.fd);
                     }
                 }
-                else if(events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true && Request[events[i].data.fd].data.requeste->method == "DELETE")
+                else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true)
                 {
-                    /* Delete Method */
-                    std::string msg = std::string("/home/afadlane/webserv") + Request[events[i].data.fd].data.method.path;
-                    deleteMethod(events[i].data.fd,msg,Request[events[i].data.fd].data.readyForClose);
+                    if(Request[events[i].data.fd].data.requeste->method == "GET")
+                    {
+                        getMethod(Request[events[i].data.fd].data,Request[events[i].data.fd].data.method,Servers,events[i].data.fd);
+                    }
+                    else if(Request[events[i].data.fd].data.requeste->method == "DELETE")
+                    {
+                        std::string msg = std::string("/home/afadlane/webserv") + Request[events[i].data.fd].data.method.path;
+                        deleteMethod(events[i].data.fd,msg,Request[events[i].data.fd].data.readyForClose);
+                    }
+                    else if(Request[events[i].data.fd].data.requeste->method == "POST")
+                    {
+                        std::string body = "<html><body><h1>post has been succussfy</h1></body></html>";
+                        const std::string httpResponse = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\n" + body;
+                        send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);
+                    }
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
                         Request.erase(events[i].data.fd);
+                        delete Request[events[i].data.fd].data.requeste;
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
                     }
