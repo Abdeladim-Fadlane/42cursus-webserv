@@ -140,8 +140,8 @@ void multiplexing()
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "POST")
                     {
-                        std::string body = "<html><body><h1>post has been succussfy</h1></body></html>";
-                        const std::string httpResponse = "HTTP/1.1 201 OK\r\nContent-Type: text/html\r\n\r\n" + body;
+                        std::string body = "<html><body><h1>Post request successful</h1></body></html>";
+                        const std::string httpResponse = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\n\r\n" + body;
                         send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);
                     }
                     if(Request[events[i].data.fd].data.readyForClose == true)
