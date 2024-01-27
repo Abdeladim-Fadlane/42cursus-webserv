@@ -92,7 +92,14 @@ void multiplexing()
                     std::cerr << "Failed to accept connection .2" << std::endl;
                     continue;
                 }
-                event.events = EPOLLIN | EPOLLOUT ;
+                event.events = EPOLLIN | EPOLLOUT;
+                event.data.fd = clientSocketFD;
+                if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
+                {
+                    perror("error epoll_ctl ");
+                    close(clientSocketFD);
+                    continue;
+                }
                 data.data.Alreadyopen = false;
                 data.data.isReading = false;
                 data.data.readyForClose = false;
@@ -102,50 +109,49 @@ void multiplexing()
                 data.data.AlreadyRequestHeader  = false;
                 data.data.requeste = new Requeste(clientSocketFD);
                 Request[clientSocketFD] = data;
-                event.data.fd = clientSocketFD;
-                if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
-                {
-                    perror("error epoll_ctl ");
-                    close(clientSocketFD);
-                    continue;
-                }
             } 
             else
             {
                 if(events[i].events & EPOLLIN )
                 {
-                    /* readiing AND parsing request and POST METHOUD*/
+                    /* File descriptor ready for writing */
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
+                        /* readiing AND parsing request */
                         Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader,events[i].data.fd);
                         insialStruct(Request[events[i].data.fd].data);
-
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
                     {
-                        /* POST METHOD  */
+                        /* handle Post method  */
                         Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.readyForClose);
                     }
                 }
                 else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true)
                 {
+                   /*  File descriptor ready for reading  */
+
                     if(Request[events[i].data.fd].data.requeste->method == "GET")
                     {
+                        /* handle Get method  */
                         getMethod(Request[events[i].data.fd].data,Request[events[i].data.fd].data.method,Servers,events[i].data.fd);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "DELETE")
                     {
+                        /* handle delete method  */
                         std::string msg = std::string("/home/afadlane/webserv") + Request[events[i].data.fd].data.method.path;
                         deleteMethod(events[i].data.fd,msg,Request[events[i].data.fd].data.readyForClose);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "POST")
                     {
+                        /* handle response Post method  */
                         std::string body = "<html><body><h1>Post request successful</h1></body></html>";
                         const std::string httpResponse = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\n\r\n" + body;
                         send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);
                     }
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
+                        /* close File descriptor of client */
                         Request.erase(events[i].data.fd);
                         delete Request[events[i].data.fd].data.requeste;
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
