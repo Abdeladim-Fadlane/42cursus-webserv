@@ -16,6 +16,7 @@ std::string    getContentType(Method &method)
     contentTypeMap[".php"] = ".php";
     contentTypeMap[".py"] = ".py";
     contentTypeMap[".css"] = "text/css";
+    contentTypeMap[".pdf"] = " application/pdf";
     contentTypeMap[".js"] = "application/javascript";
 
     size_t pos = method.path.find_last_of(".");
