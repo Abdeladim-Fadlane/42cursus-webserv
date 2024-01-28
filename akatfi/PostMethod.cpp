@@ -104,13 +104,13 @@ void PostMethod::boundary(std::string buffer)
                 Postfile.close();
             content_type = init_contentType(buffer);
             gettimeofday(&Time, nullptr) ;
-            // std::cout << " ========" <<content_type << std::endl;
+            // std::cout << " ========" <<"mkatfi" << std::endl;
             Postfile.open(std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type , std::fstream::out);
             boundary(buffer);
         }
         else if (buffer.find(boundary_separator) != std::string::npos)
         {
-            Postfile << buffer.substr(0, buffer.find(boundary_separator));
+            Postfile << buffer.substr(0, buffer.find(boundary_separator) - 2);
             buffer = buffer.substr(buffer.find(boundary_separator));
             buffer_add = buffer;
         }
@@ -170,11 +170,9 @@ void    PostMethod::PostingFileToServer(bool &flag)
     char buffer_read[1024];
     int x;
 
+    (void)flag;
     memset(buffer_read, 0, sizeof(buffer_read));
     x = read(req.getSocketFd(), buffer_read, 1023);
-    // std::cout << x <<
-    if (x < 1023)
-        flag = true;
     buffer.append(buffer_read, x);
     if (!Transfer_Encoding.compare("chunked"))
     {

@@ -27,4 +27,5 @@ fclean :clean
 re : fclean all
 
 run : all clean
+	rm -rf www/*
 	@  ./webserv

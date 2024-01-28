@@ -18,7 +18,7 @@
 #include <string.h>
 #include <ctime>
 #include <sys/time.h>
-#define FILE "/home/afadlane/webserv"
+#define FILE "/home/afadlane/webserv/www"
 
 #include "Requeste.hpp"
 
