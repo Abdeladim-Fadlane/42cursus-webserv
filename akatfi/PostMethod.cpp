@@ -104,7 +104,6 @@ void PostMethod::boundary(std::string buffer)
                 Postfile.close();
             content_type = init_contentType(buffer);
             gettimeofday(&Time, nullptr) ;
-            // std::cout << " ========" <<"mkatfi" << std::endl;
             Postfile.open(std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type , std::fstream::out);
             boundary(buffer);
         }

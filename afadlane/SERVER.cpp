@@ -124,7 +124,6 @@ void multiplexing()
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
                     {
                         /* handle Post method  */
-                        // std::cout<<
                         Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.readyForClose);
                     }
                 }
