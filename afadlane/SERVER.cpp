@@ -17,6 +17,7 @@ void example(std::vector<ServerConfig> &vec)
         i++;
     }
 }
+
 /* Analyze, Douiri */
 void    insialStruct(Data & datacleint)
 {
@@ -92,7 +93,7 @@ void multiplexing()
                     std::cerr << "Failed to accept connection .2" << std::endl;
                     continue;
                 }
-                event.events = EPOLLIN | EPOLLOUT;
+                event.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP ;
                 event.data.fd = clientSocketFD;
                 if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
                 {
@@ -112,7 +113,15 @@ void multiplexing()
             } 
             else
             {
-                if(events[i].events & EPOLLIN )
+                if(events[i].events & EPOLLHUP)
+                {
+                    /* client closed the connection */
+                    std::cerr<<"An error aka client disconnect\n";
+                    Request.erase(events[i].data.fd);
+                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                    close(events[i].data.fd);
+                }
+                else if(events[i].events & EPOLLIN )
                 {
                     /* File descriptor ready for writing */
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
@@ -165,14 +174,6 @@ void multiplexing()
                     std::string body = "<html><body><h1>Opss an error occurred. Please try again later.</h1></body></html>";
                     const std::string httpResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + body;
                     send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);
-                    Request.erase(events[i].data.fd);
-                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    close(events[i].data.fd);
-                }
-                else if(events[i].events & EPOLLHUP)
-                {
-                    /* client closed the connection */
-                    perror("An error aka client disconnect");
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
