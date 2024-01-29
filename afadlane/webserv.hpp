@@ -47,6 +47,7 @@ struct Method
     std::string autoFile;
     std::string fullPath;
 };
+
 struct Data
 {  
     int fd ;
