@@ -33,6 +33,7 @@
 #include<cstdlib>
 #include "../akatfi/PostMethod.hpp"
 #include"../akatfi/Requeste.hpp"
+
 #define  MAX_EVENTS 1024
 #define  PORT  8080
 #define  BUFFER_SIZE 1024
@@ -75,9 +76,9 @@ struct ServerConfig
     // std::vector<LocationConfig> locations;
 };
 
-void    multiplexing();
+void    multiplexing(ConfigFile &config);
 void    getMethod(Data &);
 bool    deleteMethod(Data &);
 void    fastCGI(std::string &,std::string &);
 void    sendResponse(Data &,std::string &);
-bool checkPermission(Data &, const char *,int );
+bool    checkPermission(Data &, const char *,int );

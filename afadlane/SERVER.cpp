@@ -1,18 +1,5 @@
 #include"webserv.hpp"
 
-void example(std::vector<ServerConfig> &vec)
-{
-    int i = 0;
-    ServerConfig conf;
-
-    while (i < SERVERS)
-    {
-        conf.port = 8080 + i;
-        vec.push_back(conf);
-        i++;
-    }
-}
-
 void    inisialBollen(std::map<int,struct Webserv> & Request,int & clientSocketFD)
 {
     Webserv                         Data;
@@ -39,17 +26,14 @@ void    insialStruct(Data & datacleint)
     std::cout<<"path = "<<  datacleint.Path<<std::endl;
 }
 
-void multiplexing()
+void multiplexing(ConfigFile &config)
 {
-    // Method method;
-    std::vector<std::pair<std::string,ServerConfig> > Servers;
-    std::vector<ServerConfig> vec;
-    example(vec);
+ 
     int epollFD = epoll_create(1024);
     epoll_event event;
     int socketFD ;
 
-    for(size_t i = 0 ;i < vec.size(); i++)
+    for(size_t i = 0 ;i < config.Servers.size(); i++)
     {
         socketFD = socket(AF_INET,SOCK_STREAM,0);
         if (socketFD == -1)
@@ -60,15 +44,15 @@ void multiplexing()
         sockaddr_in serverAdress;
         serverAdress.sin_family = AF_INET;
         serverAdress.sin_addr.s_addr = INADDR_ANY;
-        serverAdress.sin_port = htons(vec[i].port);
+        serverAdress.sin_port = htons(config.Servers[i].listen);
         if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
         {
             close(socketFD);
-            std::cerr<<"Cannot bind to port : "<<vec[i].port << std::endl ;
+            std::cerr<<"Cannot bind to port : "<<config.Servers[i].listen << std::endl ;
             continue;
         }
         if(listen(socketFD,128) == 0)
-            std::cout<<"listenning to "<< vec[i].port <<" [...]" <<std::endl;
+            std::cout<<"listenning to "<< config.Servers[i].listen <<" [...]" <<std::endl;
         else
         {
             close(socketFD);
@@ -83,7 +67,6 @@ void multiplexing()
             perror("Error add to epoll : ");
             exit(EXIT_FAILURE);
         } 
-        Servers.push_back(std::make_pair(vec[i].listen,vec[i]));
     }
 
     std::map<int,struct Webserv> Request;
@@ -94,7 +77,7 @@ void multiplexing()
         int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,500); 
         for (int i = 0; i < numEvent; ++i)
         {
-            if(static_cast<int>(events[i].data.fd) <=  static_cast<int>(Servers.size() + 3))
+            if(static_cast<int>(events[i].data.fd) <=  static_cast<int>(config.Servers.size() + 3))
             {
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
                 if(clientSocketFD == -1)

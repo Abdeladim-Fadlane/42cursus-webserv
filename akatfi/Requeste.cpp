@@ -44,7 +44,7 @@ void    Requeste::readFromSocketFd(bool &flag,int fd)
     {
         this->MakeMapOfHeader();
         this->get_infoConfig();
-        flag = 1;
+        flag = true;
         if (method == "POST" && !post)
             post = new PostMethod(*this);
     }

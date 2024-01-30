@@ -1,6 +1,6 @@
 NAME = webserv
 
-# CXXFLAGS =  -Wall -Wextra -Werror -fsanitize=address -g3
+# CXXFLAGS =   -fsanitize=address -g3
 CXX = c++
 
 CFILES = afadlane/SERVER.cpp \
@@ -31,4 +31,4 @@ re : fclean all
 
 run : all clean
 	rm -rf www/*
-	@  ./webserv
+	@  ./webserv akatfi/parsinfCon/file.config
