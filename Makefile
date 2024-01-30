@@ -1,6 +1,6 @@
 NAME = webserv
 
-# CXXFLAGS =   -fsanitize=address -g3
+CXXFLAGS =   -fsanitize=address -g3
 CXX = c++
 
 CFILES = afadlane/SERVER.cpp \
@@ -19,7 +19,7 @@ OBJ = ${CFILES:.cpp=.o}
 all: ${NAME}
 
 ${NAME} : ${OBJ}
-	@${CXX}   ${OBJ} -o ${NAME}
+	@${CXX}  ${CXXFLAGS} ${OBJ} -o ${NAME}
 
 clean :
 	@rm -rf ${OBJ}

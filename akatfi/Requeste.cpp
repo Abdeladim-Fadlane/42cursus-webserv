@@ -34,6 +34,7 @@ std::pair<std::string, std::string> Requeste::MakePair(std::string& line)
 
 void    Requeste::readFromSocketFd(bool &flag,int fd)
 {
+    std::cout<<fd_socket<<"---------------\n";
     char buffer[1024];
     int x;
     (void)fd;
@@ -57,8 +58,8 @@ void Requeste::get_infoConfig()
     {
         if (it->host == this->host && it->listen == this->port)
         {
-            std::cout << "nai " << std::endl;
-            for (unsigned int i = 1; i < it->locations.size(); i++)
+            // std::cout << "nai " << std::endl;
+            for (unsigned int i = 0; i < it->locations.size(); i++)
             {
                 if (!strncmp(it->locations[i].location_name.c_str(),path.c_str(), path.length()))
                 {
@@ -80,7 +81,7 @@ void Requeste::get_infoConfig()
             // Error message
         }
     }
-    std::cout << locationServer.root << std::endl;
+    // std::cout << locationServer.root << std::endl;
 }
 
 void Requeste::MakeMapOfHeader()

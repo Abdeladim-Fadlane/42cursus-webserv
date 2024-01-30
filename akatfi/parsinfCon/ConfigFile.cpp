@@ -154,7 +154,9 @@ void    ConfigFile::parceConfig()
         }
         else
             throw std::runtime_error("Error : line have dosen't follow rules");
+        
     }
+    config.close();
 }
 
 ConfigFile::~ConfigFile()

@@ -1,20 +1,5 @@
 #include"webserv.hpp"
 
-void    inisialBollen(std::map<int,struct Webserv> & Request,int & clientSocketFD,ConfigFile &config)
-{
-    Webserv                         Data;
-    Data.data.Alreadyopen           = false;
-    Data.data.isReading             = false;
-    Data.data.readyForClose         = false;
-    Data.data.Alreadparce           = false;
-    Data.data.modeAutoIndex         = false;
-    Data.data.isCgi                 = false;
-    Data.data.AlreadyRequestHeader  = false;
-    Data.data.autoIndex             = true;
-    Data.data.fd                    = clientSocketFD;
-    Data.data.requeste              = new Requeste(clientSocketFD,config);
-    Request[clientSocketFD]         = Data;
-}
 /* Analyze, Douiri */
 void    insialStruct(Data & datacleint)
 {
@@ -28,11 +13,11 @@ void    insialStruct(Data & datacleint)
 
 void multiplexing(ConfigFile &config)
 {
- 
+    int size = 3;
     int epollFD = epoll_create(1024);
     epoll_event event;
     int socketFD ;
-
+    
     for(size_t i = 0 ;i < config.Servers.size(); i++)
     {
         socketFD = socket(AF_INET,SOCK_STREAM,0);
@@ -45,6 +30,12 @@ void multiplexing(ConfigFile &config)
         serverAdress.sin_family = AF_INET;
         serverAdress.sin_addr.s_addr = INADDR_ANY;
         serverAdress.sin_port = htons(config.Servers[i].listen);
+        int reuse = 1;
+        if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
+        {
+            perror("setsockopt(SO_REUSEADDR) failed");
+            continue;
+        }
         if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
         {
             close(socketFD);
@@ -52,12 +43,15 @@ void multiplexing(ConfigFile &config)
             continue;
         }
         if(listen(socketFD,128) == 0)
+        {
+            size++;
             std::cout<<"listenning to "<< config.Servers[i].listen <<" [...]" <<std::endl;
+        }
         else
         {
             close(socketFD);
-            std::cerr<<"Error listen\n";
-            exit(EXIT_FAILURE);
+            std::cout<<"Error listen\n";
+            continue;
         }
         event.events = EPOLLIN ;
         event.data.fd = socketFD;
@@ -68,7 +62,6 @@ void multiplexing(ConfigFile &config)
             exit(EXIT_FAILURE);
         } 
     }
-
     std::map<int,struct Webserv> Request;
     epoll_event events[MAX_EVENTS];
     while (true)
@@ -77,8 +70,9 @@ void multiplexing(ConfigFile &config)
         int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,500); 
         for (int i = 0; i < numEvent; ++i)
         {
-            if(static_cast<int>(events[i].data.fd) <=  static_cast<int>(config.Servers.size() + 3))
+            if(static_cast<int>(events[i].data.fd) <=  static_cast<int>(size))
             {
+                Webserv  Data;
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
                 if(clientSocketFD == -1)
                 {
@@ -93,7 +87,17 @@ void multiplexing(ConfigFile &config)
                     close(clientSocketFD);
                     continue;
                 }
-                inisialBollen(Request,clientSocketFD,config);
+                Data.data.Alreadyopen           = false;
+                Data.data.isReading             = false;
+                Data.data.readyForClose         = false;
+                Data.data.Alreadparce           = false;
+                Data.data.modeAutoIndex         = false;
+                Data.data.isCgi                 = false;
+                Data.data.AlreadyRequestHeader  = false;
+                Data.data.autoIndex             = false;
+                Data.data.fd                    = clientSocketFD;
+                Data.data.requeste              = new Requeste(clientSocketFD,config);
+                Request[clientSocketFD]         = Data;
             } 
             else
             {
@@ -105,7 +109,7 @@ void multiplexing(ConfigFile &config)
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
                 }
-                else if(events[i].events & EPOLLIN )
+                if(events[i].events & EPOLLIN )
                 {
                     /* File descriptor ready for writing */
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
