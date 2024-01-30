@@ -60,15 +60,16 @@ int    listingDirectory(Data &dataClient)
         struct stat statInfo;
         if(strcmp(it->d_name , ".") == 0 || strcmp(it->d_name , "..") == 0)
             continue;
-        if(getAutoFile(dataClient,it->d_name) == true)
-            return (1);
+        // if(getAutoFile(dataClient,it->d_name) == true)
+        //     return (1);
         else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
         { 
             list << "<tr>";
+            // std::cout<<"f==="<<it->d_name<<std::endl;
             if (S_ISREG(statInfo.st_mode))
-                list << "<td>"<< "<a href='" << it->d_name << "'>" << it->d_name << "</a></td>";
+                list << "<td>"<< "<a href='" << directoryChildPath << "'>" << it->d_name << "</a></td>";
             if (S_ISDIR(statInfo.st_mode))
-                list << "<td>"<< "<a href='" << it->d_name << "/" << "'>" << it->d_name << "</a></td>";
+                list << "<td>"<< "<a href='" << directoryChildPath << "/" << "'>" << it->d_name << "</a></td>";
             list << "<td>"<< ctime(&statInfo.st_mtime) <<"</td>";
             list << "<td>"<< statInfo.st_size << " bytes</td>";
             list << "</tr>";
@@ -101,7 +102,6 @@ void    openFileAndSendHeader(Data& dataCleint)
 {
     char buffer[BUFFER_SIZE];
     std::string contentType = getContentType(dataCleint);
-    // method.path = method.rootLocation + method.path;
     if(contentType == ".php" || contentType == ".py")
     {
         std::string type;

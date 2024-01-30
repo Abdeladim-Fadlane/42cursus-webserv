@@ -23,7 +23,7 @@ void    inisialBollen(std::map<int,struct Webserv> & Request,int & clientSocketF
     Data.data.modeAutoIndex         = false;
     Data.data.isCgi                 = false;
     Data.data.AlreadyRequestHeader  = false;
-    Data.data.autoIndex             = false;
+    Data.data.autoIndex             = true;
     Data.data.fd                    = clientSocketFD;
     Data.data.requeste              = new Requeste(clientSocketFD);
     Request[clientSocketFD]         = Data;
@@ -36,7 +36,7 @@ void    insialStruct(Data & datacleint)
 
     datacleint.autoFile = datacleint.requeste->locationServer.indexs;
     datacleint.Path = datacleint.requeste->locationServer.root;
-    // std::cout<<"path = "<<  datacleint.Path<<std::endl;
+    std::cout<<"path = "<<  datacleint.Path<<std::endl;
 }
 
 void multiplexing()

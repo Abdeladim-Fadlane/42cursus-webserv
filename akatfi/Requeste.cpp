@@ -60,10 +60,10 @@ void Requeste::get_infoConfig()
     {
         if (it->host == this->host && it->listen == this->port)
         {
-                    std::cout << "nai " << std::endl;
-            for (unsigned int i = 0; i < it->locations.size(); i++)
+            std::cout << "nai " << std::endl;
+            for (unsigned int i = 1; i < it->locations.size(); i++)
             {
-                if (it->locations[i].location_name == path)
+                if (!strncmp(it->locations[i].location_name.c_str(),path.c_str(), path.length()))
                 {
                     // path += it->locations[i].root;
                     locationServer = it->locations[i];
