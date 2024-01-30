@@ -26,6 +26,7 @@ class Requeste
         int                                 fd_socket;
         std::string                         head;
         std::string                         body;
+        ConfigFile                          &config;
     public:
         Location                            locationServer;
         int                                 port;
@@ -36,7 +37,7 @@ class Requeste
         std::string                         method;
         bool                                RunMethod;
         std::map<std::string, std::string>  requeste_map;
-        Requeste(int fd);
+        Requeste(int fd, ConfigFile &config);
         void    MakeMapOfHeader();
         void readFromSocketFd(bool &flag,int fd);
         std::pair<std::string, std::string> MakePair(std::string& line);

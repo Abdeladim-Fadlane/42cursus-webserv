@@ -1,6 +1,6 @@
 #include"webserv.hpp"
 
-void    inisialBollen(std::map<int,struct Webserv> & Request,int & clientSocketFD)
+void    inisialBollen(std::map<int,struct Webserv> & Request,int & clientSocketFD,ConfigFile &config)
 {
     Webserv                         Data;
     Data.data.Alreadyopen           = false;
@@ -12,7 +12,7 @@ void    inisialBollen(std::map<int,struct Webserv> & Request,int & clientSocketF
     Data.data.AlreadyRequestHeader  = false;
     Data.data.autoIndex             = true;
     Data.data.fd                    = clientSocketFD;
-    Data.data.requeste              = new Requeste(clientSocketFD);
+    Data.data.requeste              = new Requeste(clientSocketFD,config);
     Request[clientSocketFD]         = Data;
 }
 /* Analyze, Douiri */
@@ -93,7 +93,7 @@ void multiplexing(ConfigFile &config)
                     close(clientSocketFD);
                     continue;
                 }
-                inisialBollen(Request,clientSocketFD);
+                inisialBollen(Request,clientSocketFD,config);
             } 
             else
             {

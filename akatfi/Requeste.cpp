@@ -12,7 +12,7 @@
 
 #include "Requeste.hpp"
 #include "PostMethod.hpp"
-Requeste::Requeste(int fd)
+Requeste::Requeste(int fd,ConfigFile &configfile) : config(configfile)
 {
     fd_socket = fd;
     RunMethod = false;
@@ -52,9 +52,6 @@ void    Requeste::readFromSocketFd(bool &flag,int fd)
 
 void Requeste::get_infoConfig()
 {
-    ConfigFile config("/home/afadlane/webserv/akatfi/parsinfCon/file.config");
-    
-    config.parceConfig();
 
     for (std::vector<Server>::iterator it = config.Servers.begin() ; it != config.Servers.end(); it++)
     {
