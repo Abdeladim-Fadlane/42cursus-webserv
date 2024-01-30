@@ -1,39 +1,39 @@
 
 #include"webserv.hpp"
-void    sendResponse(int fd,std::string &version,std::string &status,bool &isReadyForClose)
+void    sendResponse(Data &dataClient,std::string &status)
 {
     std::string htmlMessage;
-    if(status != " 204 No Content")
+    if(status != "  204 No Content")
          htmlMessage = htmlMessage = "<html><head><center><h1>" + status + "</h1></center></head></html>";
-    std::string htttpresponce = version + status + "\r\nContent-Type: text/html\r\n\r\n" + htmlMessage;
-    send(fd,htttpresponce.c_str(),htttpresponce.size(),0);
-    isReadyForClose = true;
+    std::string htttpresponce = dataClient.requeste->http_v + status + "\r\nContent-Type: text/html\r\n\r\n" + htmlMessage;
+    send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0);
+    dataClient.readyForClose = true;
 }
 
-bool checkPermission(const char *path,int fd,std::string &version,int type,bool &isReadyForClose)
+bool checkPermission(Data &dataClient, const char *path,int type)
 {
     std::string htmlMessage ;
     std::string htttpresponce;
     if(access(path,type) != 0 )
     {
         std::string status = " 403 FORBIDDEN";
-        sendResponse(fd,version,status,isReadyForClose);
+        sendResponse(dataClient,status);
         return true;
     }
     return false;
 }
 
-bool   deleteMethod(int fd ,std::string & reqPath,bool &isReadyForClose)
+bool   deleteMethod(Data &dataClient)
 {
     std::string version = "HTTP/1.1";
     std::string htmlMessage ;
     std::string htttpresponce ;
-    const char * path = reqPath.c_str();
+    const char * path = dataClient.Path.c_str();
    
     if(access(path,F_OK) != 0 )
     {
         std::string status = " 404 NOT FOUND";
-        sendResponse(fd,version,status,isReadyForClose);
+        sendResponse(dataClient,status);
         return true;
     }
     struct stat statPath;
@@ -45,14 +45,14 @@ bool   deleteMethod(int fd ,std::string & reqPath,bool &isReadyForClose)
             if(path[len -1] == '/')
             {
                 std::string status = " 409 Conflict";
-                sendResponse(fd,version,status,isReadyForClose);
+                sendResponse(dataClient,status);
                 return true;
             }
             if(unlink(path) == 0)
             {
                 htttpresponce = version + " 204 No Content\r\nContent-Type: text/html\r\n\r\n";
-                send(fd,htttpresponce.c_str(),htttpresponce.size(),0);
-                isReadyForClose = true;
+                send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0);
+                dataClient.readyForClose = true;
                 return true;
             }
         }
@@ -61,18 +61,18 @@ bool   deleteMethod(int fd ,std::string & reqPath,bool &isReadyForClose)
             if(path[len -1] != '/')
             {
                 std::string status = " 409 Conflict";
-                sendResponse(fd,version,status,isReadyForClose);
+                sendResponse(dataClient,status);
                 return true;
             }
         }
     }
-    if(checkPermission(path,fd,version,W_OK,isReadyForClose) == true)
+    if(checkPermission(dataClient,path,W_OK) == true)
         return true;
     DIR *dir = opendir(path);
     if(!dir)
     {
         std::string status = " 500 Internal Server Error";
-        sendResponse(fd,version,status,isReadyForClose);
+        sendResponse(dataClient,status);
         return true;
     }
     struct dirent * it;
@@ -86,8 +86,9 @@ bool   deleteMethod(int fd ,std::string & reqPath,bool &isReadyForClose)
             {
                 if(S_ISDIR(statInfo.st_mode))
                 {
+                    dataClient.Path = itPath;
                     itPath += "/";
-                    deleteMethod(fd,itPath,isReadyForClose);
+                    deleteMethod(dataClient);
                 }
                 else
                 {
@@ -100,7 +101,7 @@ bool   deleteMethod(int fd ,std::string & reqPath,bool &isReadyForClose)
     if (rmdir(path) == 0)
     {    
         std::string status = "  204 No Content";
-        sendResponse(fd,version,status,isReadyForClose);
+        sendResponse(dataClient,status);
     }
     return true;
 }

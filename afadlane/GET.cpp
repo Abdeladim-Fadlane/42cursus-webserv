@@ -1,8 +1,7 @@
 #include"webserv.hpp"
 
-void serveFIle(Data& datacleint, int cfd);
-
-std::string    getContentType(Method &method)
+void serveFIle(Data& datacleint);
+std::string    getContentType(Data &method)
 {
     std::map<std::string, std::string> contentTypeMap;
     contentTypeMap[".html"] = "text/html";
@@ -19,10 +18,10 @@ std::string    getContentType(Method &method)
     contentTypeMap[".pdf"] = " application/pdf";
     contentTypeMap[".js"] = "application/javascript";
 
-    size_t pos = method.path.find_last_of(".");
+    size_t pos = method.Path.find_last_of(".");
     if(pos != std::string::npos)
     {
-        std::string extension = method.path.substr(pos);
+        std::string extension = method.Path.substr(pos);
         std::map<std::string,std::string>::iterator it = contentTypeMap.find(extension);
         if(it != contentTypeMap.end())
             return it->second;
@@ -30,64 +29,55 @@ std::string    getContentType(Method &method)
     return "application/json";
 }
 
-void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd);
+void    openFileAndSendHeader(Data& datacleint);
 
-
-int    listingDirectory(Data data,Method &method,int cfd)
+bool getAutoFile(Data & dataClient,char * path)
 {
-    (void)data;
-    (void)cfd;
-    std::ostringstream list;
-    list << "<html><head><title>Directory Listing</title></head><body>";
-    list << "<h1>Index of: " << method.path << "</h1>";
-    list << "<table>";
-    std::string directoryPath = method.rootLocation + method.path + "/";
-
-    DIR *dir =  opendir(directoryPath.c_str());
-    struct dirent *it;
-    if(dir)
+    for(size_t i = 0;i < dataClient.autoFile.size(); i++)
     {
-        while((it = readdir(dir)) != NULL)
-        {   
-            std::string directoryChildPath = directoryPath  + it->d_name;
-            struct stat statInfo;
-            if(strcmp(it->d_name , ".") == 0 || strcmp(it->d_name , "..") == 0)
-                continue;
-            if(strcmp(it->d_name,method.autoFile.c_str()) == 0)
-            {
-                method.path = method.path + method.autoFile;
-                data.modeAutoIndex = true;
-                return (1);
-            }
-            else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
-            { 
-                list << "<tr>";
-                if (S_ISREG(statInfo.st_mode))
-                    list << "<td>"<< "<a href='" << it->d_name << "'>" << it->d_name << "</a></td>";
-                if (S_ISDIR(statInfo.st_mode))
-                    list << "<td>"<< "<a href='" << it->d_name << "/" << "'>" << it->d_name << "</a></td>";
-                list << "<td>"<< ctime(&statInfo.st_mtime) <<"</td>";
-                list << "<td>"<< statInfo.st_size << " bytes</td>";
-                list << "</tr>";
-            }
+        if(strcmp(path,dataClient.autoFile[i].c_str()) == 0)
+        {
+            dataClient.Path += dataClient.autoFile[i];
+            dataClient.modeAutoIndex = true;
+            return true ;
         }
-        closedir(dir);
     }
-    list << "</table></body></html>";
-    method.buff =  list.str();
-    return(0);
+    return false;
 }
 
-ServerConfig    getServer(std::vector<std::pair<std::string,ServerConfig> >& Servers,std::string &requestHost)
+int    listingDirectory(Data &dataClient)
 {
-    std::vector<std::pair<std::string,ServerConfig> >::iterator it;
-    for(it = Servers.begin();it != Servers.end();it++)
-    {
-        if(requestHost == it->first)
-           return( it->second);
+    std::ostringstream list;
+    list << "<html><head><title>Directory Listing</title></head><body>";
+    list << "<h1>Index of: " << dataClient.Path << "</h1>";
+    list << "<table>";
+    std::string directoryPath = dataClient.Path + "/";
+    DIR *dir =  opendir(directoryPath.c_str());
+    struct dirent *it;
+    while((it = readdir(dir)) != NULL)
+    {   
+        std::string directoryChildPath = directoryPath  + it->d_name;
+        struct stat statInfo;
+        if(strcmp(it->d_name , ".") == 0 || strcmp(it->d_name , "..") == 0)
+            continue;
+        if(getAutoFile(dataClient,it->d_name) == true)
+            return (1);
+        else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
+        { 
+            list << "<tr>";
+            if (S_ISREG(statInfo.st_mode))
+                list << "<td>"<< "<a href='" << it->d_name << "'>" << it->d_name << "</a></td>";
+            if (S_ISDIR(statInfo.st_mode))
+                list << "<td>"<< "<a href='" << it->d_name << "/" << "'>" << it->d_name << "</a></td>";
+            list << "<td>"<< ctime(&statInfo.st_mtime) <<"</td>";
+            list << "<td>"<< statInfo.st_size << " bytes</td>";
+            list << "</tr>";
+        }
     }
-    it--;
-    return(it->second);
+    closedir(dir);
+    list << "</table></body></html>";
+    dataClient.listDirectory =  list.str();
+    return(0);
 }
 
 void sendChunk(int clientSocket, const char* data, ssize_t length,Data& datacleint)
@@ -101,17 +91,17 @@ void sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataclei
     totalChuncked = chunkHeaderStr + chunkData + "\r\n";
     if (send(clientSocket, totalChuncked.c_str(), totalChuncked.size(),0) ==  -1)
     {
-        close(datacleint.fd);
+        close(datacleint.fileFd);
         datacleint.readyForClose = 1;
         throw std::runtime_error("An error aka client disconnect");
     }
 }
 
-void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
+void    openFileAndSendHeader(Data& dataCleint)
 {
     char buffer[BUFFER_SIZE];
-    std::string contentType = getContentType(method);
-    method.path = method.rootLocation + method.path;
+    std::string contentType = getContentType(dataCleint);
+    // method.path = method.rootLocation + method.path;
     if(contentType == ".php" || contentType == ".py")
     {
         std::string type;
@@ -119,114 +109,116 @@ void    openFileAndSendHeader(Data& datacleint,Method &method, int cfd)
             type = "php";
         else
             type = "py";
-        fastCGI(method.path,type);
-        method.path = "/tmp/tmpFile";
-        datacleint.isCgi = true;
+        fastCGI(dataCleint.Path,type);
+        dataCleint.Path = "/tmp/tmpFile";
+        dataCleint.isCgi = true;
     }
     memset(buffer,0,sizeof(buffer));
-    if(checkPermission(method.path.c_str(),cfd,method.version,R_OK,datacleint.readyForClose) == true)
+    if(checkPermission(dataCleint,dataCleint.Path.c_str(),R_OK) == true)
         return;
-    datacleint.isReading = true;
-    datacleint.fd = open(method.path.c_str(), O_RDONLY);
-    if (datacleint.fd == -1)
+    dataCleint.isReading = true;
+    dataCleint.fileFd = open(dataCleint.Path.c_str(), O_RDONLY);
+    if (dataCleint.fd == -1)
     {
-        close(datacleint.fd);
+        close(dataCleint.fileFd);
         throw std::runtime_error("internal server error");
     }
-    std::string httpResponse = method.version + " 200 OK\r\nContent-Type:" +contentType+ " \r\nTransfer-Encoding: chunked\r\n\r\n";
-    if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
+    std::string httpResponse = dataCleint.requeste->http_v + " 200 OK\r\nContent-Type:" +contentType+ " \r\nTransfer-Encoding: chunked\r\n\r\n";
+    if(send(dataCleint.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
     {
-        close(datacleint.fd);
-        datacleint.readyForClose = true;
+        close(dataCleint.fileFd);
+        dataCleint.readyForClose = true;
         throw std::runtime_error("An errror aka client disconnect"); 
     } 
 }
 
-void serveFIle(Data& datacleint, int cfd)
+void serveFIle(Data& dataClient)
 {
     char buffer[BUFFER_SIZE];
     memset(buffer,0,sizeof(buffer));
-    ssize_t byteRead = read (datacleint.fd,buffer,BUFFER_SIZE);
+    ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE);
     if(byteRead == -1)
     {
-        close(datacleint.fd);
-        datacleint.readyForClose = true;
+        close(dataClient.fileFd);
+        dataClient.readyForClose = true;
         throw std::runtime_error("EROOR reading from file");
     }
     if(byteRead == 0)
     {
-        close(datacleint.fd);
-        datacleint.readyForClose = true;
-        if(send(cfd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
+        close(dataClient.fileFd);
+        dataClient.readyForClose = true;
+        if(send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
            throw std::runtime_error("An error aka client disconnect");
         unlink("/tmp/tmpFile");
         return ;
     }
     std::string httpresponse(buffer,byteRead);
-    if(datacleint.isCgi == true)
+    if(dataClient.isCgi == true)
     {
         size_t pos = httpresponse.find("\r\n\r\n");
         if(pos != std::string::npos)
         {
             httpresponse = httpresponse.substr(pos);
         }
-        datacleint.isCgi = false;
+        dataClient.isCgi = false;
     }
-    sendChunk(cfd,httpresponse.c_str(),httpresponse.size(),datacleint);  
+    sendChunk(dataClient.fd,httpresponse.c_str(),httpresponse.size(),dataClient);  
 }
 
-int checkFileOrDirectoryPermission(Method &method,int fd,bool &radyForClose)
+int checkFileOrDirectoryPermission(Data &dataClient)
 {
-    std::string fullPath = method.rootLocation + method.path;
-    if(access(fullPath.c_str(),F_OK) != 0)
+    if(access(dataClient.Path.c_str(),F_OK) != 0)
         return 0;
-    if(checkPermission(fullPath.c_str(),fd,method.version,R_OK,radyForClose) == true)
+    if(checkPermission(dataClient,dataClient.Path.c_str(),R_OK) == true)
         return 4;
     struct stat file;
-    stat(fullPath.c_str(), &file);
+    stat(dataClient.Path.c_str(), &file);
     if (S_ISREG(file.st_mode))
         return 1;
     if (S_ISDIR(file.st_mode))
     {
-        if(checkPermission(fullPath.c_str(),fd,method.version,X_OK,radyForClose) == true)
+        if(checkPermission(dataClient,dataClient.Path.c_str(),X_OK) == true)
             return 4;;
         return 2;
     }
     return 3;
 }
 
-void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::string,ServerConfig> >&Servers,int cfd)
+void getMethod(Data & dataCleint)
 {
     try
     {
-        if(datacleint.modeAutoIndex == true)
+        if(dataCleint.modeAutoIndex == true)
         {
-            if(datacleint.isReading == false)
-                openFileAndSendHeader(datacleint,method,cfd);
+            if(dataCleint.isReading == false)
+                openFileAndSendHeader(dataCleint);
             else
-                serveFIle(datacleint,cfd);
+                serveFIle(dataCleint);
         }
-        else if(datacleint.isReading == false)
+        else if(dataCleint.isReading == false)
         {
-            ServerConfig config =  getServer(Servers,method.host);
-            method.autoFile = config.autoFile;
-            method.rootLocation = config.root;
-            int i = checkFileOrDirectoryPermission(method,cfd,datacleint.readyForClose);
+            int i = checkFileOrDirectoryPermission(dataCleint);
             if( i == 4)
                 return;
             if(i == 2)
             {
                 /* hundle DIRECTORY */
-                if(listingDirectory(datacleint,method,cfd) == 0)
+                if(dataCleint.autoIndex == false)
                 {
-                    const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + method.buff;
-                    if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
+                    std::string msg = " 403 Forbidden";
+                    sendResponse(dataCleint,msg);
+                    return;
+                }
+                if(listingDirectory(dataCleint) == 0)
+                {
+                    const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + dataCleint.listDirectory;
+                    if(send(dataCleint.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
                     {
-                        datacleint.readyForClose = true;
+                        dataCleint.readyForClose = true;
                         throw std::runtime_error("An error aka client disconnect");
                     }
-                    method.buff.clear(); 
-                    datacleint.readyForClose = true;
+                    dataCleint.listDirectory.clear(); 
+                    dataCleint.readyForClose = true;
                     return ;
                 }
             }
@@ -235,29 +227,28 @@ void getMethod(Data & datacleint,Method &method, std::vector<std::pair<std::stri
                 /* hundle  not found*/
                 std::string httpResponse = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n" ;
                 httpResponse += "<html><head><center><h1>404 NOT FOUND</h1></center></head></html>";
-                if(send(cfd, httpResponse.c_str(), httpResponse.size(),0) == -1)
+                if(send(dataCleint.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
                 {
-                    datacleint.readyForClose = true;
+                    dataCleint.readyForClose = true;
                     throw std::runtime_error("An error aka client disconnect");
                 }
-                datacleint.readyForClose = true;
+                dataCleint.readyForClose = true;
             }
             else if(i == 1)
             {
                 /* hundle file */
-                openFileAndSendHeader(datacleint,method,cfd);
+                openFileAndSendHeader(dataCleint);
             }
         }
         else
-            serveFIle(datacleint,cfd);
+            serveFIle(dataCleint);
     }
     catch (const std::runtime_error &e)
     {
         if(strcmp(e.what() ,"internal server error") == 0)
         {
             std::string status = " 500 Internal Server Error";
-            sendResponse(cfd,method.version,status,datacleint.readyForClose);
+            sendResponse(dataCleint,status);
         }
-        // std::cout << e.what() << std::endl;
     }
 }

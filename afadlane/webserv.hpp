@@ -37,35 +37,28 @@
 #define  PORT  8080
 #define  BUFFER_SIZE 1024
 #define  SERVERS 3
-struct Method
-{
-    std::string path;
-    std::string version;
-    std::string buff;
-    std::string rootLocation;
-    std::string host;
-    std::string autoFile;
-    std::string fullPath;
-};
 
 struct Data
 {  
     int fd ;
+    int fileFd;
+    bool isCgi;
+    bool autoIndex;
     bool isReading;
     bool Alreadyopen;
     bool Alreadparce;
+    std::string Path;
     bool modeAutoIndex;
     bool readyForClose;
-    bool AlreadyRequestHeader;
-    bool isCgi;
     Requeste *requeste ;
-    Method   method;
+    std::string listDirectory;
+    bool AlreadyRequestHeader;
+    std::vector<std::string> autoFile;
 };
-
 
 struct Webserv
 {
-    Data data; 
+    Data data;
 };
 
 struct ServerConfig
@@ -82,10 +75,9 @@ struct ServerConfig
     // std::vector<LocationConfig> locations;
 };
 
-void multiplexing();
-void fastCGI(std::string &,std::string &);
-void    parceRequest(Data & ,Method &,int );
-bool   deleteMethod(int ,std::string &,bool &);
-bool checkPermission(const char *path,int fd,std::string &version,int type,bool &);
-void    getMethod(Data & ,Method &,std::vector<std::pair<std::string,ServerConfig> > &,int );
-void    sendResponse(int fd,std::string &version,std::string &status,bool &isReadyForClose);
+void    multiplexing();
+void    getMethod(Data &);
+bool    deleteMethod(Data &);
+void    fastCGI(std::string &,std::string &);
+void    sendResponse(Data &,std::string &);
+bool checkPermission(Data &, const char *,int );

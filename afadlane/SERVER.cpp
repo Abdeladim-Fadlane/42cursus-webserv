@@ -7,26 +7,33 @@ void example(std::vector<ServerConfig> &vec)
 
     while (i < SERVERS)
     {
-        conf.listen = "127.0.0.0:8080";
         conf.port = 8080 + i;
-        conf.clientMaxBodySize = "10";
-        conf.domainName = "afadlane1337.ma";
-        conf.root = "/home/afadlane/webserv/afadlane";
-        conf.autoFile = "index.html";
         vec.push_back(conf);
         i++;
     }
 }
 
+void    inisialBollen(std::map<int,struct Webserv> & Request,int & clientSocketFD)
+{
+    Webserv                         Data;
+    Data.data.Alreadyopen           = false;
+    Data.data.isReading             = false;
+    Data.data.readyForClose         = false;
+    Data.data.Alreadparce           = false;
+    Data.data.modeAutoIndex         = false;
+    Data.data.isCgi                 = false;
+    Data.data.AlreadyRequestHeader  = false;
+    Data.data.autoIndex             = true;
+    Data.data.fd                    = clientSocketFD;
+    Data.data.requeste              = new Requeste(clientSocketFD);
+    Request[clientSocketFD]         = Data;
+}
 /* Analyze, Douiri */
 void    insialStruct(Data & datacleint)
 {
-    datacleint.method.path =  datacleint.requeste->path;
-    // method.path =  datacleint.requeste->path;
-    // std::cout<<"path = "<<  method.path<<std::endl;
-    datacleint.method.version = datacleint.requeste->http_v;
-    datacleint.method.host = "127.0.0.1:8080";
-    datacleint.method.fullPath = std::string("/home/afadlane/webserv/afadlane") + datacleint.method.path;
+    datacleint.autoFile.push_back("index.html");
+    datacleint.Path = std::string("/home/afadlane/webserv") + datacleint.requeste->path;
+    // std::cout<<"path = "<<  datacleint.Path<<std::endl;
 }
 
 void multiplexing()
@@ -86,7 +93,6 @@ void multiplexing()
         {
             if(static_cast<int>(events[i].data.fd) <=  static_cast<int>(Servers.size() + 3))
             {
-                Webserv data;
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
                 if(clientSocketFD == -1)
                 {
@@ -101,15 +107,7 @@ void multiplexing()
                     close(clientSocketFD);
                     continue;
                 }
-                data.data.Alreadyopen           = false;
-                data.data.isReading             = false;
-                data.data.readyForClose         = false;
-                data.data.Alreadparce           = false;
-                data.data.modeAutoIndex         = false;
-                data.data.isCgi                 = false;
-                data.data.AlreadyRequestHeader  = false;
-                data.data.requeste = new Requeste(clientSocketFD);
-                Request[clientSocketFD] = data;
+                inisialBollen(Request,clientSocketFD);
             } 
             else
             {
@@ -143,13 +141,12 @@ void multiplexing()
                     if(Request[events[i].data.fd].data.requeste->method == "GET")
                     {
                         /* handle Get method  */
-                        getMethod(Request[events[i].data.fd].data,Request[events[i].data.fd].data.method,Servers,events[i].data.fd);
+                        getMethod(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "DELETE")
                     {
                         /* handle delete method  */
-                        std::string msg = std::string("/home/afadlane/webserv") + Request[events[i].data.fd].data.method.path;
-                        deleteMethod(events[i].data.fd,msg,Request[events[i].data.fd].data.readyForClose);
+                        deleteMethod(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "POST")
                     {
