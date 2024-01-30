@@ -1,6 +1,6 @@
 NAME = webserv
 
-CXXFLAGS =  -Wall -Wextra -Werror -fsanitize=address -g3
+# CXXFLAGS =  -Wall -Wextra -Werror -fsanitize=address -g3
 CXX = c++
 
 CFILES = afadlane/SERVER.cpp \
@@ -10,13 +10,16 @@ CFILES = afadlane/SERVER.cpp \
  		 afadlane/DELETE.cpp \
 		 akatfi/Requeste.cpp \
 		 akatfi/PostMethod.cpp \
+		 akatfi/parsinfCon/ConfigFile.cpp \
+		 akatfi/parsinfCon/Server.cpp \
+		 akatfi/parsinfCon/Location.cpp \
 
 OBJ = ${CFILES:.cpp=.o}
 
 all: ${NAME}
 
 ${NAME} : ${OBJ}
-	@${CXX} ${CXXFLAGS}  ${OBJ} -o ${NAME}
+	@${CXX}   ${OBJ} -o ${NAME}
 
 clean :
 	@rm -rf ${OBJ}

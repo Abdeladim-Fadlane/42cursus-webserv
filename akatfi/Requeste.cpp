@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/19 18:13:01 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/20 12:22:25 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/29 18:06:58 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 Requeste::Requeste(int fd)
 {
     fd_socket = fd;
-    // std::cout << fd_socket<< std::endl;
     RunMethod = false;
     post = NULL;
 }
@@ -39,16 +38,52 @@ void    Requeste::readFromSocketFd(bool &flag,int fd)
     int x;
     (void)fd;
     memset(buffer,0, sizeof(buffer));
-    // std::cout <<  "====== ============================================="<< fd << std::endl;
     x = read(fd_socket, buffer, 1023);
     head.append(buffer, x);
     if (head.find("\r\n\r\n") != std::string::npos)
     {
         this->MakeMapOfHeader();
+        this->get_infoConfig();
         flag = 1;
         if (method == "POST" && !post)
             post = new PostMethod(*this);
     }
+}
+
+void Requeste::get_infoConfig()
+{
+    ConfigFile config("/home/afadlane/webserv/akatfi/parsinfCon/file.config");
+    
+    config.parceConfig();
+
+    for (std::vector<Server>::iterator it = config.Servers.begin() ; it != config.Servers.end(); it++)
+    {
+        if (it->host == this->host && it->listen == this->port)
+        {
+                    std::cout << "nai " << std::endl;
+            for (unsigned int i = 0; i < it->locations.size(); i++)
+            {
+                if (it->locations[i].location_name == path)
+                {
+                    // path += it->locations[i].root;
+                    locationServer = it->locations[i];
+                    break ;
+                }
+                else if (i + 1 == it->locations.size())
+                {
+                    // path = it->locations[0].location_name + it->locations[0].root;
+                    locationServer = it->locations[0];
+                    break ;
+                }
+            }
+            break ;
+        }
+        if (it + 1 == config.Servers.end())
+        {
+            // Error message
+        }
+    }
+    std::cout << locationServer.root << std::endl;
 }
 
 void Requeste::MakeMapOfHeader()
@@ -74,10 +109,9 @@ void Requeste::MakeMapOfHeader()
         throw std::runtime_error("400");
     if (path.length() > 2048)
         throw std::runtime_error("400");
-    
-    // host = requeste_map.find("Host")->second;
-    // port = atoi(host.substr(host.find(":") + 1).c_str());
-    // host = host.substr(0, host.find(":"));
+    host = requeste_map.find("Host")->second;
+    port = atoi(host.substr(host.find(":") + 1).c_str());
+    host = host.substr(0, host.find(":"));
 }
 
 int Requeste::getSocketFd() const
@@ -97,8 +131,6 @@ const std::string& Requeste::getPath() const
 
 Requeste::~Requeste()
 {
-    // for (std::map<std::string, std::string>::iterator it = requeste_map.begin(); it != requeste_map.end(); it++)
-    //     std::cout << it->first << " | " << it->second << std::endl;
     close(fd_socket);
     delete post;
 }
@@ -108,7 +140,6 @@ void setFileextation(std::string const& f, std::map<std::string, std::string>& E
     std::fstream                            file;
     std::string                             input;
     std::string                             first;
-    // std::map<std::string, std::string>      Extation;
 
     file.open(f.c_str());
     while (std::getline(file, input))

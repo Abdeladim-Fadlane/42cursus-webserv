@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/21 11:14:04 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/26 12:17:06 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/28 20:45:12 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,8 @@ class Location
         std::map<std::string, std::string>    cgi;
         bool                        close;
         Location(const std::string& location_name);
+        Location& operator=(const Location& obj);
+        Location();
         void setLocationName(const std::string& new_name);
         void add_location(std::fstream& os);
         ~Location();

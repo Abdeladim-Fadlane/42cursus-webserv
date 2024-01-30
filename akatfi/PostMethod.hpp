@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/19 16:34:28 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/21 14:29:07 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/29 18:41:48 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #include <string.h>
 #include <ctime>
 #include <sys/time.h>
-#define FILE "/home/afadlane/webserv/www"
+#define FILE "/nfs/homes/akatfi/Desktop/webserv/www"
 
 #include "Requeste.hpp"
 
@@ -27,7 +27,7 @@ class PostMethod
     private:
         static long         i;
         bool                flag_boundary;
-        size_t                size; // long
+        size_t                size;
         std::string         boundary_separator;
         size_t              separator_size;
         std::string         buffer_add;

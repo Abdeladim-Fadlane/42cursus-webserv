@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/21 11:13:54 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/26 12:15:07 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/29 14:06:57 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,6 +117,9 @@ void    ConfigFile::parceConfig()
             this->checkErrorPages(it);
             if (it->host.empty() || !it->port_chose)
                 throw std::runtime_error("Error : the server need host and post");
+            for (std::vector<Server>::iterator itServ = Servers.begin(); itServ != Servers.end() - 1; itServ++)
+                if (it->host == itServ->host && it->listen == itServ->listen)
+                    throw std::runtime_error("Error : one server have port and host similar to other server");
             // int i = 0;
             // std::cout << "--------------  server  -------------------" << std::endl;
             // if (it->listen)

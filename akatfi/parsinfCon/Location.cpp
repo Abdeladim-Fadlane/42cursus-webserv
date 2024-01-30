@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 18:32:49 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/26 16:04:40 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/29 18:10:32 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,24 @@ Location::Location(const std::string&  location_name)
 {
     this->location_name = location_name;
     close = true;
+}
+
+Location::Location()
+{}
+
+Location& Location::operator=(const Location& obj)
+{
+    location_name = obj.location_name;
+    root = obj.root;
+    autoindex = obj.autoindex;
+    indexs = obj.indexs;
+    allowed_mathod = obj.allowed_mathod;
+    uploadfile = obj.uploadfile;
+    upload_location = obj.upload_location;
+    cgi_allowed = obj.cgi_allowed;
+    cgi = obj.cgi;
+    close = obj.close;
+    return (*this);
 }
 
 void    Location::setLocationName(const std::string& new_name)
@@ -47,7 +65,11 @@ void    Location::add_location(std::fstream& os)
             break ;
         }
         else if (!arg[0].compare("root") && arg.size() == 2)
+        {
+            if (!root.empty())
+                throw std::runtime_error("Error : duplicate member root in location");
             root = arg[1];
+        }
         else if (!arg[0].compare("autoindex") && arg.size() == 2)
         {
             if (arg[1].compare("ON") && arg[1].compare("OFF"))

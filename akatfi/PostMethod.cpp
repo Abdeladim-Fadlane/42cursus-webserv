@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/21 18:56:09 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/21 14:27:17 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/29 17:58:20 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,7 +104,7 @@ void PostMethod::boundary(std::string buffer)
                 Postfile.close();
             content_type = init_contentType(buffer);
             gettimeofday(&Time, nullptr) ;
-            Postfile.open(std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type , std::fstream::out);
+            Postfile.open(std::string(req.locationServer.root).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type , std::fstream::out);
             boundary(buffer);
         }
         else if (buffer.find(boundary_separator) != std::string::npos)
@@ -169,17 +169,21 @@ void    PostMethod::PostingFileToServer(bool &flag)
     char buffer_read[1024];
     int x;
 
+    // if (!this->req.locationServer.uploadfile.compare("OFF") || )
+    //     return ;
     (void)flag;
     memset(buffer_read, 0, sizeof(buffer_read));
     x = read(req.getSocketFd(), buffer_read, 1023);
     buffer.append(buffer_read, x);
+    if ((buffer + req.getBody()).length() == 0)
+        return ;
     if (!Transfer_Encoding.compare("chunked"))
     {
         if (first_time)
         {
             gettimeofday(&Time, nullptr);
             content_type = map_extation.find(content_type)->second; 
-            Postfile.open(std::string(FILE) + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
+            Postfile.open(std::string(req.locationServer.root) + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
         }
         first_time = false;
         chunked(buffer);
@@ -191,9 +195,8 @@ void    PostMethod::PostingFileToServer(bool &flag)
         if (first_time)
         {
             gettimeofday(&Time, NULL) ;
-            std::cout << content_type << std::endl;
             content_type = map_extation.find(content_type)->second; 
-            Postfile.open(std::string(FILE).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
+            Postfile.open(std::string(req.locationServer.root).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
         }
         first_time = false;
         buffer = buffer_add + buffer;

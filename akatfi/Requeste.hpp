@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/19 18:13:07 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/20 12:22:35 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/29 13:53:05 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <string>
 #include <fstream>
+#include "parsinfCon/Configfile.hpp"
 class PostMethod;
 class Requeste
 {
@@ -25,26 +26,23 @@ class Requeste
         int                                 fd_socket;
         std::string                         head;
         std::string                         body;
-        // int                                 port;
-        // std::string                         host;
-        // std
     public:
+        Location                            locationServer;
+        int                                 port;
+        std::string                         host;
         std::string                         path;
-        PostMethod              *post;
+        PostMethod                          *post;
         std::string                         http_v;
         std::string                         method;
         bool                                RunMethod;
         std::map<std::string, std::string>  requeste_map;
         Requeste(int fd);
         void    MakeMapOfHeader();
-        // void    readFromSocketFd();
         void readFromSocketFd(bool &flag,int fd);
-        // void    writeToSocketFd(const std::string& buffer);
-        // void    MakeValue();
         std::pair<std::string, std::string> MakePair(std::string& line);
+        void    get_infoConfig();
         std::map<std::string, std::string> getRequesteMap();
         int     getSocketFd() const;
-        // void setFileextation(const std::string& f);
         const std::string& getBody() const;
         const std::string&    getPath() const;
         ~Requeste();
