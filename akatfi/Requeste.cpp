@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/19 18:13:01 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/31 20:03:25 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 20:45:11 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -103,9 +103,18 @@ void Requeste::MakeMapOfHeader()
         throw std::runtime_error("400");
     if (path.length() > 2048)
         throw std::runtime_error("400");
+    if (path.find("?") != std::string::npos)
+    {
+        query_str = path.substr(path.find("?") + 1);
+        path = path.substr(0, path.find("?"));
+    }
+    content_type = requeste_map.find("Content-Type")->second;
+    content_length = requeste_map.find("Content-Length")->second;
+    std::cout << content_type << "::" << content_length << std::endl;
     host = requeste_map.find("Host")->second;
     port = atoi(host.substr(host.find(":") + 1).c_str());
     host = host.substr(0, host.find(":"));
+    
 }
 
 int Requeste::getSocketFd() const

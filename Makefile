@@ -30,5 +30,5 @@ fclean :clean
 re : fclean all
 
 run : all clean
-	rm -rf www/*
+	# rm -rf www/*
 	@  ./webserv akatfi/parsinfCon/file.config

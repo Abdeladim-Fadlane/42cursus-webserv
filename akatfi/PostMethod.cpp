@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/21 18:56:09 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/31 18:19:54 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 20:52:41 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -178,7 +178,7 @@ void    PostMethod::PostingFileToServer(bool &flag)
         {
             gettimeofday(&Time, nullptr);
             content_type = map_extation.find(content_type)->second; 
-            Postfile.open(std::string(req.locationServer.root) + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
+            Postfile.open(std::string(req.locationServer.root).append("/index")  + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
         }
         first_time = false;
         chunked(buffer);
@@ -187,16 +187,21 @@ void    PostMethod::PostingFileToServer(bool &flag)
         boundary(buffer);
     else
     {
+        struct stat fileStat;
         if (first_time)
         {
             gettimeofday(&Time, NULL) ;
             content_type = map_extation.find(content_type)->second; 
             Postfile.open(std::string(req.locationServer.root).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
         }
+        stat((std::string(req.locationServer.root).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec)).c_str(), &fileStat);
         first_time = false;
         buffer = buffer_add + buffer;
+        
         buffer_add = "";
         Postfile << buffer;
+        if (content_length == fileStat.st_size)
+            Postfile.close();
     }
 }
 

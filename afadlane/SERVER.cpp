@@ -8,8 +8,8 @@ void    insialStruct(Data & datacleint)
 
     datacleint.autoFile = datacleint.requeste->locationServer.indexs;
     datacleint.Path = datacleint.requeste->locationServer.root;
-    std::cout<<"root = "<<  datacleint.Path<<endl;
-    std::cout<<"path = "<<   datacleint.requeste->path<<endl;
+    // std::cout<<"root = "<<  datacleint.Path<<endl;
+    // std::cout<<"path = "<<   datacleint.requeste->path<<endl;
 }
 
 bool isServer(std::vector<int> & Servers,int index)

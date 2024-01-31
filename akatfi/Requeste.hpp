@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/19 18:13:07 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/31 18:20:52 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 20:38:52 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,9 @@ class Requeste
     public:
         Location                            locationServer;
         int                                 port;
+        std::string                         query_str;
+        std::string                         content_type;
+        std::string                         content_length;
         std::string                         host;
         std::string                         path;
         PostMethod                          *post;

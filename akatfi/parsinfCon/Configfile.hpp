@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/21 11:14:04 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/31 19:06:32 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 20:25:58 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,6 @@ class ConfigFile
         std::vector<Server> Servers;
         ConfigFile(const std::string& FileName);
         void    parceConfig();
-        // void    checkErrorPages(std::vector<Server>::iterator);
         ~ConfigFile();
 };
 bool getlineFromFile(std::fstream& os, std::string& input);
