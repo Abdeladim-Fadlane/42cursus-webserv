@@ -65,11 +65,11 @@ int    listingDirectory(Data &dataClient)
         else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
         { 
             list << "<tr>";
-            // std::cout<<"f==="<<it->d_name<<std::endl;
+            std::cout<<"f==="<<it->d_name<<std::endl;
             if (S_ISREG(statInfo.st_mode))
-                list << "<td>"<< "<a href='" << directoryChildPath << "'>" << it->d_name << "</a></td>";
+                list << "<td>"<< "<a href='" << directoryChildPath << "'>" << directoryChildPath << "</a></td>";
             if (S_ISDIR(statInfo.st_mode))
-                list << "<td>"<< "<a href='" << directoryChildPath << "/" << "'>" << it->d_name << "</a></td>";
+                list << "<td>"<< "<a href='" << directoryChildPath << "/" << "'>" << directoryChildPath << "</a></td>";
             list << "<td>"<< ctime(&statInfo.st_mtime) <<"</td>";
             list << "<td>"<< statInfo.st_size << " bytes</td>";
             list << "</tr>";
