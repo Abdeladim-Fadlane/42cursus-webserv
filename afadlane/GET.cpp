@@ -67,9 +67,9 @@ int    listingDirectory(Data &dataClient)
             // std::cout<<"-----"<< dataClient.requeste->path<<std::endl;
             list << "<tr>";
             if (S_ISREG(statInfo.st_mode))
-                list << "<td>"<< "<a href='" << dataClient.requeste->path + "/" + std::string(it->d_name) << "'>" << it->d_name << "</a></td>";
+                list << "<td>"<< "<a href='" << dataClient.requeste->path +  std::string(it->d_name) << "'>" << it->d_name << "</a></td>";
             if (S_ISDIR(statInfo.st_mode))
-                list << "<td>"<< "<a href='" << dataClient.requeste->path + "/" + std::string(it->d_name)  << "/" << "'>" << it->d_name << "</a></td>";
+                list << "<td>"<< "<a href='" << dataClient.requeste->path + std::string(it->d_name)  << "/" << "'>" << it->d_name << "</a></td>";
             list << "<td>"<< ctime(&statInfo.st_mtime) <<"</td>";
             list << "<td>"<< statInfo.st_size << " bytes</td>";
             list << "</tr>";

@@ -6,16 +6,32 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 18:34:11 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/26 15:54:38 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 19:10:17 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Configfile.hpp"
 
+long Server::init_numberError(std::string path)
+{
+    int i = 0;
+    while (i< path.length() && isdigit(path[i]))
+        i++;
+    return (atoi(path.substr(0, i).c_str()));
+}
+
 Server::Server()
 {
     port_chose = false;
     close = true;
+    DIR* dir_error = opendir("/nfs/homes/akatfi/Desktop/coding_web/akatfi/parsinfCon/Error_pages");
+    dirent* path;
+    while ((path = readdir(dir_error)))
+    {
+        if (path->d_name[0] != '.')
+            error_pages[init_numberError(std::string(path->d_name))] = std::string("Error_pages").append(path->d_name);
+        // std::cout << path->d_name << std::endl;
+    }
 }
 
 void    Server::init_data(std::fstream& os)

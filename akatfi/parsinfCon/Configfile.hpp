@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/21 11:14:04 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/28 20:45:12 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 19:06:32 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #define CONFIG_FILE_HPP
 #include <fstream>
 #include <iostream>
+#include <dirent.h>
 #include <map>
 #include <vector>
 #include <unistd.h>
@@ -58,18 +59,18 @@ class Server
         Server();
         ~Server();
         void    init_data(std::fstream& os);
+        long    init_numberError(std::string path);
 };
 
 class ConfigFile
 {
     private:
         std::fstream        config;
-        std::map<long, std::string> error;
     public:
         std::vector<Server> Servers;
         ConfigFile(const std::string& FileName);
         void    parceConfig();
-        void    checkErrorPages(std::vector<Server>::iterator);
+        // void    checkErrorPages(std::vector<Server>::iterator);
         ~ConfigFile();
 };
 bool getlineFromFile(std::fstream& os, std::string& input);
