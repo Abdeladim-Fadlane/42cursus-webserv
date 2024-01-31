@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/19 18:13:01 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/30 19:43:45 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 13:21:57 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,28 +53,33 @@ void    Requeste::readFromSocketFd(bool &flag,int fd)
 
 void Requeste::get_infoConfig()
 {
-    std::cout << "---- >" << path << std::endl;
+    // std::cout << "new path : " << path << std::endl;
     for (std::vector<Server>::iterator it = config.Servers.begin() ; it != config.Servers.end(); it++)
     {
         if (it->host == this->host && it->listen == this->port)
         {
             for (unsigned int i = 0; i < it->locations.size(); i++)
             {
-                if (i && !strncmp(it->locations[i].location_name.c_str(),path.c_str(), it->locations[i].location_name.length()))
+                if (!strncmp(it->locations[i].location_name.c_str(),path.c_str(), it->locations[i].location_name.length()))
                 {
+                    // std::cout << "chosed " << std::endl;
                     locationServer = it->locations[i];
                     locationServer.root += path.substr(it->locations[i].location_name.length());
-                    // std::cout << "1--> " << path.substr(it->locations[i].location_name.length()) << std::endl;
-                    return ;
+                    break ;
+                }
+                else if (path == "/")
+                {
+                    path = it->locations[0].location_name;
+                    std::cout  << locationServer.location_name << std::endl;
+                    locationServer = it->locations[0];
+                    break;
                 }
             }
-            locationServer = it->locations[0];
-            path = locationServer.location_name;
-            locationServer.root += path.substr(it->locations[0].location_name.length());
-            // std::cout << "2--> " << path.substr(it->locations[0].location_name.length()) << std::endl;
             break ;
         }
     }
+    // std::cout << "path ---- >" << path << std::endl;
+    // std::cout << "root ---- >" << locationServer.root << std::endl;
     // std::cout << locationServer.root << std::endl;
 }
 

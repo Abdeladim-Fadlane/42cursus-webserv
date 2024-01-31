@@ -38,7 +38,6 @@
 #define  PORT  8080
 #define  BUFFER_SIZE 1024
 #define  SERVERS 3
-using namespace  std;
 
 struct Data
 {  

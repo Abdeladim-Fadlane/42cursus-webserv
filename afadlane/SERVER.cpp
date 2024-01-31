@@ -8,24 +8,12 @@ void    insialStruct(Data & datacleint)
 
     datacleint.autoFile = datacleint.requeste->locationServer.indexs;
     datacleint.Path = datacleint.requeste->locationServer.root;
-    // std::cout<<"root = "<<  datacleint.Path<<endl;
-    // std::cout<<"path = "<<   datacleint.requeste->path<<endl;
-}
-
-bool isServer(std::vector<int> & Servers,int index)
-{
-    for(int i  = 0;i < Servers.size() ; i++)
-    {
-        if(Servers[i] == index)
-            return true;
-    }
-    return false;
+    std::cout<<"path = "<<  datacleint.Path<<std::endl;
 }
 
 void multiplexing(ConfigFile &config)
 {
     int size = 3;
-    std::vector<int> Servers;
     int epollFD = epoll_create(1024);
     epoll_event event;
     int socketFD ;
@@ -72,8 +60,7 @@ void multiplexing(ConfigFile &config)
             close(socketFD);
             perror("Error add to epoll : ");
             exit(EXIT_FAILURE);
-        }
-        Servers.push_back(socketFD);
+        } 
     }
     std::map<int,struct Webserv> Request;
     epoll_event events[MAX_EVENTS];
@@ -83,8 +70,8 @@ void multiplexing(ConfigFile &config)
         int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,500); 
         for (int i = 0; i < numEvent; ++i)
         {
-            if(isServer(Servers,events[i].data.fd) == true)
-            { 
+            if(static_cast<int>(events[i].data.fd) <=  static_cast<int>(size))
+            {
                 Webserv  Data;
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
                 if(clientSocketFD == -1)

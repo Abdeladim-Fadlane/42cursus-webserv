@@ -49,7 +49,7 @@ int    listingDirectory(Data &dataClient)
 {
     std::ostringstream list;
     list << "<html><head><title>Directory Listing</title></head><body>";
-    list << "<h1>Index of: " << dataClient.requeste->path << "</h1>";
+    list << "<h1>Index of: " << dataClient.Path << "</h1>";
     list << "<table>";
     std::string directoryPath = dataClient.Path + "/";
     DIR *dir =  opendir(directoryPath.c_str());
@@ -64,12 +64,12 @@ int    listingDirectory(Data &dataClient)
         //     return (1);
         else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
         { 
-            // std::cout<<"-----"<< dataClient.requeste->path<<std::endl;
             list << "<tr>";
+            // std::cout<<"f==="<<it->d_name<<std::endl;
             if (S_ISREG(statInfo.st_mode))
-                list << "<td>"<< "<a href='" << dataClient.requeste->path+ std::string(it->d_name) << "'>" << it->d_name << "</a></td>";
+                list << "<td>"<< "<a href='" << dataClient.requeste->path + "/" + std::string(it->d_name) << "'>" << it->d_name << "</a></td>";
             if (S_ISDIR(statInfo.st_mode))
-                list << "<td>"<< "<a href='" << dataClient.requeste->path + std::string(it->d_name)  << "/" << "'>" << it->d_name << "</a></td>";
+                list << "<td>"<< "<a href='" << dataClient.requeste->path + "/" + std::string(it->d_name) << "/" << "'>" << it->d_name << "</a></td>";
             list << "<td>"<< ctime(&statInfo.st_mtime) <<"</td>";
             list << "<td>"<< statInfo.st_size << " bytes</td>";
             list << "</tr>";
