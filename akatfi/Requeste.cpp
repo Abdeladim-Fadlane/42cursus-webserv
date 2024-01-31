@@ -69,6 +69,7 @@ void Requeste::get_infoConfig()
                 }
             }
             locationServer = it->locations[0];
+            path = locationServer.location_name;
             locationServer.root += path.substr(it->locations[0].location_name.length());
             // std::cout << "2--> " << path.substr(it->locations[0].location_name.length()) << std::endl;
             break ;
