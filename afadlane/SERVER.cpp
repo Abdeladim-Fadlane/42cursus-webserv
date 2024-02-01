@@ -5,9 +5,7 @@ void    insialStruct(Data & datacleint)
 {
     if(datacleint.requeste->locationServer.autoindex == "ON")
         datacleint.autoIndex = true;
-
-    // datacleint.autoFile = datacleint.requeste->locationServer.indexs;
-    datacleint.autoFile.push_back ("phpinfo.php");
+    datacleint.autoFile = datacleint.requeste->locationServer.indexs;
     datacleint.Path = datacleint.requeste->locationServer.root;
     // std::cout<<"root = "<<  datacleint.Path<<endl;
     // std::cout<<"path = "<<   datacleint.requeste->path<<endl;
