@@ -8,8 +8,8 @@ void    insialStruct(Data & datacleint)
 
     datacleint.autoFile = datacleint.requeste->locationServer.indexs;
     datacleint.Path = datacleint.requeste->locationServer.root;
-    std::cout<<"root = "<<  datacleint.Path<<endl;
-    std::cout<<"path = "<<   datacleint.requeste->path<<endl;
+    // std::cout<<"root = "<<  datacleint.Path<<endl;
+    // std::cout<<"path = "<<   datacleint.requeste->path<<endl;
 }
 
 bool isServer(std::vector<int> & Servers,int index)
@@ -128,7 +128,7 @@ void multiplexing(ConfigFile &config)
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
                         /* readiing AND parsing request */
-                        Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader,events[i].data.fd);
+                        Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader);
                         insialStruct(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")

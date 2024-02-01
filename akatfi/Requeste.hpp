@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/19 18:13:07 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/29 13:53:05 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 20:38:52 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,16 +30,18 @@ class Requeste
     public:
         Location                            locationServer;
         int                                 port;
+        std::string                         query_str;
+        std::string                         content_type;
+        std::string                         content_length;
         std::string                         host;
         std::string                         path;
         PostMethod                          *post;
         std::string                         http_v;
         std::string                         method;
-        bool                                RunMethod;
         std::map<std::string, std::string>  requeste_map;
         Requeste(int fd, ConfigFile &config);
         void    MakeMapOfHeader();
-        void readFromSocketFd(bool &flag,int fd);
+        void readFromSocketFd(bool &flag);
         std::pair<std::string, std::string> MakePair(std::string& line);
         void    get_infoConfig();
         std::map<std::string, std::string> getRequesteMap();

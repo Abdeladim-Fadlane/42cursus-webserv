@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/19 18:13:01 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/31 13:21:57 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 20:45:11 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,6 @@
 Requeste::Requeste(int fd,ConfigFile &configfile) : config(configfile)
 {
     fd_socket = fd;
-    RunMethod = false;
     post = NULL;
 }
 
@@ -32,12 +31,10 @@ std::pair<std::string, std::string> Requeste::MakePair(std::string& line)
     return (std::pair<std::string, std::string>(first, line));
 }
 
-void    Requeste::readFromSocketFd(bool &flag,int fd)
+void    Requeste::readFromSocketFd(bool &flag)
 {
-    // std::cout<<fd_socket<<"---------------\n";
     char buffer[1024];
     int x;
-    (void)fd;
     memset(buffer,0, sizeof(buffer));
     x = read(fd_socket, buffer, 1023);
     head.append(buffer, x);
@@ -53,7 +50,8 @@ void    Requeste::readFromSocketFd(bool &flag,int fd)
 
 void Requeste::get_infoConfig()
 {
-    // std::cout << "new path : " << path << std::endl;
+    struct stat statbuf;
+
     for (std::vector<Server>::iterator it = config.Servers.begin() ; it != config.Servers.end(); it++)
     {
         if (it->host == this->host && it->listen == this->port)
@@ -62,15 +60,17 @@ void Requeste::get_infoConfig()
             {
                 if (!strncmp(it->locations[i].location_name.c_str(),path.c_str(), it->locations[i].location_name.length()))
                 {
-                    // std::cout << "chosed " << std::endl;
                     locationServer = it->locations[i];
-                    locationServer.root += path.substr(it->locations[i].location_name.length());
+                    locationServer.root += "/";
+                    locationServer.root  += path.substr(it->locations[i].location_name.length());
+                    stat(locationServer.root.c_str(), &statbuf);
+                    if (path.length() && path[path.length() - 1] != '/' && S_ISDIR(statbuf.st_mode) == true)
+                        path += "/";
                     break ;
                 }
-                else if (path == "/")
+                else if (path == "/" && it->locations.size() - 1 == i)
                 {
                     path = it->locations[0].location_name;
-                    std::cout  << locationServer.location_name << std::endl;
                     locationServer = it->locations[0];
                     break;
                 }
@@ -78,9 +78,6 @@ void Requeste::get_infoConfig()
             break ;
         }
     }
-    // std::cout << "path ---- >" << path << std::endl;
-    // std::cout << "root ---- >" << locationServer.root << std::endl;
-    // std::cout << locationServer.root << std::endl;
 }
 
 void Requeste::MakeMapOfHeader()
@@ -106,9 +103,18 @@ void Requeste::MakeMapOfHeader()
         throw std::runtime_error("400");
     if (path.length() > 2048)
         throw std::runtime_error("400");
+    if (path.find("?") != std::string::npos)
+    {
+        query_str = path.substr(path.find("?") + 1);
+        path = path.substr(0, path.find("?"));
+    }
+    content_type = requeste_map.find("Content-Type")->second;
+    content_length = requeste_map.find("Content-Length")->second;
+    std::cout << content_type << "::" << content_length << std::endl;
     host = requeste_map.find("Host")->second;
     port = atoi(host.substr(host.find(":") + 1).c_str());
     host = host.substr(0, host.find(":"));
+    
 }
 
 int Requeste::getSocketFd() const

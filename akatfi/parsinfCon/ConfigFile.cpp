@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/21 11:13:54 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/29 14:06:57 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 19:06:51 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,8 @@ ConfigFile::ConfigFile(const std::string& FileName)
     stat(FileName.c_str(), &fileStat);
     if (fileStat.st_size == 0)
         throw std::runtime_error("Error the file is empty");
-
+    
+    
     // dont forget to set up the paths of file errors
     // for (unsigned int i = 400; i <= 406; i++)
     // {
@@ -81,25 +82,6 @@ std::vector<std::string> split_line(std::string line)
     return (words);
 }
 
-void    ConfigFile::checkErrorPages(std::vector<Server>::iterator serv)
-{
-    std::map<long, std::string>::iterator it1;
-    struct stat fileStat;
-    
-    for (std::map<long, std::string>::iterator it = error.begin(); it != error.end(); it++)
-    {
-        it1 = serv->error_pages.find(it->first);
-        if (it == serv->error_pages.end())
-            serv->error_pages[it->first] = it->second;
-        else 
-        {
-            stat(it1->second.c_str(), &fileStat);
-            if (access(it->second.c_str(), F_OK) == -1 || !fileStat.st_size)
-                it1->second = it->second;
-        }
-    }
-}
-
 void    ConfigFile::parceConfig()
 {
     std::string input;
@@ -114,7 +96,6 @@ void    ConfigFile::parceConfig()
             Servers.push_back(Server());
             it = Servers.end() - 1;
             it->init_data(config);
-            this->checkErrorPages(it);
             if (it->host.empty() || !it->port_chose)
                 throw std::runtime_error("Error : the server need host and post");
             for (std::vector<Server>::iterator itServ = Servers.begin(); itServ != Servers.end() - 1; itServ++)

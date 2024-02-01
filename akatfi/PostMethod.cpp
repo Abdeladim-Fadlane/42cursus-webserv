@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/21 18:56:09 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/29 17:58:20 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/01/31 20:52:41 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@ PostMethod::PostMethod(const Requeste& r) : req(r)
     path = r.getPath();
     setFileextation("akatfi/fileExtation", map_extation);
     content_type = this->req.requeste_map.find("Content-Type")->second;
-    // content_type = map_extation.find(content_type)->second;
     content_length = atoi((this->req.requeste_map.find("Content-Length")->second).c_str());
     Transfer_Encoding = this->req.requeste_map.find("Transfer-Encoding")->second;
 }
@@ -67,8 +66,6 @@ std::string PostMethod::init_contentType(std::string& buffer)
         if (line.find("Content-Type: ") != std::string::npos)
             content = line.substr(line.find("Content-Type: ") +  strlen("Content-Type: "));
     }
-    // std::cout << "nanoni" << std::endl;
-    // std::cout <<content<< std::endl;
     return (map_extation.find(content)->second);
 }
 
@@ -97,7 +94,6 @@ void PostMethod::boundary(std::string buffer)
     {
         index = buffer.find("-");
         separator_size = boundary_separator.length() - index;
-        // separator_size = buffer.length() - index;
         if (buffer.find(boundary_separator) == 0)
         {
             if (Postfile.is_open())
@@ -131,7 +127,6 @@ void PostMethod::chunked(std::string &buffer)
         if (buffer.find("\r\n") != std::string::npos)
         {
             size = hexStringToDecimal(buffer.substr(0, buffer.find("\r\n")));
-            // std::cout << buffer.substr(0, buffer.find("\r\n")) << std::endl;
             if (!size)
             {
                 Postfile.close();
@@ -183,7 +178,7 @@ void    PostMethod::PostingFileToServer(bool &flag)
         {
             gettimeofday(&Time, nullptr);
             content_type = map_extation.find(content_type)->second; 
-            Postfile.open(std::string(req.locationServer.root) + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
+            Postfile.open(std::string(req.locationServer.root).append("/index")  + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
         }
         first_time = false;
         chunked(buffer);
@@ -192,16 +187,21 @@ void    PostMethod::PostingFileToServer(bool &flag)
         boundary(buffer);
     else
     {
+        struct stat fileStat;
         if (first_time)
         {
             gettimeofday(&Time, NULL) ;
             content_type = map_extation.find(content_type)->second; 
             Postfile.open(std::string(req.locationServer.root).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec) + content_type, std::fstream::out);
         }
+        stat((std::string(req.locationServer.root).append("/index") + std::to_string(Time.tv_sec + Time.tv_usec)).c_str(), &fileStat);
         first_time = false;
         buffer = buffer_add + buffer;
+        
         buffer_add = "";
         Postfile << buffer;
+        if (content_length == fileStat.st_size)
+            Postfile.close();
     }
 }
 
