@@ -1,16 +1,8 @@
 #pragma once
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <sys/wait.h>
-#include <fcntl.h>
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <iostream>
 #include <cstring>
-#include <unistd.h>
-#include <arpa/inet.h>
 #include <cstdlib>
 #include <stdio.h>
 #include <cerrno>
