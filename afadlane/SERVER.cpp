@@ -6,7 +6,8 @@ void    insialStruct(Data & datacleint)
     if(datacleint.requeste->locationServer.autoindex == "ON")
         datacleint.autoIndex = true;
 
-    datacleint.autoFile = datacleint.requeste->locationServer.indexs;
+    // datacleint.autoFile = datacleint.requeste->locationServer.indexs;
+    datacleint.autoFile.push_back ("phpinfo.php");
     datacleint.Path = datacleint.requeste->locationServer.root;
     // std::cout<<"root = "<<  datacleint.Path<<endl;
     // std::cout<<"path = "<<   datacleint.requeste->path<<endl;
@@ -14,7 +15,7 @@ void    insialStruct(Data & datacleint)
 
 bool isServer(std::vector<int> & Servers,int index)
 {
-    for(int i  = 0 ; i < Servers.size() ; i++)
+    for(size_t i  = 0 ; i < Servers.size() ; i++)
     {
         if(Servers[i] == index)
             return true;
@@ -24,7 +25,6 @@ bool isServer(std::vector<int> & Servers,int index)
 
 void multiplexing(ConfigFile &config)
 {
-    int size = 3;
     std::vector<int> Servers;
     int epollFD = epoll_create(1024);
     epoll_event event;
@@ -55,10 +55,7 @@ void multiplexing(ConfigFile &config)
             continue;
         }
         if(listen(socketFD,128) == 0)
-        {
-            size++;
             std::cout<<"listenning to "<< config.Servers[i].listen <<" [...]" <<std::endl;
-        }
         else
         {
             close(socketFD);

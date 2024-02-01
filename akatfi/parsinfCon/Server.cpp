@@ -24,8 +24,10 @@ Server::Server()
 {
     port_chose = false;
     close = true;
-    DIR* dir_error = opendir("/nfs/homes/akatfi/Desktop/coding_web/akatfi/parsinfCon/Error_pages");
+    DIR* dir_error = opendir("afadlane");
     dirent* path;
+    if(! dir_error)
+        throw std::runtime_error("error open dir");
     while ((path = readdir(dir_error)))
     {
         if (path->d_name[0] != '.')

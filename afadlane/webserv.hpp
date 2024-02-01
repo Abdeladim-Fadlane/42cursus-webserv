@@ -72,6 +72,6 @@ struct ServerConfig
 void    multiplexing(ConfigFile &config);
 void    getMethod(Data &);
 bool    deleteMethod(Data &);
-void    fastCGI(std::string &,std::string &);
+void    fastCGI(Data &,std::string &);
 void    sendResponse(Data &,std::string &);
 bool    checkPermission(Data &, const char *,int );
