@@ -71,7 +71,6 @@ void    Requeste::readFromSocketFd(bool &flag, bool& isdone)
         else
         {
             isdone = true;
-            std::cout << "set true from requeste " << std::endl;
         }
     }
 }

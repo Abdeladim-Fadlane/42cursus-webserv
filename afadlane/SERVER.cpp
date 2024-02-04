@@ -132,12 +132,11 @@ void multiplexing(ConfigFile &config)
                         /* handle Post method  */
                         Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.isDone);
                     }
-                    std::cout <<"====== >> " << Request[events[i].data.fd].data.isDone << std::endl;
                 }
                 else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.isDone == true)
                 {
                    /*  File descriptor ready for reading  */
-                   std::cout << "dakhel" << std::endl;
+            
                     if(Request[events[i].data.fd].data.requeste->method == "GET")
                     {
                         /* handle Get method  */
@@ -151,7 +150,6 @@ void multiplexing(ConfigFile &config)
                     else if(Request[events[i].data.fd].data.requeste->method == "POST" )
                     {
                         /* handle response Post method  */
-                        std::cout<<"herrrr\n";
                         std::string body = "<html><body><h1>Post request successful</h1></body></html>";
                         const std::string httpResponse = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\n\r\n" + body;
                         send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);

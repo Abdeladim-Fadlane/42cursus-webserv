@@ -236,7 +236,6 @@ void    PostMethod::PostingFileToServer(bool& isdone)
         Postfile << buffer;
         if (content_length == fileStat.st_size)
         {
-            std::cout <<"set true to flag " << std::endl;
             Postfile.close();
             isdone = true;
         }
