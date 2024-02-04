@@ -63,8 +63,7 @@ int    listingDirectory(Data &dataClient)
         if(getAutoFile(dataClient,it->d_name) == true)
             return (1);
         else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
-        { 
-            // std::cout<<"-----"<< dataClient.requeste->path<<std::endl;
+        {
             list << "<tr>";
             if (S_ISREG(statInfo.st_mode))
                 list << "<td>"<< "<a href='" << dataClient.requeste->path +  std::string(it->d_name) << "'>" << it->d_name << "</a></td>";
@@ -102,6 +101,7 @@ void    openFileAndSendHeader(Data& dataCleint)
 {
     char buffer[BUFFER_SIZE];
     std::string contentType = getContentType(dataCleint);
+    // std::cout<<dataCleint.requeste->Location_Server.cgi_allowed <<"------------\n";
     if((contentType == ".php" || contentType == ".py") && dataCleint.requeste->Location_Server.cgi_allowed == "ON")
     {
         std::string type;
@@ -141,7 +141,7 @@ void serveFIle(Data& dataClient)
     {
         close(dataClient.fileFd);
         dataClient.readyForClose = true;
-        throw std::runtime_error("EROOR reading from file");
+        throw std::runtime_error("internal server error");
     }
     if(byteRead == 0)
     {
@@ -202,7 +202,7 @@ void getMethod(Data & dataCleint)
                 return;
             if(i == 2)
             {
-                /* hundle DIRECTORY */
+                /* listing DIRECTORY */
                 if(dataCleint.autoIndex == false)
                 {
                     std::string msg = " 403 Forbidden";
@@ -224,19 +224,14 @@ void getMethod(Data & dataCleint)
             }
             else if(i == 0)
             {
-                /* hundle  not found*/
-                std::string httpResponse = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n" ;
-                httpResponse += "<html><head><center><h1>404 NOT FOUND</h1></center></head></html>";
-                if(send(dataCleint.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-                {
-                    dataCleint.readyForClose = true;
-                    throw std::runtime_error("An error aka client disconnect");
-                }
+                /* hundle NOt Found case */
+                std::string msg = " 404 NOT FOUND";
+                sendResponse(dataCleint,msg);
                 dataCleint.readyForClose = true;
             }
             else if(i == 1)
             {
-                /* hundle file */
+                
                 openFileAndSendHeader(dataCleint);
             }
         }

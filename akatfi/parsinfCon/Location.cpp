@@ -75,7 +75,7 @@ void    Location::add_location(std::fstream& os)
         {
             if (arg[1].compare("ON") && arg[1].compare("OFF"))
                 throw std::runtime_error("Error : the autoindex will has ON or OFF parameter");
-            autoindex = arg[1];
+            cgi_allowed = arg[1];
         }
         else if (!arg[0].compare("index"))
         {
