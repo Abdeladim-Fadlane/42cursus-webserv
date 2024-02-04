@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/19 18:13:07 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/31 20:38:52 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/02/04 16:03:24 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,10 @@
 #include <cstdlib>
 #include <string>
 #include <fstream>
+#include <fcntl.h>
+#include <algorithm>
 #include "parsinfCon/Configfile.hpp"
+#include "afadlane/webserv.hpp"
 class PostMethod;
 class Requeste
 {
@@ -27,8 +30,11 @@ class Requeste
         std::string                         head;
         std::string                         body;
         ConfigFile                          &config;
+        int                                 fdresponse;
     public:
-        Location                            locationServer;
+        Server                              Server_Requeste;
+        Location                            Location_Server;
+        long                                status_client;
         int                                 port;
         std::string                         query_str;
         std::string                         content_type;
@@ -40,11 +46,11 @@ class Requeste
         std::string                         method;
         std::map<std::string, std::string>  requeste_map;
         Requeste(int fd, ConfigFile &config);
-        void    MakeMapOfHeader();
-        void readFromSocketFd(bool &flag);
+        void    MakeMapOfHeader(bool& isdone);
+        bool set_status_client();
+        void readFromSocketFd(Data& dataClient);
         std::pair<std::string, std::string> MakePair(std::string& line);
         void    get_infoConfig();
-        std::map<std::string, std::string> getRequesteMap();
         int     getSocketFd() const;
         const std::string& getBody() const;
         const std::string&    getPath() const;

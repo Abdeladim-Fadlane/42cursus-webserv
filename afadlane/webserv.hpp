@@ -1,16 +1,8 @@
 #pragma once
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <sys/wait.h>
-#include <fcntl.h>
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <iostream>
 #include <cstring>
-#include <unistd.h>
-#include <arpa/inet.h>
 #include <cstdlib>
 #include <stdio.h>
 #include <cerrno>
@@ -30,9 +22,8 @@
 #include <stdexcept>
 #include <sys/stat.h>
 #include<cstdio>
-#include<cstdlib>
+#include <cstdlib>
 #include "../akatfi/PostMethod.hpp"
-#include"../akatfi/Requeste.hpp"
 
 #define  MAX_EVENTS 1024
 #define  PORT  8080
@@ -44,6 +35,7 @@ struct Data
 {  
     int fd ;
     int fileFd;
+    bool  isDone;
     bool isCgi;
     bool autoIndex;
     bool isReading;
@@ -80,6 +72,6 @@ struct ServerConfig
 void    multiplexing(ConfigFile &config);
 void    getMethod(Data &);
 bool    deleteMethod(Data &);
-void    fastCGI(std::string &,std::string &);
+void    fastCGI(Data &,std::string &);
 void    sendResponse(Data &,std::string &);
 bool    checkPermission(Data &, const char *,int );

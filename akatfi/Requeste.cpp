@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/12/19 18:13:01 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/31 20:45:11 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/02/04 16:03:06 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,9 @@
 Requeste::Requeste(int fd,ConfigFile &configfile) : config(configfile)
 {
     fd_socket = fd;
+    fdresponse = -1;
     post = NULL;
+    port = 0;
 }
 
 std::pair<std::string, std::string> Requeste::MakePair(std::string& line)
@@ -31,7 +33,28 @@ std::pair<std::string, std::string> Requeste::MakePair(std::string& line)
     return (std::pair<std::string, std::string>(first, line));
 }
 
-void    Requeste::readFromSocketFd(bool &flag)
+bool    Requeste::set_status_client()
+{
+    std::cout << "nadi canadi" << std::endl;
+    char buffer[1024];
+    if (fdresponse == -1)
+    {
+        std::string file_name = Server_Requeste.error_pages[status_client];
+        // std::cout << file_name << std::endl;
+        fdresponse = open(file_name.c_str(), O_RDONLY);
+        if (fdresponse == -1)
+            exit(1);
+        std::cout << "fd_responce : " << fdresponse << std::endl;
+    }
+    memset(buffer, 0, sizeof(buffer));
+    if (!read(fdresponse, buffer, 1023))
+        return close(fdresponse), true;
+    write(1, buffer, strlen(buffer));
+    write(fd_socket, buffer, strlen(buffer));
+    return (false);
+}
+
+void    Requeste::readFromSocketFd(Data & dataClient)
 {
     char buffer[1024];
     int x;
@@ -40,11 +63,21 @@ void    Requeste::readFromSocketFd(bool &flag)
     head.append(buffer, x);
     if (head.find("\r\n\r\n") != std::string::npos)
     {
-        this->MakeMapOfHeader();
+        this->MakeMapOfHeader(isdone);
         this->get_infoConfig();
-        flag = true;
-        if (method == "POST" && !post)
+        dataClient.AlreadyRequestHeader = true;
+        if (std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
+        {
+            status_client = 405;
+            // method = "";
+            std::cout << "method not allowed " << std::endl;
+            dataClient.isDone = true;
+            dataClient.readyForClose = true;
+        }
+        else if  (method == "POST" && !post)
             post = new PostMethod(*this);
+        else
+            isdone = true;
     }
 }
 
@@ -56,14 +89,18 @@ void Requeste::get_infoConfig()
     {
         if (it->host == this->host && it->listen == this->port)
         {
+            Server_Requeste = *it;
             for (unsigned int i = 0; i < it->locations.size(); i++)
             {
                 if (!strncmp(it->locations[i].location_name.c_str(),path.c_str(), it->locations[i].location_name.length()))
                 {
-                    locationServer = it->locations[i];
-                    locationServer.root += "/";
-                    locationServer.root  += path.substr(it->locations[i].location_name.length());
-                    stat(locationServer.root.c_str(), &statbuf);
+                    Location_Server = it->locations[i];
+                    Location_Server.root += "/";
+                    if (stat((Location_Server.root + Location_Server.upload_location).c_str(), &statbuf) != 0)
+                        Location_Server.upload_location = "";
+                    Location_Server.upload_location = Location_Server.root + Location_Server.upload_location;
+                    Location_Server.root  += path.substr(it->locations[i].location_name.length());
+                    stat(Location_Server.root.c_str(), &statbuf);
                     if (path.length() && path[path.length() - 1] != '/' && S_ISDIR(statbuf.st_mode) == true)
                         path += "/";
                     break ;
@@ -71,16 +108,26 @@ void Requeste::get_infoConfig()
                 else if (path == "/" && it->locations.size() - 1 == i)
                 {
                     path = it->locations[0].location_name;
-                    locationServer = it->locations[0];
+                    Location_Server = it->locations[0];
+                    if (stat((Location_Server.root + Location_Server.upload_location).c_str(), &statbuf) != 0)
+                        Location_Server.upload_location = "";
+                    Location_Server.upload_location = Location_Server.root + Location_Server.upload_location;
                     break;
                 }
             }
             break ;
         }
     }
+    // if (stat(Location_Server.root.c_str(), &statbuf) != 0)
+    // {
+    //     //write error in socket 
+    //     std::cout << "path not found !" << std::endl;
+    // }
+    // std::cout << "uplaod path --> " << Location_Server.upload_location << std::endl;
+    // std::cout << "server path --> " << Location_Server.root << std::endl;
 }
 
-void Requeste::MakeMapOfHeader()
+void Requeste::MakeMapOfHeader(bool& isdone)
 {
     std::string     new_req;
     std::string     line;
@@ -100,21 +147,42 @@ void Requeste::MakeMapOfHeader()
         requeste_map.insert(MakePair(line));
     }
     if (http_v != "HTTP/1.1")
-        throw std::runtime_error("400");
+    {
+        status_client = 500;
+        isdone = true;
+        // error of http version;
+        // std::cout << "the server not sepport this version of http !" << std::endl;
+    }
     if (path.length() > 2048)
-        throw std::runtime_error("400");
+    {
+        status_client = 414;
+        isdone = true;
+        // write error in socket 
+        // std::cout << "path length is over" << std::endl;
+    }
     if (path.find("?") != std::string::npos)
     {
         query_str = path.substr(path.find("?") + 1);
-        path = path.substr(0, path.find("?"));
+        path = path.substr(0, path.rfind("?"));
     }
-    content_type = requeste_map.find("Content-Type")->second;
-    content_length = requeste_map.find("Content-Length")->second;
-    std::cout << content_type << "::" << content_length << std::endl;
-    host = requeste_map.find("Host")->second;
-    port = atoi(host.substr(host.find(":") + 1).c_str());
-    host = host.substr(0, host.find(":"));
-    
+    if (requeste_map.find("Content-Type") != requeste_map.end())
+        content_type = requeste_map.find("Content-Type")->second;
+    if (requeste_map.find("Content-Length") != requeste_map.end())
+        content_length = requeste_map.find("Content-Length")->second;
+    if (requeste_map.find("Host") != requeste_map.end())
+    {
+        host = requeste_map.find("Host")->second;
+        if (host.find(":") != std::string::npos)
+        {
+            port = atoi(host.substr(host.find(":") + 1).c_str());
+            host = host.substr(0, host.find(":"));
+        }
+    }
+    if (host.empty() || !port)
+    {
+        status_client = 400;
+        isdone = true;
+    }
 }
 
 int Requeste::getSocketFd() const

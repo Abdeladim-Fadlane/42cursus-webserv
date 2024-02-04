@@ -60,8 +60,8 @@ int    listingDirectory(Data &dataClient)
         struct stat statInfo;
         if(strcmp(it->d_name , ".") == 0 || strcmp(it->d_name , "..") == 0)
             continue;
-        // if(getAutoFile(dataClient,it->d_name) == true)
-        //     return (1);
+        if(getAutoFile(dataClient,it->d_name) == true)
+            return (1);
         else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
         { 
             // std::cout<<"-----"<< dataClient.requeste->path<<std::endl;
@@ -102,14 +102,14 @@ void    openFileAndSendHeader(Data& dataCleint)
 {
     char buffer[BUFFER_SIZE];
     std::string contentType = getContentType(dataCleint);
-    if(contentType == ".php" || contentType == ".py")
+    if((contentType == ".php" || contentType == ".py") && dataCleint.requeste->Location_Server.cgi_allowed == "ON")
     {
         std::string type;
         if(contentType == ".php")
             type = "php";
         else
             type = "py";
-        fastCGI(dataCleint.Path,type);
+        fastCGI(dataCleint,type);
         dataCleint.Path = "/tmp/tmpFile";
         dataCleint.isCgi = true;
     }
@@ -250,5 +250,7 @@ void getMethod(Data & dataCleint)
             std::string status = " 500 Internal Server Error";
             sendResponse(dataCleint,status);
         }
+        dataCleint.readyForClose = true;
+        return ;
     }
 }
