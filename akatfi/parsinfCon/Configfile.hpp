@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/21 11:14:04 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/31 20:25:58 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/02/02 17:25:12 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <sstream>
 #include <sys/stat.h>
+#include <stdlib.h>
 #define MAX_PAGE 406
 #define MIN_PAGE 400
 
@@ -31,7 +32,7 @@ class Location
         std::string                 root;
         std::string                 autoindex;
         std::vector<std::string>    indexs;
-        std::vector<std::string>    allowed_mathod;
+        std::vector<std::string>    allowed_method;
         std::string                 uploadfile;
         std::string                 upload_location;
         std::string                 cgi_allowed;
@@ -57,6 +58,7 @@ class Server
         bool                                close;
         bool                                port_chose;
         Server();
+        Server& operator=(const Server& obj);
         ~Server();
         void    init_data(std::fstream& os);
         long    init_numberError(std::string path);
@@ -69,6 +71,7 @@ class ConfigFile
     public:
         std::vector<Server> Servers;
         ConfigFile(const std::string& FileName);
+        void close_and_throw(std::string msg_error);
         void    parceConfig();
         ~ConfigFile();
 };

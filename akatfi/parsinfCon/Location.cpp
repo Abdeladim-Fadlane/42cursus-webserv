@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 18:32:49 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/29 18:10:32 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/02/02 18:27:16 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,9 @@ Location::Location(const std::string&  location_name)
 {
     this->location_name = location_name;
     close = true;
+    uploadfile = "OFF";
+    cgi_allowed = "OFF";
+    autoindex = "OFF";
 }
 
 Location::Location()
@@ -27,7 +30,7 @@ Location& Location::operator=(const Location& obj)
     root = obj.root;
     autoindex = obj.autoindex;
     indexs = obj.indexs;
-    allowed_mathod = obj.allowed_mathod;
+    allowed_method = obj.allowed_method;
     uploadfile = obj.uploadfile;
     upload_location = obj.upload_location;
     cgi_allowed = obj.cgi_allowed;
@@ -45,18 +48,16 @@ void    Location::add_location(std::fstream& os)
 {
     std::string input;
     std::vector<std::string>  arg;  
-
+    
     while (getlineFromFile(os, input))
     {
-        arg = split_line(input);
-        if (!arg[0].compare("location"))
-            break ;
-        if (arg[0][0] != '}' && arg[0][0] != '{')
+        if (input != "}" && input != "{")
         {
-            if (arg[arg.size() - 1][arg[arg.size() - 1].size() - 1] != ';')
+            if (input[input.length() - 1] != ';')
                 throw std::runtime_error("Error : the line will has a ;");
-            arg[arg.size() - 1] = arg[arg.size() - 1].substr(0, arg[arg.size() - 1].size() - 1);
+            input = input.substr(0, input.length() - 1);
         }
+        arg = split_line(input);
         if (!arg[0].compare("{") && close)
             close = false;
         else if (!arg[0].compare("}") && !close)
@@ -83,11 +84,11 @@ void    Location::add_location(std::fstream& os)
         }
         else if (!arg[0].compare("allowed_methods"))
         {
-            for (unsigned int i = arg.size() + 1; i < arg.size(); i++)
+            for (unsigned int i = 1; i < arg.size(); i++)
             {
                 if (arg[i] != "GET" && arg[i] != "POST" && arg[i] != "DELETE")
                     throw std::runtime_error(std::string("Error : The method ").append(arg[i]) + " is not allowed");
-                allowed_mathod.push_back(arg[i]);
+                allowed_method.push_back(arg[i]);
             }
         }
         else if (!arg[0].compare("uploadfile") && arg.size() == 2)
