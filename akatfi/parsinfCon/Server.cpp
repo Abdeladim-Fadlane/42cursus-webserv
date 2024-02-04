@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/22 18:34:11 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/31 19:10:17 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/02/02 18:29:30 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,8 @@
 
 long Server::init_numberError(std::string path)
 {
-    int i = 0;
-    while (i< path.length() && isdigit(path[i]))
+    unsigned int i = 0;
+    while (i < path.length() && isdigit(path[i]))
         i++;
     return (atoi(path.substr(0, i).c_str()));
 }
@@ -24,16 +24,26 @@ Server::Server()
 {
     port_chose = false;
     close = true;
-    DIR* dir_error = opendir("afadlane");
-    dirent* path;
-    if(! dir_error)
-        throw std::runtime_error("error open dir");
-    while ((path = readdir(dir_error)))
-    {
-        if (path->d_name[0] != '.')
-            error_pages[init_numberError(std::string(path->d_name))] = std::string("Error_pages").append(path->d_name);
-        // std::cout << path->d_name << std::endl;
-    }
+    // DIR* dir_error = opendir("/nfs/homes/akatfi/Desktop/coding_web/akatfi/parsinfCon/Error_pages");
+    // dirent* path;
+    // while ((path = readdir(dir_error)))
+    // {
+    //     if (path->d_name[0] != '.')
+    //         error_pages[init_numberError(std::string(path->d_name))] = std::string("Error_pages").append(path->d_name);
+    // }
+}
+
+Server& Server::operator=(const Server& obj)
+{
+    listen = obj.listen;
+    host = obj.host;
+    server_name = obj.server_name;
+    error_pages = obj.error_pages;
+    max_body = obj.max_body;
+    locations = obj.locations;
+    close = obj.close;
+    port_chose = obj.port_chose;
+    return (*this);
 }
 
 void    Server::init_data(std::fstream& os)
@@ -44,13 +54,13 @@ void    Server::init_data(std::fstream& os)
 
     while (getlineFromFile(os, input) && input != "server")
     {
-        arg = split_line(input);
-        if (arg[0][0] != '}' && arg[0][0] != '{' && arg[0] != "location")
-        {   
-            if (arg[arg.size() - 1][arg[arg.size() - 1].size() - 1] != ';')
+        if (input != "}" && input != "{" && input.find("location") == std::string::npos)
+        {
+            if (input[input.length() - 1] != ';')
                 throw std::runtime_error("Error : the line will has a ;");
-            arg[arg.size() - 1] = arg[arg.size() - 1].substr(0, arg[arg.size() - 1].size() - 1);
+            input = input.substr(0, input.length() - 1);
         }
+        arg = split_line(input);
         if (!arg[0].compare("{") && arg.size() == 1)
             close = false;
         else if (!arg[0].compare("}") && arg.size() == 1)

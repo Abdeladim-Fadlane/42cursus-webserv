@@ -3,10 +3,10 @@
 /* Analyze, Douiri */
 void    insialStruct(Data & datacleint)
 {
-    if(datacleint.requeste->locationServer.autoindex == "ON")
+    if(datacleint.requeste->Location_Server.autoindex == "ON")
         datacleint.autoIndex = true;
-    datacleint.autoFile = datacleint.requeste->locationServer.indexs;
-    datacleint.Path = datacleint.requeste->locationServer.root;
+    datacleint.autoFile = datacleint.requeste->Location_Server.indexs;
+    datacleint.Path = datacleint.requeste->Location_Server.root;
     // std::cout<<"root = "<<  datacleint.Path<<endl;
     // std::cout<<"path = "<<   datacleint.requeste->path<<endl;
 }
@@ -102,9 +102,10 @@ void multiplexing(ConfigFile &config)
                 Data.data.modeAutoIndex         = false;
                 Data.data.isCgi                 = false;
                 Data.data.AlreadyRequestHeader  = false;
+                Data.data.isDone                = false;
                 Data.data.autoIndex             = false;
                 Data.data.fd                    = clientSocketFD;
-                Data.data.requeste              = new Requeste(clientSocketFD,config);
+                Data.data.requeste              = new Requeste(clientSocketFD,config,Data.data.isDone);
                 Request[clientSocketFD]         = Data;
             } 
             else
@@ -123,19 +124,20 @@ void multiplexing(ConfigFile &config)
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
                         /* readiing AND parsing request */
-                        Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader);
+                        Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.AlreadyRequestHeader, Request[events[i].data.fd].data.isDone);
                         insialStruct(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
                     {
                         /* handle Post method  */
-                        Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.readyForClose);
+                        Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.isDone);
                     }
+                    std::cout <<"====== >> " << Request[events[i].data.fd].data.isDone << std::endl;
                 }
-                else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.AlreadyRequestHeader == true)
+                else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.isDone == true)
                 {
                    /*  File descriptor ready for reading  */
-
+                   std::cout << "dakhel" << std::endl;
                     if(Request[events[i].data.fd].data.requeste->method == "GET")
                     {
                         /* handle Get method  */
@@ -146,9 +148,10 @@ void multiplexing(ConfigFile &config)
                         /* handle delete method  */
                         deleteMethod(Request[events[i].data.fd].data);
                     }
-                    else if(Request[events[i].data.fd].data.requeste->method == "POST")
+                    else if(Request[events[i].data.fd].data.requeste->method == "POST" )
                     {
                         /* handle response Post method  */
+                        std::cout<<"herrrr\n";
                         std::string body = "<html><body><h1>Post request successful</h1></body></html>";
                         const std::string httpResponse = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\n\r\n" + body;
                         send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);

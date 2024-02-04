@@ -6,7 +6,7 @@
 /*   By: akatfi <akatfi@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/01/21 11:13:54 by akatfi            #+#    #+#             */
-/*   Updated: 2024/01/31 19:06:51 by akatfi           ###   ########.fr       */
+/*   Updated: 2024/02/02 18:29:42 by akatfi           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 
 ConfigFile::ConfigFile(const std::string& FileName)
 {
-    std::stringstream ss;
     struct stat fileStat;
     
     config.open(FileName.c_str());
@@ -22,16 +21,7 @@ ConfigFile::ConfigFile(const std::string& FileName)
         throw std::runtime_error("Error : cant opening this file");
     stat(FileName.c_str(), &fileStat);
     if (fileStat.st_size == 0)
-        throw std::runtime_error("Error the file is empty");
-    
-    
-    // dont forget to set up the paths of file errors
-    // for (unsigned int i = 400; i <= 406; i++)
-    // {
-    //     ss << i;
-    //     error[i] = std::string("Error_pages/") + ss.str() + ".html";
-    //     std::stringstream().swap(ss);
-    // }
+        close_and_throw("Error the file is empty");
 }
 
 bool check_digit(std::string digit)
@@ -53,8 +43,14 @@ bool getlineFromFile(std::fstream& os, std::string& input)
         input = input.substr(0, input.length() - 1);
     if (input.empty())
         throw std::runtime_error("Error : th config file has a empty line");
-    // std::cout << "---> " << input << std::endl;
+    // std::cout << input << std::endl;
     return true;
+}
+
+void ConfigFile::close_and_throw(std::string msg_error)
+{
+    config.close();
+    throw std::runtime_error(msg_error);
 }
 
 std::vector<std::string> split_line(std::string line)
@@ -93,48 +89,25 @@ void    ConfigFile::parceConfig()
         line_arg = split_line(input);
         if (!line_arg[0].compare("server") && line_arg.size() == 1)
         {
-            Servers.push_back(Server());
-            it = Servers.end() - 1;
-            it->init_data(config);
-            if (it->host.empty() || !it->port_chose)
-                throw std::runtime_error("Error : the server need host and post");
-            for (std::vector<Server>::iterator itServ = Servers.begin(); itServ != Servers.end() - 1; itServ++)
-                if (it->host == itServ->host && it->listen == itServ->listen)
-                    throw std::runtime_error("Error : one server have port and host similar to other server");
-            // int i = 0;
-            // std::cout << "--------------  server  -------------------" << std::endl;
-            // if (it->listen)
-            //     std::cout << "listen : " << it->listen<< std::endl;
-            // if (!it->host.empty())
-            //     std::cout << "host : " << it->host<< std::endl;
-            // if (!it->server_name.empty())
-            //     std::cout << "server_name : " << it->server_name<< std::endl;
-            // if (!it->max_body.empty())
-            //     std::cout << "max_body : " << it->max_body<< std::endl;
-            //  for (std::vector<Location>::iterator it1 = it->locations.begin(); it1 != it->locations.end(); it1++)
-            // {
-            //     std::cout << "----------- location" << ++i << " ----------------" << std::endl;
-            //     if (!it1->location_name.empty())
-            //         std::cout << "location_name : " << it1->location_name<< std::endl;
-            //     if (!it1->root.empty())
-            //         std::cout << "root : " << it1->root<< std::endl;
-            //     if (!it1->autoindex.empty())
-            //         std::cout << "autoindex : " << it1->autoindex<< std::endl;
-            //     if (!it1->uploadfile.empty())
-            //         std::cout << "uploadfile : " << it1->uploadfile<< std::endl;
-            //     if (!it1->upload_location.empty())
-            //         std::cout << "upload_location : " << it1->upload_location<< std::endl;
-            //     if (!it1->cgi_allowed.empty())
-            //         std::cout << "cgi_allowed : " << it1->cgi_allowed<< std::endl;
-            //     // if (!it1->cgi_allowed.first.empty())
-            //     //     std::cout << "cgi_allowed[0] : " << it1->cgi_allowed.first<< std::endl;
-            //     std::cout << "------------------------end of location -------------------" << std::endl;
-
-            // }
-            // std::cout << "---------------------------------" << std::endl;
+            try
+            {
+                Servers.push_back(Server());
+                it = Servers.end() - 1;
+                it->init_data(config);
+                if (it->host.empty() || !it->port_chose)
+                    throw std::runtime_error("Error : the server need host and post");
+                for (std::vector<Server>::iterator itServ = Servers.begin(); itServ != Servers.end() - 1; itServ++)
+                    if (it->host == itServ->host && it->listen == itServ->listen)
+                        throw std::runtime_error("Error : one server have port and host similar to other server");
+            }
+            catch(const std::exception& e)
+            {
+                close_and_throw(e.what());
+            }
+            
         }
         else
-            throw std::runtime_error("Error : line have dosen't follow rules");
+            close_and_throw("Error : line have dosen't follow rules");
         
     }
     config.close();

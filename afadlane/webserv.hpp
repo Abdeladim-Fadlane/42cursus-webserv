@@ -36,6 +36,7 @@ struct Data
 {  
     int fd ;
     int fileFd;
+    bool  isDone;
     bool isCgi;
     bool autoIndex;
     bool isReading;

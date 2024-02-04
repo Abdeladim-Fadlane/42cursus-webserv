@@ -102,7 +102,7 @@ void    openFileAndSendHeader(Data& dataCleint)
 {
     char buffer[BUFFER_SIZE];
     std::string contentType = getContentType(dataCleint);
-    if((contentType == ".php" || contentType == ".py") && dataCleint.requeste->locationServer.cgi_allowed == "ON")
+    if((contentType == ".php" || contentType == ".py") && dataCleint.requeste->Location_Server.cgi_allowed == "ON")
     {
         std::string type;
         if(contentType == ".php")

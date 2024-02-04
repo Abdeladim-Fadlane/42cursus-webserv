@@ -44,7 +44,7 @@ void fastCGI(Data &dataClient,std::string &type)
             throw std::runtime_error("internal server error");
         std::string interpreter ;
         if(type == "py")
-            interpreter = dataClient.requeste->locationServer.cgi[".py"];
+            interpreter = dataClient.requeste->Location_Server.cgi[".py"];
         else if(type == "php")
             interpreter = "/usr/bin/php-cgi8.2";
         else
