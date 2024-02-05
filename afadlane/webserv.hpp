@@ -38,6 +38,7 @@ struct Data
     int fileFd;
     bool  isDone;
     bool isCgi;
+    double startTime;
     bool autoIndex;
     bool isReading;
     bool Alreadyopen;
@@ -47,6 +48,7 @@ struct Data
     bool readyForClose;
     Requeste *requeste ;
     std::string listDirectory;
+    std::string restRead;
     bool AlreadyRequestHeader;
     std::vector<std::string> autoFile;
 };
@@ -76,3 +78,6 @@ bool    deleteMethod(Data &);
 void    fastCGI(Data &,std::string &);
 void    sendResponse(Data &,std::string &);
 bool    checkPermission(Data &, const char *,int );
+
+
+void sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient);
