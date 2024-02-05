@@ -22,8 +22,9 @@
 #include <stdexcept>
 #include <sys/stat.h>
 #include<cstdio>
-#include <cstdlib>
+#include<cstdlib>
 #include "../akatfi/PostMethod.hpp"
+#include"../akatfi/Requeste.hpp"
 
 #define  MAX_EVENTS 1024
 #define  PORT  8080
@@ -37,6 +38,7 @@ struct Data
     int fileFd;
     bool  isDone;
     bool isCgi;
+    double startTime;
     bool autoIndex;
     bool isReading;
     bool Alreadyopen;
@@ -46,6 +48,7 @@ struct Data
     bool readyForClose;
     Requeste *requeste ;
     std::string listDirectory;
+    std::string restRead;
     bool AlreadyRequestHeader;
     std::vector<std::string> autoFile;
 };
@@ -75,3 +78,6 @@ bool    deleteMethod(Data &);
 void    fastCGI(Data &,std::string &);
 void    sendResponse(Data &,std::string &);
 bool    checkPermission(Data &, const char *,int );
+
+
+void sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient);

@@ -24,12 +24,13 @@ Server::Server()
 {
     port_chose = false;
     close = true;
-    DIR* dir_error = opendir("/nfs/homes/akatfi/Desktop/coding_web/akatfi/parsinfCon/Error_pages");
+    DIR* dir_error = opendir("akatfi/parsinfCon/error");
     dirent* path;
     while ((path = readdir(dir_error)))
     {
+        // std::cout << path->d_name << std::endl;
         if (path->d_name[0] != '.')
-            error_pages[init_numberError(std::string(path->d_name))] = std::string("/nfs/homes/akatfi/Desktop/coding_web/akatfi/parsinfCon/Error_pages/").append(path->d_name);
+            error_pages[init_numberError(std::string(path->d_name))] = std::string("akatfi/parsinfCon/error/").append(path->d_name);
     }
     // exit(0);
 }

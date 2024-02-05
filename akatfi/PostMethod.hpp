@@ -27,7 +27,7 @@ class PostMethod
         std::string         boundary_separator;
         size_t              separator_size;
         std::string         buffer_add;
-        Requeste            req;
+        Requeste            &req;
         std::fstream        Postfile;
         std::string         content_type;
         size_t              content_length;
@@ -39,7 +39,7 @@ class PostMethod
         size_t              content_file;
     public:
         std::string         path;
-        PostMethod(const Requeste& r);
+        PostMethod(Requeste& r);
         void    PostingFileToServer(bool& isdone); 
         void    chunked(std::string &buffer, bool& isdone);   
         void    boundary(std::string buffer, bool& isdone);

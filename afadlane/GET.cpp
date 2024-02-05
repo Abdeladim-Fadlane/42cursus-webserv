@@ -1,6 +1,7 @@
 #include"webserv.hpp"
 
-void serveFIle(Data& datacleint);
+void serveFIle(Data& dataClient);
+
 std::string    getContentType(Data &method)
 {
     std::map<std::string, std::string> contentTypeMap;
@@ -14,6 +15,7 @@ std::string    getContentType(Data &method)
     contentTypeMap[".mp4"] = "video/mp4";
     contentTypeMap[".php"] = ".php";
     contentTypeMap[".py"] = ".py";
+    contentTypeMap[".sh"] = ".sh";
     contentTypeMap[".css"] = "text/css";
     contentTypeMap[".pdf"] = " application/pdf";
     contentTypeMap[".js"] = "application/javascript";
@@ -29,7 +31,7 @@ std::string    getContentType(Data &method)
     return "application/json";
 }
 
-void    openFileAndSendHeader(Data& datacleint);
+void    openFileAndSendHeader(Data& dataClient);
 
 bool getAutoFile(Data & dataClient,char * path)
 {
@@ -63,8 +65,7 @@ int    listingDirectory(Data &dataClient)
         if(getAutoFile(dataClient,it->d_name) == true)
             return (1);
         else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
-        { 
-            // std::cout<<"-----"<< dataClient.requeste->path<<std::endl;
+        {
             list << "<tr>";
             if (S_ISREG(statInfo.st_mode))
                 list << "<td>"<< "<a href='" << dataClient.requeste->path +  std::string(it->d_name) << "'>" << it->d_name << "</a></td>";
@@ -81,7 +82,7 @@ int    listingDirectory(Data &dataClient)
     return(0);
 }
 
-void sendChunk(int clientSocket, const char* data, ssize_t length,Data& datacleint)
+void sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient)
 {
     std::string totalChuncked ;
     std::stringstream chunkHeader;
@@ -92,76 +93,61 @@ void sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataclei
     totalChuncked = chunkHeaderStr + chunkData + "\r\n";
     if (send(clientSocket, totalChuncked.c_str(), totalChuncked.size(),0) ==  -1)
     {
-        close(datacleint.fileFd);
-        datacleint.readyForClose = 1;
-        throw std::runtime_error("An error aka client disconnect");
+        close(dataClient.fileFd);
+        dataClient.readyForClose = 1;
     }
 }
-
-void    openFileAndSendHeader(Data& dataCleint)
+bool checkIsCgi(std::string &contentType)
+{
+    if((contentType == ".sh" || contentType == ".php" || contentType == ".py") )
+        return true;
+    return false;
+}
+void    openFileAndSendHeader(Data& dataClient)
 {
     char buffer[BUFFER_SIZE];
-    std::string contentType = getContentType(dataCleint);
-    if((contentType == ".php" || contentType == ".py") && dataCleint.requeste->Location_Server.cgi_allowed == "ON")
+    std::string contentType = getContentType(dataClient);
+    if(checkIsCgi(contentType) == true && dataClient.requeste->Location_Server.cgi_allowed == "ON")
     {
-        std::string type;
-        if(contentType == ".php")
-            type = "php";
-        else
-            type = "py";
-        fastCGI(dataCleint,type);
-        dataCleint.Path = "/tmp/tmpFile";
-        dataCleint.isCgi = true;
+        fastCGI(dataClient,contentType);
+        return ;
     }
     memset(buffer,0,sizeof(buffer));
-    if(checkPermission(dataCleint,dataCleint.Path.c_str(),R_OK) == true)
+    if(checkPermission(dataClient,dataClient.Path.c_str(),R_OK) == true)
         return;
-    dataCleint.isReading = true;
-    dataCleint.fileFd = open(dataCleint.Path.c_str(), O_RDONLY);
-    if (dataCleint.fd == -1)
+    dataClient.isReading = true;
+    dataClient.fileFd = open(dataClient.Path.c_str(), O_RDONLY);
+    if (dataClient.fileFd == -1)
     {
-        close(dataCleint.fileFd);
+        close(dataClient.fileFd);
         throw std::runtime_error("internal server error");
     }
-    std::string httpResponse = dataCleint.requeste->http_v + " 200 OK\r\nContent-Type:" +contentType+ " \r\nTransfer-Encoding: chunked\r\n\r\n";
-    if(send(dataCleint.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
+    std::string httpResponse = dataClient.requeste->http_v + " 200 OK\r\nContent-Type:" +contentType+ " \r\nTransfer-Encoding: chunked\r\n\r\n";
+    if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
     {
-        close(dataCleint.fileFd);
-        dataCleint.readyForClose = true;
-        throw std::runtime_error("An errror aka client disconnect"); 
+        close(dataClient.fileFd);
+        dataClient.readyForClose = true;
     } 
 }
 
 void serveFIle(Data& dataClient)
 {
     char buffer[BUFFER_SIZE];
-    memset(buffer,0,sizeof(buffer));
     ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE);
     if(byteRead == -1)
     {
         close(dataClient.fileFd);
         dataClient.readyForClose = true;
-        throw std::runtime_error("EROOR reading from file");
+        throw std::runtime_error("internal server error");
     }
     if(byteRead == 0)
     {
         close(dataClient.fileFd);
         dataClient.readyForClose = true;
-        if(send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
-           throw std::runtime_error("An error aka client disconnect");
-        unlink("/tmp/tmpFile");
+        send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0);
         return ;
     }
     std::string httpresponse(buffer,byteRead);
-    if(dataClient.isCgi == true)
-    {
-        size_t pos = httpresponse.find("\r\n\r\n");
-        if(pos != std::string::npos)
-        {
-            httpresponse = httpresponse.substr(pos);
-        }
-        dataClient.isCgi = false;
-    }
     sendChunk(dataClient.fd,httpresponse.c_str(),httpresponse.size(),dataClient);  
 }
 
@@ -184,73 +170,66 @@ int checkFileOrDirectoryPermission(Data &dataClient)
     return 3;
 }
 
-void getMethod(Data & dataCleint)
+void getMethod(Data & dataClient)
 {
     try
     {
-        if(dataCleint.modeAutoIndex == true)
+        if(dataClient.modeAutoIndex == true)
         {
-            if(dataCleint.isReading == false)
-                openFileAndSendHeader(dataCleint);
+            if(dataClient.isReading == false)
+                openFileAndSendHeader(dataClient);
             else
-                serveFIle(dataCleint);
+                serveFIle(dataClient);
         }
-        else if(dataCleint.isReading == false)
+        else if(dataClient.isReading == false)
         {
-            int i = checkFileOrDirectoryPermission(dataCleint);
+            int i = checkFileOrDirectoryPermission(dataClient);
             if( i == 4)
                 return;
             if(i == 2)
             {
-                /* hundle DIRECTORY */
-                if(dataCleint.autoIndex == false)
+                /* listing DIRECTORY */
+                if(dataClient.autoIndex == false)
                 {
                     std::string msg = " 403 Forbidden";
-                    sendResponse(dataCleint,msg);
+                    sendResponse(dataClient,msg);
                     return;
                 }
-                if(listingDirectory(dataCleint) == 0)
+                if(listingDirectory(dataClient) == 0)
                 {
-                    const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + dataCleint.listDirectory;
-                    if(send(dataCleint.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-                    {
-                        dataCleint.readyForClose = true;
-                        throw std::runtime_error("An error aka client disconnect");
-                    }
-                    dataCleint.listDirectory.clear(); 
-                    dataCleint.readyForClose = true;
+                    const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + dataClient.listDirectory;
+                    if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
+                        dataClient.readyForClose = true;
+                    dataClient.listDirectory.clear(); 
+                    dataClient.readyForClose = true;
                     return ;
                 }
             }
             else if(i == 0)
             {
-                /* hundle  not found*/
-                std::string httpResponse = "HTTP/1.1 404 NOT FOUND\r\nContent-Type: text/html\r\n\r\n" ;
-                httpResponse += "<html><head><center><h1>404 NOT FOUND</h1></center></head></html>";
-                if(send(dataCleint.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-                {
-                    dataCleint.readyForClose = true;
-                    throw std::runtime_error("An error aka client disconnect");
-                }
-                dataCleint.readyForClose = true;
+                /* hundle Not Found case */
+                std::string msg = " 404 NOT FOUND";
+                sendResponse(dataClient,msg);
+                dataClient.readyForClose = true;
             }
             else if(i == 1)
             {
-                /* hundle file */
-                openFileAndSendHeader(dataCleint);
+                /* hundle files */
+                openFileAndSendHeader(dataClient);
             }
         }
         else
-            serveFIle(dataCleint);
+            serveFIle(dataClient);
     }
     catch (const std::runtime_error &e)
     {
-        if(strcmp(e.what() ,"internal server error") == 0)
-        {
-            std::string status = " 500 Internal Server Error";
-            sendResponse(dataCleint,status);
-        }
-        dataCleint.readyForClose = true;
+        // if(strcmp(e.what() ,"internal server error") == 0)
+        // {
+        //     std::string status = " 500 Internal Server Error";
+        //     sendResponse(dataClient,status);
+        // }
+        // dataClient.readyForClose = true;
+        std::cout<<e.what()<<"\n";
         return ;
     }
 }

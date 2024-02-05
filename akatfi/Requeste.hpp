@@ -21,7 +21,6 @@
 #include <fcntl.h>
 #include <algorithm>
 #include "parsinfCon/Configfile.hpp"
-#include "afadlane/webserv.hpp"
 class PostMethod;
 class Requeste
 {
@@ -32,6 +31,7 @@ class Requeste
         ConfigFile                          &config;
         int                                 fdresponse;
     public:
+        std::string                         headerResponse;
         Server                              Server_Requeste;
         Location                            Location_Server;
         long                                status_client;
@@ -45,10 +45,11 @@ class Requeste
         std::string                         http_v;
         std::string                         method;
         std::map<std::string, std::string>  requeste_map;
+        std::string                         file_name;
         Requeste(int fd, ConfigFile &config);
         void    MakeMapOfHeader(bool& isdone);
-        bool set_status_client();
-        void readFromSocketFd(Data& dataClient);
+        void set_status_client(bool&);
+        void readFromSocketFd(bool &isdone, bool &readyForClose, bool &flag);
         std::pair<std::string, std::string> MakePair(std::string& line);
         void    get_infoConfig();
         int     getSocketFd() const;

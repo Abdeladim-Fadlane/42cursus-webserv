@@ -10,7 +10,12 @@ void    insialStruct(Data & datacleint)
     // std::cout<<"root = "<<  datacleint.Path<<endl;
     // std::cout<<"path = "<<   datacleint.requeste->path<<endl;
 }
-
+double    getCurrentTime(void)
+{
+    struct timeval currentTime;
+    gettimeofday(&currentTime,NULL);
+    return (currentTime.tv_sec * 1000 ) + (currentTime.tv_usec /1000);
+}
 bool isServer(std::vector<int> & Servers,int index)
 {
     for(size_t i  = 0 ; i < Servers.size() ; i++)
@@ -105,6 +110,7 @@ void multiplexing(ConfigFile &config)
                 Data.data.isDone                = false;
                 Data.data.autoIndex             = false;
                 Data.data.fd                    = clientSocketFD;
+                Data.data.startTime             = getCurrentTime();
                 Data.data.requeste              = new Requeste(clientSocketFD,config);
                 Request[clientSocketFD]         = Data;
             } 
@@ -114,17 +120,19 @@ void multiplexing(ConfigFile &config)
                 {
                     /* client closed the connection */
                     std::cerr<<"An error aka client disconnect\n";
+                    delete Request[events[i].data.fd].data.requeste;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
                 }
-                if(events[i].events & EPOLLIN )
+                else if(events[i].events & EPOLLIN )
                 {
                     /* File descriptor ready for writing */
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
                         /* readiing AND parsing request */
-                        Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data);
+                        Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.isDone,
+                            Request[events[i].data.fd].data.readyForClose, Request[events[i].data.fd].data.AlreadyRequestHeader);
                         insialStruct(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
@@ -136,7 +144,7 @@ void multiplexing(ConfigFile &config)
                 else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.isDone == true)
                 {
                    /*  File descriptor ready for reading  */
-                //    std::cout << "dakhel" << std::endl;
+            
                     if(Request[events[i].data.fd].data.requeste->method == "GET")
                     {
                         /* handle Get method  */
@@ -149,16 +157,23 @@ void multiplexing(ConfigFile &config)
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "POST" )
                     {
+                        // std::cout << "response post" << std::endl;pkil
                         /* handle response Post method  */
-                        // std::cout<<"herrrr\n";
-                        std::string body = "<html><body><h1>Post request successful</h1></body></html>";
-                        const std::string httpResponse = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\n\r\n" + body;
-                        send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);
-                        Request[events[i].data.fd].data.readyForClose = true;
+                        // std::string body = "<html><body><h1>Post request successful</h1></body></html>";
+                        // const std::string httpResponse = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\n\r\n" + body;
+                        // send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);
+                        Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
+                        // Request[events[i].data.fd].data.readyForClose = true;
+                        // std::cout << Request[events[i].data.fd].data.requeste->status_client << std::endl;
+                        // std::cout << "will be close it" << std::endl;
+                    }
+                    else
+                    {
+                        // std::cout << "requeste error" << std::endl;
+                        Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
                     }
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
-                        std::cout << "-----> " << Request[events[i].data.fd].data.requeste->status_client << std::endl;
                         /* close File descriptor of client */
                         Request.erase(events[i].data.fd);
                         delete Request[events[i].data.fd].data.requeste;
@@ -172,6 +187,7 @@ void multiplexing(ConfigFile &config)
                     std::string body = "<html><body><h1>Opss an error occurred. Please try again later.</h1></body></html>";
                     const std::string httpResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + body;
                     send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);
+                    delete Request[events[i].data.fd].data.requeste;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);

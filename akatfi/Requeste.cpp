@@ -33,28 +33,28 @@ std::pair<std::string, std::string> Requeste::MakePair(std::string& line)
     return (std::pair<std::string, std::string>(first, line));
 }
 
-bool    Requeste::set_status_client()
+void    Requeste::set_status_client(bool &readyclose)
 {
-    std::cout << "nadi canadi" << std::endl;
     char buffer[1024];
+
     if (fdresponse == -1)
     {
-        std::string file_name = Server_Requeste.error_pages[status_client];
-        // std::cout << file_name << std::endl;
+        file_name = Server_Requeste.error_pages[status_client];
         fdresponse = open(file_name.c_str(), O_RDONLY);
-        if (fdresponse == -1)
-            exit(1);
-        std::cout << "fd_responce : " << fdresponse << std::endl;
     }
+    else 
+        headerResponse = "";
     memset(buffer, 0, sizeof(buffer));
     if (!read(fdresponse, buffer, 1023))
-        return close(fdresponse), true;
-    write(1, buffer, strlen(buffer));
-    write(fd_socket, buffer, strlen(buffer));
-    return (false);
+    {
+        close(fdresponse); 
+        readyclose = true;
+    }
+    else
+        write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length());  
 }
 
-void    Requeste::readFromSocketFd(Data & dataClient)
+void    Requeste::readFromSocketFd(bool &isdone, bool &readyForClose, bool &flag)
 {
     char buffer[1024];
     int x;
@@ -65,14 +65,13 @@ void    Requeste::readFromSocketFd(Data & dataClient)
     {
         this->MakeMapOfHeader(isdone);
         this->get_infoConfig();
-        dataClient.AlreadyRequestHeader = true;
+        flag = true;
         if (std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
         {
             status_client = 405;
-            // method = "";
-            std::cout << "method not allowed " << std::endl;
-            dataClient.isDone = true;
-            dataClient.readyForClose = true;
+            isdone = true;
+            method = "";
+            headerResponse = "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\n";
         }
         else if  (method == "POST" && !post)
             post = new PostMethod(*this);
@@ -81,10 +80,23 @@ void    Requeste::readFromSocketFd(Data & dataClient)
     }
 }
 
+std::string delete_slash_path(std::string& path)
+{
+    unsigned int i;
+
+    while (path.size() > 1 && path[0] == '/')
+        path = path.substr(1);
+    while (path.size() > 0  && path[path.size() - 1] == '/')
+        path = path.substr(0, path.size() - 1);
+    return (path);
+}
+
 void Requeste::get_infoConfig()
 {
     struct stat statbuf;
 
+
+    path = "/" + delete_slash_path(path);
     for (std::vector<Server>::iterator it = config.Servers.begin() ; it != config.Servers.end(); it++)
     {
         if (it->host == this->host && it->listen == this->port)
@@ -118,13 +130,6 @@ void Requeste::get_infoConfig()
             break ;
         }
     }
-    // if (stat(Location_Server.root.c_str(), &statbuf) != 0)
-    // {
-    //     //write error in socket 
-    //     std::cout << "path not found !" << std::endl;
-    // }
-    // std::cout << "uplaod path --> " << Location_Server.upload_location << std::endl;
-    // std::cout << "server path --> " << Location_Server.root << std::endl;
 }
 
 void Requeste::MakeMapOfHeader(bool& isdone)
@@ -148,17 +153,18 @@ void Requeste::MakeMapOfHeader(bool& isdone)
     }
     if (http_v != "HTTP/1.1")
     {
-        status_client = 500;
+        status_client = 505;
         isdone = true;
-        // error of http version;
-        // std::cout << "the server not sepport this version of http !" << std::endl;
+        method = "";
+        headerResponse = "HTTP/1.1 505 HTTP Version Not Supported\r\nContent-Type: text/html\r\n\r\n";
+
     }
     if (path.length() > 2048)
     {
         status_client = 414;
         isdone = true;
-        // write error in socket 
-        // std::cout << "path length is over" << std::endl;
+        method =  "";
+        headerResponse = "HTTP/1.1 414 URI Too Long\r\nContent-Type: text/html\r\n\r\n";
     }
     if (path.find("?") != std::string::npos)
     {
@@ -182,6 +188,7 @@ void Requeste::MakeMapOfHeader(bool& isdone)
     {
         status_client = 400;
         isdone = true;
+        headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
     }
 }
 

@@ -12,7 +12,7 @@
 
 #include "PostMethod.hpp"
 
-PostMethod::PostMethod(const Requeste& r) : req(r)
+PostMethod::PostMethod(Requeste& r) : req(r)
 {
     first_time = true;
     buffer_add = r.getBody();
@@ -28,6 +28,8 @@ PostMethod::PostMethod(const Requeste& r) : req(r)
         content_length = atoi((this->req.requeste_map.find("Content-Length")->second).c_str());
     if (req.requeste_map.find("Transfer-Encoding") != req.requeste_map.end())
         Transfer_Encoding = this->req.requeste_map.find("Transfer-Encoding")->second;
+    req.headerResponse = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\n\r\n";
+    req.status_client = 201;
 }
 
 const std::string& PostMethod::getContentType(void) const 
@@ -237,7 +239,6 @@ void    PostMethod::PostingFileToServer(bool& isdone)
             Postfile.close();
             isdone = true;
         }
-        // std::cout << "fileStat.st_size : " << fileStat.st_size << " :: " << content_length  << std::endl;
     }
 }
 
