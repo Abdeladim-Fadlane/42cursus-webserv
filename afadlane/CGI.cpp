@@ -47,6 +47,51 @@ void   SendHeader(Data &dataClient)
 
 void fastCGI(Data &dataClient,std::string &type)
 {
+    std::vector<std::string> environment;
+    environmentStore(dataClient,environment);
+    char* env[environment.size() + 1]; 
+    for(size_t i = 0; i< environment.size();i++)
+    {
+        env[i] = const_cast<char*>(environment[i].c_str());
+    }
+    env[environment.size()] = NULL;
+    std::string interpreter ;
+    if(type == ".py")
+        interpreter = dataClient.requeste->Location_Server.cgi[".py"];
+    else if(type == ".php")
+        interpreter = dataClient.requeste->Location_Server.cgi[".php"];
+    else if(type == ".sh")
+        interpreter = dataClient.requeste->Location_Server.cgi[".sh"];
+    else
+        throw std::runtime_error("Unsupported");
+
+
+    if(dataClient.requeste->method == "POST")
+    {
+        /* HUNDL POST*/
+        int fd = open("/tmp/tmpFile",O_RDONLY | O_WRONLY | O_CREAT ,777);
+        int fdPost = open("afadlane/TOOLS/postFile",O_RDONLY | O_WRONLY | O_CREAT ,777);
+        if (fd == -1 || fdPost == -1)
+            throw std::runtime_error ("internal server error 0");
+        pid_t pid;
+        pid = fork();
+        if(pid == -1)
+            throw std::runtime_error("internal server error");
+        if(pid == 0)
+        {
+            dup2(fd,1);
+            dup2(fdPost,0);
+            close(fd);
+            close(fdPost);
+            const char *args[] = {interpreter.c_str(), dataClient.Path.c_str(), NULL};
+            execve(interpreter.c_str(), const_cast<char* const*>(args), env);
+            throw std::runtime_error ("Cannot exectue script");
+        }
+        else
+            wait(NULL);
+        close(fd);
+    }
+    
     if(dataClient.requeste->method == "GET")
     {
 
@@ -69,14 +114,6 @@ void fastCGI(Data &dataClient,std::string &type)
         }
         else
         {
-            std::vector<std::string> environment;
-            environmentStore(dataClient,environment);
-            char* env[environment.size() + 1]; 
-            for(size_t i = 0; i< environment.size();i++)
-            {
-                env[i] = const_cast<char*>(environment[i].c_str());
-            }
-            env[environment.size()] = NULL;
             dataClient.isCgi = true;
             pid_t pid;
             int fd = open("/tmp/tmpFile",O_RDONLY | O_WRONLY | O_CREAT ,777);
@@ -85,15 +122,6 @@ void fastCGI(Data &dataClient,std::string &type)
             pid = fork();
             if(pid == -1)
                 throw std::runtime_error("internal server error");
-            std::string interpreter ;
-            if(type == ".py")
-                interpreter = dataClient.requeste->Location_Server.cgi[".py"];
-            else if(type == ".php")
-                interpreter = dataClient.requeste->Location_Server.cgi[".php"];
-            else if(type == ".sh")
-                interpreter = dataClient.requeste->Location_Server.cgi[".sh"];
-            else
-                throw std::runtime_error("Unsupported");
             if (pid == 0)
             {
                 dup2(fd, 1);
