@@ -14,7 +14,7 @@ double    getCurrentTime(void)
 {
     struct timeval currentTime;
     gettimeofday(&currentTime,NULL);
-    return (currentTime.tv_sec * 1000 ) + (currentTime.tv_usec /1000);
+    return ((currentTime.tv_sec) + (currentTime.tv_usec / 1000000));
 }
 bool isServer(std::vector<int> & Servers,int index)
 {
