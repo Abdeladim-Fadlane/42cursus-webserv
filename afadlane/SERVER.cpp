@@ -101,6 +101,8 @@ void multiplexing(ConfigFile &config)
                     continue;
                 }
                 Data.data.Alreadyopen           = false;
+                Data.data.isFork                = false;
+                Data.data.isExeceted            = false;
                 Data.data.isReading             = false;
                 Data.data.readyForClose         = false;
                 Data.data.Alreadparce           = false;

@@ -37,6 +37,8 @@ struct Data
     int fd ;
     int fileFd;
     bool  isDone;
+    bool  isFork;
+    pid_t pid;
     bool isCgi;
     double startTime;
     bool autoIndex;
@@ -51,6 +53,7 @@ struct Data
     std::string restRead;
     bool AlreadyRequestHeader;
     std::vector<std::string> autoFile;
+    bool isExeceted;
 };
 
 struct Webserv

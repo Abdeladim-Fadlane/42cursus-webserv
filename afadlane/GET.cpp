@@ -94,7 +94,7 @@ void sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClie
     if (send(clientSocket, totalChuncked.c_str(), totalChuncked.size(),0) ==  -1)
     {
         close(dataClient.fileFd);
-        dataClient.readyForClose = 1;
+        dataClient.readyForClose = true;
     }
 }
 bool checkIsCgi(std::string &contentType)

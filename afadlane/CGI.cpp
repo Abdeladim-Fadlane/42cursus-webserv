@@ -66,34 +66,34 @@ void fastCGI(Data &dataClient,std::string &type)
         throw std::runtime_error("Unsupported");
 
 
-    if(dataClient.requeste->method == "POST")
-    {
-        /* HUNDL POST*/
-        int fd = open("/nfs/homes/afadlane/webserv/afadlane/script.php",O_RDONLY);
-        int fdPost = open("/nfs/homes/afadlane/webserv/afadlane/postFile.html",O_RDONLY | O_WRONLY | O_CREAT ,0666);
-        if (fd == -1 || fdPost == -1)
-            std::cerr<<("internal server error 0");
-        pid_t pid;
-        pid = fork();
-        if(pid == -1)
-            throw std::runtime_error("internal server error");
-        if(pid == 0)
-        {
-            dup2(fdPost,1);
-            dup2(fd,0);
-            close(fd);
-            close(fdPost);
-            const char *args[] = {interpreter.c_str(), dataClient.Path.c_str(), NULL};
-            execve(interpreter.c_str(), const_cast<char* const*>(args), env);
-            throw std::runtime_error ("Cannot exectue script");
-        }
-        else
-            wait(NULL);
-        close(fd);
-        close(fdPost);
-        dataClient.readyForClose = true;
-        return;
-    }
+    // if(dataClient.requeste->method == "POST")
+    // {
+    //     /* HUNDL POST*/
+    //     int fd = open("/nfs/homes/afadlane/webserv/afadlane/script.php",O_RDONLY);
+    //     int fdPost = open("/nfs/homes/afadlane/webserv/afadlane/postFile.html",O_RDONLY | O_WRONLY | O_CREAT ,0666);
+    //     if (fd == -1 || fdPost == -1)
+    //         std::cerr<<("internal server error 0");
+    //     pid_t pid;
+    //     pid = fork();
+    //     if(pid == -1)
+    //         throw std::runtime_error("internal server error");
+    //     if(pid == 0)
+    //     {
+    //         dup2(fdPost,1);
+    //         dup2(fd,0);
+    //         close(fd);
+    //         close(fdPost);
+    //         const char *args[] = {interpreter.c_str(), dataClient.Path.c_str(), NULL};
+    //         execve(interpreter.c_str(), const_cast<char* const*>(args), env);
+    //         throw std::runtime_error ("Cannot exectue script");
+    //     }
+    //     else
+    //         wait(NULL);
+    //     close(fd);
+    //     close(fdPost);
+    //     dataClient.readyForClose = true;
+    //     return;
+    // }
     
     if(dataClient.requeste->method == "GET")
     {
@@ -117,46 +117,45 @@ void fastCGI(Data &dataClient,std::string &type)
         }
         else
         {
-            dataClient.isCgi = true;
-            dataClient.startTime = getCurrentTime();
-            pid_t pid;
-            int fd = open("/tmp/tmpFile",O_RDONLY | O_WRONLY | O_CREAT ,0666);
-            if (fd == -1)
-                throw std::runtime_error ("internal server error 0");
-            pid = fork();
-            if(pid == -1)
-                throw std::runtime_error("internal server error");
-            if (pid == 0)
-            {
-                dup2(fd, 1);
-                const char *args[] = {interpreter.c_str(), dataClient.Path.c_str(), NULL};
-                close(fd);
-                execve(interpreter.c_str(), const_cast<char* const*>(args), env);
-                throw std::runtime_error ("Cannot exectue script");
-            } 
-            else
-            {
-                int status;
-                while(true)
+            int fd;
+            if(dataClient.isFork == false)
+            {;
+                dataClient.startTime = getCurrentTime();
+                dataClient.isFork = true;
+                fd = open("/tmp/tmpFile",O_RDONLY | O_WRONLY | O_CREAT ,0666);
+                if (fd == -1)
+                    throw std::runtime_error ("internal server error 0");
+                dataClient.pid = fork();
+                if(dataClient.pid == -1)
+                    throw std::runtime_error("internal server error");
+                if (dataClient.pid == 0)
                 {
-                    if(waitpid(pid,&status,WNOHANG) == 0)
-                    {
-                        if(getCurrentTime() - dataClient.startTime >=  5)
-                        {
-                            close(fd);
-                            dataClient.readyForClose = true;
-                            std::string msg =" 504 Gateway Timeout"; 
-                            sendResponse(dataClient,msg);
-                            kill(pid,SIGTERM);
-                            return ;
-                        }
-                    }
-                    else
-                        break;
+                    dup2(fd, 1);
+                    close(fd);
+                    const char *args[] = {interpreter.c_str(), dataClient.Path.c_str(), NULL};
+                    execve(interpreter.c_str(), const_cast<char* const*>(args), env);
+                    throw std::runtime_error ("Cannot exectue script");
                 }
             }
-            close(fd);
-            SendHeader(dataClient);
+            int status;
+            if(waitpid(dataClient.pid,&status,WNOHANG) == 0)
+            {
+                if(getCurrentTime() - dataClient.startTime >=  10)
+                {
+                    close(fd);
+                    kill(dataClient.pid,SIGTERM);
+                    dataClient.readyForClose = true;
+                    std::string msg =" 504 Gateway Timeout"; 
+                    sendResponse(dataClient,msg);
+                    unlink("/tmp/tmpFile");
+                }
+            }
+            else
+            {
+                close(fd);
+                SendHeader(dataClient);
+                dataClient.isCgi = true;
+            }
         }
     }
 }
