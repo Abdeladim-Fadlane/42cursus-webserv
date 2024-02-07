@@ -62,10 +62,6 @@ void fastCGI(Data &dataClient,std::string &type)
         interpreter = dataClient.requeste->Location_Server.cgi[".php"];
     else if(type == ".sh")
         interpreter = dataClient.requeste->Location_Server.cgi[".sh"];
-    else
-        throw std::runtime_error("Unsupported");
-
-
     // if(dataClient.requeste->method == "POST")
     // {
     //     /* HUNDL POST*/
@@ -107,7 +103,7 @@ void fastCGI(Data &dataClient,std::string &type)
             {
                 close(dataClient.fileFd);
                 dataClient.readyForClose = true;
-                unlink("/tmp/tmpFile");
+                // unlink("/tmp/tmpFile");
             }
             else
             {
