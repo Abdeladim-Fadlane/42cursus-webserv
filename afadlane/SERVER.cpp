@@ -101,6 +101,9 @@ void multiplexing(ConfigFile &config)
                     continue;
                 }
                 Data.data.Alreadyopen           = false;
+                Data.data.fileFd                = 0;
+                Data.data.code                  = 0;
+                Data.data.Alreadyopen           = false;
                 Data.data.isReading             = false;
                 Data.data.isFork                = false;
                 Data.data.isExeceted            = false;
@@ -122,13 +125,13 @@ void multiplexing(ConfigFile &config)
                 {
                     /* client closed the connection */
                     std::cerr<<"An error aka client disconnect\n";
+                    delete Request[events[i].data.fd].data.requeste;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
                 }
                 else if(events[i].events & EPOLLIN && Request[events[i].data.fd].data.isDone == false)
                 {
-                    // std::cerr<<"123ct\n";
                     /* File descriptor ready for writing */
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
@@ -145,16 +148,21 @@ void multiplexing(ConfigFile &config)
                 else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.isDone == true)
                 {
                    /*  File descriptor ready for reading  */
-                //    std::cout << "done" << std::endl;
                     if(Request[events[i].data.fd].data.requeste->method == "GET")
                     {
                         /* handle Get method  */
-                        getMethod(Request[events[i].data.fd].data);
+                        if(Request[events[i].data.fd].data.code != 0)
+                            sendErrorResponse(Request[events[i].data.fd].data);
+                        else
+                            getMethod(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "DELETE")
                     {
                         /* handle delete method  */
-                        deleteMethod(Request[events[i].data.fd].data);
+                        if(Request[events[i].data.fd].data.code != 0)
+                            sendErrorResponse(Request[events[i].data.fd].data);
+                        else
+                            deleteMethod(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "POST" )
                         Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
@@ -162,8 +170,6 @@ void multiplexing(ConfigFile &config)
                         Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
-                        // std::cout << "-----> " << Request[events[i].data.fd].data.requeste->status_client << std::endl;
-                        /* close File descriptor of client */
                         Request.erase(events[i].data.fd);
                         delete Request[events[i].data.fd].data.requeste;
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
@@ -173,9 +179,9 @@ void multiplexing(ConfigFile &config)
                 else if(events[i].events & EPOLLERR)
                 {
                     /* an error has occurred */
-                    std::string body = "<html><body><h1>Opss an error occurred. Please try again later.</h1></body></html>";
-                    const std::string httpResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + body;
-                    send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);
+                    std::string msg = " 500 Internal Server Error";
+                    sendResponse(Request[events[i].data.fd].data,msg);
+                    delete Request[events[i].data.fd].data.requeste;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);

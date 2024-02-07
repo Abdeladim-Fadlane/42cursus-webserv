@@ -39,6 +39,7 @@ struct Data
     bool  isDone;
     bool  isFork;
     pid_t pid;
+    long code;
     bool isCgi;
     double startTime;
     bool autoIndex;
@@ -82,4 +83,5 @@ void    fastCGI(Data &,std::string &);
 void    multiplexing(ConfigFile &config);
 void    sendResponse(Data &,std::string &);
 bool    checkPermission(Data &, const char *,int );
+void    sendErrorResponse(Data &dataClient);
 void    sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient);

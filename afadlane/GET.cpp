@@ -202,6 +202,7 @@ void getMethod(Data & dataClient)
                 if(dataClient.autoIndex == false)
                 {
                     std::string msg = " 403 Forbidden";
+                    dataClient.code = 403;
                     sendResponse(dataClient,msg);
                     return;
                 }
@@ -219,8 +220,8 @@ void getMethod(Data & dataClient)
             {
                 /* hundle Not Found case */
                 std::string msg = " 404 NOT FOUND";
+                dataClient.code = 404;
                 sendResponse(dataClient,msg);
-                dataClient.readyForClose = true;
             }
             else if(i == 1)
             {
@@ -233,13 +234,13 @@ void getMethod(Data & dataClient)
     }
     catch (const std::runtime_error &e)
     {
-        // if(strcmp(e.what() ,"internal server error") == 0)
-        // {
-        //     std::string status = " 500 Internal Server Error";
-        //     sendResponse(dataClient,status);
-        // }
-        // dataClient.readyForClose = true;
-        std::cout<<e.what()<<"\n";
+        if(strcmp(e.what() ,"internal server error") == 0)
+        {
+            std::string status = " 500 Internal Server Error";
+            sendResponse(dataClient,status);
+            dataClient.code = 500;
+
+        }
         return ;
     }
 }
