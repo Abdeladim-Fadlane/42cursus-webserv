@@ -39,7 +39,7 @@ bool getAutoFile(Data & dataClient,char * path)
     {
         if(strcmp(path,dataClient.autoFile[i].c_str()) == 0)
         {
-            dataClient.Path += dataClient.autoFile[i];
+            dataClient.Path = dataClient.Path + "/" + dataClient.autoFile[i];
             dataClient.modeAutoIndex = true;
             return true ;
         }

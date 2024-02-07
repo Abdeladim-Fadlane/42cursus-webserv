@@ -21,9 +21,8 @@
 #include <stdio.h>
 #include <sstream>
 #include <sys/stat.h>
+#include <limits.h>
 #include <stdlib.h>
-#define MAX_PAGE 406
-#define MIN_PAGE 400
 
 class Location
 {
@@ -53,7 +52,7 @@ class Server
         std::string                         host;
         std::string                         server_name;
         std::map<long, std::string>  error_pages;
-        long                                max_body;
+        size_t                                max_body;
         std::vector<Location>               locations;
         bool                                close;
         bool                                port_chose;

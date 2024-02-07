@@ -12,10 +12,10 @@
 
 #include "Requeste.hpp"
 #include "PostMethod.hpp"
-Requeste::Requeste(int fd,ConfigFile &configfile, bool &f) : config(configfile), flag(f)
+Requeste::Requeste(int fd,ConfigFile &configfile) : config(configfile)
 {
     fd_socket = fd;
-    fdresponse = -6;
+    fdresponse = -1;
     post = NULL;
     port = 0;
 }
@@ -33,23 +33,28 @@ std::pair<std::string, std::string> Requeste::MakePair(std::string& line)
     return (std::pair<std::string, std::string>(first, line));
 }
 
-bool    Requeste::set_status_client()
+void    Requeste::set_status_client(bool &readyclose)
 {
     char buffer[1024];
-    
-    if (fdresponse == -6)
+
+    if (fdresponse == -1)
     {
-        std::string file_name = Server_Requeste.error_pages[status_client];
+        file_name = Server_Requeste.error_pages[status_client];
         fdresponse = open(file_name.c_str(), O_RDONLY);
     }
+    else 
+        headerResponse = "";
     memset(buffer, 0, sizeof(buffer));
     if (!read(fdresponse, buffer, 1023))
-        return close(fdresponse),false;
-    write(fd_socket, buffer, strlen(buffer));
-    return true;
+    {
+        close(fdresponse); 
+        readyclose = true;
+    }
+    else
+        write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length());  
 }
 
-void    Requeste::readFromSocketFd(bool &flag, bool& isdone)
+void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
 {
     char buffer[1024];
     int x;
@@ -58,27 +63,53 @@ void    Requeste::readFromSocketFd(bool &flag, bool& isdone)
     head.append(buffer, x);
     if (head.find("\r\n\r\n") != std::string::npos)
     {
-        this->MakeMapOfHeader();
-        this->get_infoConfig();
+        this->MakeMapOfHeader(isdone);
+        this->get_infoConfig(isdone);
         flag = true;
-        if (std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
+        if (isdone == false && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
         {
-            //take permission to write an error page;
-            std::cout << "method is not allowed" << std::endl;
-        }
-        if (method == "POST" && !post)
-            post = new PostMethod(*this);
-        else
-        {
+            status_client = 405;
             isdone = true;
+            method = "";
+            headerResponse = "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\n";
         }
+        else if  (isdone == false && method == "POST" && !post)
+            post = new PostMethod(*this);
+        else if (isdone == false)
+            isdone = true;
+    }
+    else if (head.length() >= 4000)
+    {
+        status_client = 413;
+        isdone = true;
+        headerResponse = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n";
+    }
+    else if (head.length() == 0 && flag == false)
+    {
+        status_client = 404;
+        isdone = true;
+        headerResponse = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n";
     }
 }
 
-void Requeste::get_infoConfig()
+std::string delete_slash_path(std::string& path, bool& slash)
+{
+    while (path.size() > 1 && path[0] == '/')
+        path = path.substr(1);
+    while (path.size() > 0  && path[path.size() - 1] == '/')
+    {
+        path = path.substr(0, path.size() - 1);
+        slash = true;
+    }
+    return (path);
+}
+
+void Requeste::get_infoConfig(bool& isdone)
 {
     struct stat statbuf;
+    bool slash = false;
 
+    path = "/" + delete_slash_path(path, slash);
     for (std::vector<Server>::iterator it = config.Servers.begin() ; it != config.Servers.end(); it++)
     {
         if (it->host == this->host && it->listen == this->port)
@@ -97,6 +128,14 @@ void Requeste::get_infoConfig()
                     stat(Location_Server.root.c_str(), &statbuf);
                     if (path.length() && path[path.length() - 1] != '/' && S_ISDIR(statbuf.st_mode) == true)
                         path += "/";
+                    else if (S_ISREG(statbuf.st_mode) && slash == true)
+                    {
+                        status_client = 404;
+                        isdone = true;
+                        method =  "";
+                        headerResponse = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n";
+                        return ;
+                    }
                     break ;
                 }
                 else if (path == "/" && it->locations.size() - 1 == i)
@@ -112,16 +151,9 @@ void Requeste::get_infoConfig()
             break ;
         }
     }
-    if (stat(Location_Server.root.c_str(), &statbuf) != 0)
-    {
-        //write error in socket 
-        std::cout << "path not found !" << std::endl;
-    }
-    // std::cout << "uplaod path --> " << Location_Server.upload_location << std::endl;
-    // std::cout << "server path --> " << Location_Server.root << std::endl;
 }
 
-void Requeste::MakeMapOfHeader()
+void Requeste::MakeMapOfHeader(bool& isdone)
 {
     std::string     new_req;
     std::string     line;
@@ -142,13 +174,18 @@ void Requeste::MakeMapOfHeader()
     }
     if (http_v != "HTTP/1.1")
     {
-        // error of http version;
-        std::cout << "the server not sepport this version of http !" << std::endl;
+        status_client = 505;
+        isdone = true;
+        method = "";
+        headerResponse = "HTTP/1.1 505 HTTP Version Not Supported\r\nContent-Type: text/html\r\n\r\n";
+
     }
     if (path.length() > 2048)
     {
-        // write error in socket 
-        std::cout << "path length is over" << std::endl;
+        status_client = 414;
+        isdone = true;
+        method =  "";
+        headerResponse = "HTTP/1.1 414 URI Too Long\r\nContent-Type: text/html\r\n\r\n";
     }
     if (path.find("?") != std::string::npos)
     {
@@ -170,7 +207,10 @@ void Requeste::MakeMapOfHeader()
     }
     if (host.empty() || !port)
     {
-        // error the requste not has a port or host
+        status_client = 400;
+        isdone = true;
+        method = "";
+        headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
     }
 }
 

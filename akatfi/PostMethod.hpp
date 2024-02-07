@@ -14,8 +14,9 @@
 #define POST_METHOD_HPP
 #include <fstream>
 #include <string>
-#include <fstream>
+#include <sstream>
 #include <string.h>
+#include <stdio.h>
 #include <ctime>
 #include <sys/time.h>
 #include "Requeste.hpp"
@@ -23,13 +24,11 @@
 class PostMethod
 {
     private:
-        static long         i;
-        // bool                flag_boundary;
         size_t              size;
         std::string         boundary_separator;
         size_t              separator_size;
         std::string         buffer_add;
-        Requeste            req;
+        Requeste            &req;
         std::fstream        Postfile;
         std::string         content_type;
         size_t              content_length;
@@ -38,15 +37,18 @@ class PostMethod
         std::stringstream   ss;
         struct timeval      Time;
         std::map<std::string, std::string>  map_extation;
+        std::vector<std::string>    vector_files;
+        size_t              content_file;
     public:
         std::string         path;
-        PostMethod(const Requeste& r);
+        PostMethod(Requeste& r);
         void    PostingFileToServer(bool& isdone); 
         void    chunked(std::string &buffer, bool& isdone);   
         void    boundary(std::string buffer, bool& isdone);
         size_t getContentLength(void) const;
         const std::string& getContentType(void) const;
         std::string init_contentType(std::string& buffer);
+        void    unlink_all_file(void);
         ~PostMethod();
 };
 

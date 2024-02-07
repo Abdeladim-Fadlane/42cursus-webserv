@@ -24,13 +24,16 @@ Server::Server()
 {
     port_chose = false;
     close = true;
-    // DIR* dir_error = opendir("/nfs/homes/akatfi/Desktop/coding_web/akatfi/parsinfCon/Error_pages");
-    // dirent* path;
-    // while ((path = readdir(dir_error)))
-    // {
-    //     if (path->d_name[0] != '.')
-    //         error_pages[init_numberError(std::string(path->d_name))] = std::string("Error_pages").append(path->d_name);
-    // }
+    max_body = LONG_MAX;
+    DIR* dir_error = opendir("akatfi/parsinfCon/error");
+    dirent* path;
+    while ((path = readdir(dir_error)))
+    {
+        // std::cout << path->d_name << std::endl;
+        if (path->d_name[0] != '.')
+            error_pages[init_numberError(std::string(path->d_name))] = std::string("akatfi/parsinfCon/error/").append(path->d_name);
+    }
+    closedir(dir_error);
 }
 
 Server& Server::operator=(const Server& obj)
@@ -89,8 +92,8 @@ void    Server::init_data(std::fstream& os)
         }
         else if (!arg[0].compare("error_page") && !close && arg.size() == 3)
         {
-            if (!check_digit(arg[1]) || !(atoi(arg[1].c_str()) >= MIN_PAGE && atoi(arg[1].c_str()) <= MAX_PAGE))
-                throw std::runtime_error("Error : thee number of error_page will be a digit between 400 and 406");
+            if (!check_digit(arg[1]))
+                throw std::runtime_error("Error : the number of error_page will be a digit");
             error_pages[atoi(arg[1].c_str())] = arg[2];
         }
         else if (!arg[0].compare("location") && arg.size() == 2 && !close)

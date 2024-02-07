@@ -75,7 +75,7 @@ void    Location::add_location(std::fstream& os)
         {
             if (arg[1].compare("ON") && arg[1].compare("OFF"))
                 throw std::runtime_error("Error : the autoindex will has ON or OFF parameter");
-            cgi_allowed = arg[1];
+            autoindex = arg[1];
         }
         else if (!arg[0].compare("index"))
         {
@@ -99,16 +99,16 @@ void    Location::add_location(std::fstream& os)
         }
         else if (!arg[0].compare("upload_location") && arg.size() == 2)
             upload_location = arg[1];
-         else if (!arg[0].compare("cgi_allowed") && arg.size() == 2)
+        else if (!arg[0].compare("cgi_allowed") && arg.size() == 2)
         {
             if (arg[1].compare("ON") && arg[1].compare("OFF"))
                 throw std::runtime_error("Error : the cgi_allowed will has ON or OFF parameter");
-            autoindex = arg[1];
+            cgi_allowed = arg[1];
         }
         else if (!arg[0].compare("cgi") && arg.size() == 3)
         {
             if (access(arg[1].c_str(), X_OK) == -1)
-                throw std::runtime_error(std::string("of ").append(arg[2]) + " extation with this path");
+                throw std::runtime_error(std::string("Error : can't execute file's of ").append(arg[2]) + " extation with this path");
             cgi[arg[2]] = arg[1];
         }
         else
