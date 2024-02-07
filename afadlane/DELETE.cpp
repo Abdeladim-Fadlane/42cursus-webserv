@@ -104,7 +104,7 @@ bool   deleteMethod(Data &dataClient)
     {    
         std::string status = "  204 No Content";
         sendResponse(dataClient,status);
-        dataClient.readyForClose =true;
+        dataClient.readyForClose = true;
     }
     return true;
 }

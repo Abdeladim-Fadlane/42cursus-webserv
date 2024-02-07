@@ -239,7 +239,6 @@ void getMethod(Data & dataClient)
             std::string status = " 500 Internal Server Error";
             sendResponse(dataClient,status);
             dataClient.code = 500;
-
         }
         return ;
     }
