@@ -14,8 +14,9 @@
 #define POST_METHOD_HPP
 #include <fstream>
 #include <string>
-#include <fstream>
+#include <sstream>
 #include <string.h>
+#include <stdio.h>
 #include <ctime>
 #include <sys/time.h>
 #include "Requeste.hpp"
@@ -36,6 +37,7 @@ class PostMethod
         std::stringstream   ss;
         struct timeval      Time;
         std::map<std::string, std::string>  map_extation;
+        std::vector<std::string>    vector_files;
         size_t              content_file;
     public:
         std::string         path;
@@ -46,6 +48,7 @@ class PostMethod
         size_t getContentLength(void) const;
         const std::string& getContentType(void) const;
         std::string init_contentType(std::string& buffer);
+        void    unlink_all_file(void);
         ~PostMethod();
 };
 

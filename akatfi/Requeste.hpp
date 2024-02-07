@@ -49,9 +49,9 @@ class Requeste
         Requeste(int fd, ConfigFile &config);
         void    MakeMapOfHeader(bool& isdone);
         void set_status_client(bool&);
-        void readFromSocketFd(bool &isdone, bool &readyForClose, bool &flag);
+        void readFromSocketFd(bool &isdone, bool &flag);
         std::pair<std::string, std::string> MakePair(std::string& line);
-        void    get_infoConfig();
+        void    get_infoConfig(bool& isdone);
         int     getSocketFd() const;
         const std::string& getBody() const;
         const std::string&    getPath() const;

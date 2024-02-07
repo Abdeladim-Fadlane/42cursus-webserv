@@ -37,6 +37,8 @@ struct Data
     int fd ;
     int fileFd;
     bool  isDone;
+    bool  isFork;
+    pid_t pid;
     bool isCgi;
     double startTime;
     bool autoIndex;
@@ -51,6 +53,7 @@ struct Data
     std::string restRead;
     bool AlreadyRequestHeader;
     std::vector<std::string> autoFile;
+    bool isExeceted;
 };
 
 struct Webserv
@@ -72,12 +75,11 @@ struct ServerConfig
     // std::vector<LocationConfig> locations;
 };
 
-void    multiplexing(ConfigFile &config);
 void    getMethod(Data &);
 bool    deleteMethod(Data &);
+double  getCurrentTime(void);
 void    fastCGI(Data &,std::string &);
+void    multiplexing(ConfigFile &config);
 void    sendResponse(Data &,std::string &);
 bool    checkPermission(Data &, const char *,int );
-
-
-void sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient);
+void    sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient);

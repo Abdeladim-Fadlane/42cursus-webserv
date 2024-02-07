@@ -42,21 +42,6 @@ size_t PostMethod::getContentLength(void) const
     return (content_length);
 }
 
-int hexCharToDecimal(char hexChar) {
-    if (std::isdigit(hexChar))
-        return hexChar - '0';
-    else
-        return std::tolower(hexChar) - 'a' + 10;
-}
-
-int hexStringToDecimal(const std::string& hexString) {
-    int decimalValue = 0;
-
-    for (size_t i = 0; i < hexString.length(); ++i) 
-        decimalValue = decimalValue * 16 + hexCharToDecimal(hexString[i]);
-    return decimalValue;
-}
-
 std::string PostMethod::init_contentType(std::string& buffer)
 {
     std::string line;
@@ -71,7 +56,9 @@ std::string PostMethod::init_contentType(std::string& buffer)
         if (line.find("Content-Type: ") != std::string::npos)
             content = line.substr(line.find("Content-Type: ") +  strlen("Content-Type: "));
     }
-    return (map_extation.find(content)->second);
+    if (map_extation.find(content) != map_extation.end())
+        return (map_extation.find(content)->second);
+    return ("");
 }
 
 
@@ -81,6 +68,7 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
     size_t      index;
     
     buffer = buffer_add + buffer;
+    content_file += buffer.length();
     buffer_add = "";
     if (first_time)
     {
@@ -105,8 +93,15 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
             if (Postfile.is_open())
                 Postfile.close();
             content_type = init_contentType(buffer);
+            if (content_type.empty())
+            {
+                req.status_client = 415;
+                req.headerResponse = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Type: text/html\r\n\r\n";
+                isdone = true;
+            }
             gettimeofday(&Time, NULL) ;
-            ss << Time.tv_sec << "-" <<Time.tv_usec;
+            ss << Time.tv_sec << "-" << Time.tv_usec;
+            vector_files.push_back(req.Location_Server.upload_location + "/index" + ss.str() + content_type);
             Postfile.open((std::string(req.Location_Server.upload_location).append("/index") + ss.str() + content_type).c_str() , std::fstream::out);
             ss.str("");
             boundary(buffer, isdone);
@@ -129,12 +124,17 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
 
 void PostMethod::chunked(std::string &buffer, bool& isdone)
 {
+    std::stringstream strhex;
+
     buffer = buffer_add + buffer;
+    content_file += buffer.length();
     if (!size)
     {
         if (buffer.find("\r\n") != std::string::npos)
         {
-            size = hexStringToDecimal(buffer.substr(0, buffer.find("\r\n")));
+            strhex << std::hex << buffer.substr(0, buffer.find("\r\n"));
+            strhex >> size;
+            strhex.str("");
             if (!size)
             {
                 Postfile.close();
@@ -173,22 +173,37 @@ void    PostMethod::PostingFileToServer(bool& isdone)
     char buffer_read[1024];
     int x;
 
-    if (!this->req.Location_Server.uploadfile.compare("OFF") && req.Location_Server.cgi_allowed == "OFF")
+    // if (content_file >= req.Server_Requeste.max_body)
+    // {
+    //     unlink_all_file();
+    //     req.status_client = 413;
+    //     isdone = true;
+    //     req.headerResponse = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n";
+    // }
+    if (!req.Location_Server.uploadfile.compare("OFF") && !req.Location_Server.cgi_allowed.compare("OFF"))
     {
-        std::cout << "upload file is off" << std::endl;
-        // falg = true;
-        // req.status_client =
-        // return ;
+        req.headerResponse = "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\n";
+        req.status_client = 405;
+        isdone = true;
+        return ;
     }
     if (content_type.empty() || !content_length)
     {
-        // write error in socket 
+        req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+        isdone = true;
+        req.status_client = 400;
+        return ;
     }
     memset(buffer_read, 0, sizeof(buffer_read));
     x = read(req.getSocketFd(), buffer_read, 1023);
     buffer.append(buffer_read, x);
     if ((buffer + req.getBody()).length() == 0)
+    {
+        req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+        isdone = true;
+        req.status_client = 400;
         return ;
+    }
     if (!Transfer_Encoding.compare("chunked"))
     {
         if (first_time)
@@ -200,9 +215,13 @@ void    PostMethod::PostingFileToServer(bool& isdone)
                 content_type = "";
             if (content_type.empty())
             {
-                //Error the server not sepported this extation
+                req.status_client = 415;
+                req.headerResponse = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Type: text/html\r\n\r\n";
+                isdone = true;
+                return ;
             }
             ss << Time.tv_sec << "-" << Time.tv_usec;
+            vector_files.push_back(req.Location_Server.upload_location + "/index" + ss.str() + content_type);
             Postfile.open((std::string(req.Location_Server.upload_location).append("/index")  + ss.str() + content_type).c_str(), std::fstream::out);
             ss.str("");
         }
@@ -222,9 +241,13 @@ void    PostMethod::PostingFileToServer(bool& isdone)
                 content_type = "";
             if (content_type.empty())
             {
-                //Error the server not sepported this extation
+                req.status_client = 415;
+                req.headerResponse = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Type: text/html\r\n\r\n";
+                isdone = true;
+                return ;
             }
             ss << Time.tv_sec << "-" << Time.tv_usec;
+            vector_files.push_back(req.Location_Server.upload_location + "/index" + ss.str() + content_type);
             content_type =std::string(req.Location_Server.upload_location).append("/index")  + ss.str() + content_type;
             Postfile.open(content_type.c_str(), std::fstream::out);
             ss.str("");
@@ -240,6 +263,12 @@ void    PostMethod::PostingFileToServer(bool& isdone)
             isdone = true;
         }
     }
+}
+
+void PostMethod::unlink_all_file()
+{
+    for (unsigned int i = 0; i < vector_files.size(); i++)
+        remove(vector_files[i].c_str());
 }
 
 PostMethod::~PostMethod()

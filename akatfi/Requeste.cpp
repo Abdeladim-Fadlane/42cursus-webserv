@@ -54,7 +54,7 @@ void    Requeste::set_status_client(bool &readyclose)
         write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length());  
 }
 
-void    Requeste::readFromSocketFd(bool &isdone, bool &readyForClose, bool &flag)
+void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
 {
     char buffer[1024];
     int x;
@@ -64,39 +64,52 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &readyForClose, bool &flag
     if (head.find("\r\n\r\n") != std::string::npos)
     {
         this->MakeMapOfHeader(isdone);
-        this->get_infoConfig();
+        this->get_infoConfig(isdone);
         flag = true;
-        if (std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
+        if (isdone == false && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
         {
             status_client = 405;
             isdone = true;
             method = "";
             headerResponse = "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\n";
         }
-        else if  (method == "POST" && !post)
+        else if  (isdone == false && method == "POST" && !post)
             post = new PostMethod(*this);
-        else
+        else if (isdone == false)
             isdone = true;
+    }
+    else if (head.length() >= 4000)
+    {
+        status_client = 413;
+        isdone = true;
+        headerResponse = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n";
+    }
+    else if (head.length() == 0 && flag == false)
+    {
+        status_client = 404;
+        isdone = true;
+        headerResponse = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n";
     }
 }
 
-std::string delete_slash_path(std::string& path)
+std::string delete_slash_path(std::string& path, bool& slash)
 {
-    unsigned int i;
-
     while (path.size() > 1 && path[0] == '/')
         path = path.substr(1);
     while (path.size() > 0  && path[path.size() - 1] == '/')
+    {
         path = path.substr(0, path.size() - 1);
+        slash = true;
+    }
     return (path);
 }
 
-void Requeste::get_infoConfig()
+void Requeste::get_infoConfig(bool& isdone)
 {
     struct stat statbuf;
+    bool slash = false;
 
-
-    path = "/" + delete_slash_path(path);
+    path = "/" + delete_slash_path(path, slash);
     for (std::vector<Server>::iterator it = config.Servers.begin() ; it != config.Servers.end(); it++)
     {
         if (it->host == this->host && it->listen == this->port)
@@ -115,6 +128,14 @@ void Requeste::get_infoConfig()
                     stat(Location_Server.root.c_str(), &statbuf);
                     if (path.length() && path[path.length() - 1] != '/' && S_ISDIR(statbuf.st_mode) == true)
                         path += "/";
+                    else if (S_ISREG(statbuf.st_mode) && slash == true)
+                    {
+                        status_client = 404;
+                        isdone = true;
+                        method =  "";
+                        headerResponse = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n";
+                        return ;
+                    }
                     break ;
                 }
                 else if (path == "/" && it->locations.size() - 1 == i)
@@ -188,6 +209,7 @@ void Requeste::MakeMapOfHeader(bool& isdone)
     {
         status_client = 400;
         isdone = true;
+        method = "";
         headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
     }
 }

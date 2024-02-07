@@ -94,7 +94,7 @@ void sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClie
     if (send(clientSocket, totalChuncked.c_str(), totalChuncked.size(),0) ==  -1)
     {
         close(dataClient.fileFd);
-        dataClient.readyForClose = 1;
+        dataClient.readyForClose = true;
     }
 }
 bool checkIsCgi(std::string &contentType)
@@ -103,14 +103,24 @@ bool checkIsCgi(std::string &contentType)
         return true;
     return false;
 }
+bool checkCgi(Data &dataClient ,std::string &contentType)
+{
+    if(dataClient.requeste->Location_Server.cgi.find(contentType.c_str()) != dataClient.requeste->Location_Server.cgi.end())
+        return true;
+    return false;
+}
+
 void    openFileAndSendHeader(Data& dataClient)
 {
     char buffer[BUFFER_SIZE];
     std::string contentType = getContentType(dataClient);
     if(checkIsCgi(contentType) == true && dataClient.requeste->Location_Server.cgi_allowed == "ON")
     {
-        fastCGI(dataClient,contentType);
-        return ;
+        if(checkCgi(dataClient,contentType) == true)
+        {
+            fastCGI(dataClient,contentType);
+            return ;
+        }
     }
     memset(buffer,0,sizeof(buffer));
     if(checkPermission(dataClient,dataClient.Path.c_str(),R_OK) == true)
