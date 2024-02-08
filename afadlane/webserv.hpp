@@ -36,6 +36,7 @@ struct Data
 {  
     int fd ;
     int fileFd;
+    int errorFd;
     bool  isDone;
     bool  isFork;
     pid_t pid;

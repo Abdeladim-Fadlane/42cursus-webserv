@@ -103,7 +103,7 @@ void fastCGI(Data &dataClient,std::string &type)
             {
                 close(dataClient.fileFd);
                 dataClient.readyForClose = true;
-                // unlink("/tmp/tmpFile");
+                unlink("/tmp/tmpFile");
             }
             else
             {
@@ -115,12 +115,12 @@ void fastCGI(Data &dataClient,std::string &type)
         {
             int fd;
             if(dataClient.isFork == false)
-            {;
+            {
                 dataClient.startTime = getCurrentTime();
                 dataClient.isFork = true;
                 fd = open("/tmp/tmpFile",O_RDONLY | O_WRONLY | O_CREAT ,0666);
                 if (fd == -1)
-                    throw std::runtime_error ("internal server error 0");
+                    throw std::runtime_error ("internal server error");
                 dataClient.pid = fork();
                 if(dataClient.pid == -1)
                     throw std::runtime_error("internal server error");
@@ -136,13 +136,13 @@ void fastCGI(Data &dataClient,std::string &type)
             int status;
             if(waitpid(dataClient.pid,&status,WNOHANG) == 0)
             {
-                if(getCurrentTime() - dataClient.startTime >=  10)
+                if(getCurrentTime() - dataClient.startTime >=  3)
                 {
                     close(fd);
                     kill(dataClient.pid,SIGTERM);
-                    dataClient.readyForClose = true;
-                    std::string msg =" 504 Gateway Timeout"; 
-                    sendResponse(dataClient,msg);
+                    std::string status =" 504 Gateway Timeout"; 
+                    sendResponse(dataClient,status);
+                    dataClient.code = 504;
                     unlink("/tmp/tmpFile");
                 }
             }

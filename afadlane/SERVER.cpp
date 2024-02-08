@@ -101,7 +101,7 @@ void multiplexing(ConfigFile &config)
                     continue;
                 }
                 Data.data.Alreadyopen           = false;
-                Data.data.fileFd                = 0;
+                Data.data.errorFd               = -2;
                 Data.data.code                  = 0;
                 Data.data.Alreadyopen           = false;
                 Data.data.isReading             = false;
@@ -152,7 +152,9 @@ void multiplexing(ConfigFile &config)
                     {
                         /* handle Get method  */
                         if(Request[events[i].data.fd].data.code != 0)
+                        {
                             sendErrorResponse(Request[events[i].data.fd].data);
+                        }
                         else
                             getMethod(Request[events[i].data.fd].data);
                     }

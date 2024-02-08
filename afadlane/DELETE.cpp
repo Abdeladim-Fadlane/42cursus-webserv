@@ -1,23 +1,27 @@
 
 #include"webserv.hpp"
-
+bool checkPermission(Data &dataClient, const char *path,int type);
 void sendErrorResponse(Data &dataClient)
 {
     char buffer[BUFFER_SIZE];
     memset(buffer,0,BUFFER_SIZE);
-    if(dataClient.fileFd == 0)
+    if(dataClient.errorFd == -2)
     {
-        dataClient.fileFd = open(dataClient.requeste->Server_Requeste.error_pages[dataClient.code].c_str(),O_RDONLY);
+        dataClient.errorFd = open(dataClient.requeste->Server_Requeste.error_pages[dataClient.code].c_str(),O_RDONLY);
+        if(dataClient.errorFd == -1)
+        {
+            dataClient.readyForClose = true;
+            return;
+        }
     }
-    ssize_t readByte = read(dataClient.fileFd,buffer,BUFFER_SIZE - 1);
+    ssize_t readByte = read(dataClient.errorFd,buffer,BUFFER_SIZE - 1);
     if(readByte == 0)
     {
         dataClient.readyForClose = true;
         return;
     }
     std::string htttpresponce(buffer);
-    send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0);
-    
+    send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0); 
 }
 
 void    sendResponse(Data &dataClient,std::string &status)
