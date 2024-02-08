@@ -88,7 +88,11 @@ void fastCGI(Data &dataClient,std::string &type)
             if (fd == -1)
                 throw std::runtime_error ("internal server error");
             if(dataClient.requeste->method == "POST")
+            {
                 fd2 = open("/tmp/postfile",O_RDONLY);
+                if(fd == -1)
+                    throw std::runtime_error ("internal server error");
+            }
             dataClient.pid = fork();
             if(dataClient.pid == -1)
                 throw std::runtime_error("internal server error");
@@ -100,8 +104,8 @@ void fastCGI(Data &dataClient,std::string &type)
                 close(fd);
                 close(fd2);
                 const char *args[] = {interpreter.c_str(), dataClient.Path.c_str(), NULL};
-                execve(interpreter.c_str(), const_cast<char* const*>(args), env);
-                throw std::runtime_error ("Cannot exectue script");
+                if(execve(interpreter.c_str(), const_cast<char* const*>(args), env) == -1)
+                    throw std::runtime_error ("Cannot exectue script");
             }
         }
         int status;
