@@ -1,24 +1,24 @@
-import requests
+#!/usr/bin/env python3
 
-def send_get_request(url, params=None):
-    try:
-        response = requests.get(url, params=params)
-        response.raise_for_status()  # Raise an exception for bad status codes
-        return response.text
-    except requests.exceptions.RequestException as e:
-        print("Error:", e)
-        return None
+# Required header for CGI scripts
+print("Content-Type: text/html")  
+print()  # Blank line indicates end of headers
 
-# Example usage
-cgi_url = "http://google.com"
-parameters = {
-    'param1': 'value1',
-    'param2': 'value2'
-}
+# HTML content
+print("<html>")
+print("<head><title>CGI GET Request</title></head>")
+print("<body>")
+print("<h1>GET Request Received</h1>")
+print("<p>This is a simple CGI script handling a GET request.</p>")
 
-response_text = send_get_request(cgi_url, params=parameters)
-if response_text:
-    print("Response from CGI script:")
-    print(response_text)
+# Retrieving GET parameters
+import cgi
+form = cgi.FieldStorage()
+if "param1" in form:
+    param1_value = form.getvalue("param1")
+    print(f"<p>Value of 'param1': {param1_value}</p>")
 else:
-    print("Failed to get response from CGI script.")
+    print("<p>No 'param1' provided in the GET request.</p>")
+
+print("</body>")
+print("</html>")
