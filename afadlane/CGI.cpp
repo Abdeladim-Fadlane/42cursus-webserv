@@ -22,7 +22,58 @@ void environmentStore(Data &dataClient, std::vector<std::string> &environment)
     environment.push_back("SERVER_ADDR=" + SERVER_ADDR);
     environment.push_back("SERVER_PORT=" + SERVER_PORT); 
 }
+std::string checkElemnetExit(std::vector<string> & header,const char *str)
+{
+    for(size_t i  = 0; i < header.size(); i++)
+    {
+        if(header[i].find(str) != std::string::npos)
+            return header[i];
+    }
+    return "";
+}
 
+std::string splitHeader(std::string &line,std::string &lenght)
+{
+    std::istringstream wiss(line);
+    std::string token;
+    
+    std::string returnHerader;
+    std::vector<std::string>Header;
+    while(std::getline(wiss,token,'\n'))
+    {
+        Header.push_back(token);
+    }
+    if(checkElemnetExit(Header,"Status").empty())
+        returnHerader = std::string(" Status: 200 OK\r\n");
+    else
+        returnHerader = checkElemnetExit(Header,"Status");
+    if(!checkElemnetExit(Header,"Location:").empty())
+        returnHerader += checkElemnetExit(Header,"Location:");
+    if(checkElemnetExit(Header,"Content-Type:").empty())
+        returnHerader += "Content-Type: text/html\r\n";
+    else
+        returnHerader += checkElemnetExit(Header,"Content-Type:");
+    if(checkElemnetExit(Header,"Content-Length:").empty())
+        returnHerader += "Content-Length: " + lenght + "\r\n\r\n";
+    else
+        returnHerader += checkElemnetExit(Header,"Content-Length:") + "\r\n\r\n";
+    return returnHerader;
+}
+
+std::string makeHeader(std::string &line,std::string &lenght)
+{
+    std::string header;
+    std::string body;
+    size_t pos;
+    pos = line.find("\r\n\r\n");
+    if(pos != std::string::npos)
+    {
+        header = line.substr(0,pos);
+        header = splitHeader(header,lenght);
+        body   = line.substr(pos+1);
+    }
+    return header + body;
+}
 void   SendHeader(Data &dataClient)
 {
     dataClient.fileFd = open("/tmp/tmpFile",O_RDONLY);
@@ -31,14 +82,19 @@ void   SendHeader(Data &dataClient)
         close(dataClient.fileFd);
         throw std::runtime_error("internal server error");
     }
+    struct stat fileInfo;
+    stat("/tmp/tmpFile",&fileInfo);
+    std::ostringstream oss;
+    oss << fileInfo.st_size;
+    std::string lengh = oss.str();
     char buffer[BUFFER_SIZE];
     memset(buffer,0,BUFFER_SIZE);
     std::string httpResponse;
     ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE -1);
     if(byteRead <= 0)
-        throw std::runtime_error("no bye to read");
+        throw std::runtime_error("faild read");
     std::string line(buffer);
-    httpResponse = dataClient.requeste->http_v + line;
+    httpResponse = dataClient.requeste->http_v + makeHeader(line,lengh);
     send(dataClient.fd,httpResponse.c_str(),httpResponse.size(),0);
 }
 

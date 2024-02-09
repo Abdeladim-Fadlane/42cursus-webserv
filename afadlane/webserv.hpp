@@ -27,9 +27,7 @@
 #include"../akatfi/Requeste.hpp"
 
 #define  MAX_EVENTS 1024
-#define  PORT  8080
 #define  BUFFER_SIZE 1024
-#define  SERVERS 3
 using namespace  std;
 
 struct Data
@@ -63,19 +61,6 @@ struct Webserv
     Data data;
 };
 
-struct ServerConfig
-{
-    int port ;
-    std::string listen;
-    std::string host;
-    std::string domainName;
-    std::vector<std::string> errorPage;
-    std::string clientMaxBodySize;
-    int size ;
-    std::string root ;
-    std::string autoFile ;
-    // std::vector<LocationConfig> locations;
-};
 
 void    getMethod(Data &);
 bool    deleteMethod(Data &);
@@ -86,3 +71,4 @@ void    sendResponse(Data &,std::string &);
 bool    checkPermission(Data &, const char *,int );
 void    sendErrorResponse(Data &dataClient);
 void    sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient);
+std::string makeHeader(std::string &line,std::string &lenght);
