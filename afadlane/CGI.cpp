@@ -76,14 +76,14 @@ std::string makeHeader(std::string &line,std::string &lenght)
 }
 void   SendHeader(Data &dataClient)
 {
-    dataClient.fileFd = open("/tmp/tmpFile",O_RDONLY);
+    dataClient.fileFd = open(dataClient.cgiFile.c_str(),O_RDONLY);
     if (dataClient.fileFd == -1)
     {
         close(dataClient.fileFd);
         throw std::runtime_error("internal server error");
     }
     struct stat fileInfo;
-    stat("/tmp/tmpFile",&fileInfo);
+    stat(dataClient.cgiFile.c_str(),&fileInfo);
     std::ostringstream oss;
     oss << fileInfo.st_size;
     std::string lengh = oss.str();
@@ -95,7 +95,8 @@ void   SendHeader(Data &dataClient)
         throw std::runtime_error("faild read");
     std::string line(buffer);
     httpResponse = dataClient.requeste->http_v + makeHeader(line,lengh);
-    send(dataClient.fd,httpResponse.c_str(),httpResponse.size(),0);
+    if(send(dataClient.fd,httpResponse.c_str(),httpResponse.size(),0) == -1)
+        throw std::runtime_error("error send ");
 }
 
 void fastCGI(Data &dataClient,std::string &type)
@@ -124,12 +125,13 @@ void fastCGI(Data &dataClient,std::string &type)
         {
             close(dataClient.fileFd);
             dataClient.readyForClose = true;
-            unlink("/tmp/tmpFile");
+            unlink(dataClient.cgiFile.c_str());
         }
         else
         {
             std::string line(buffer,byteRead);
-            sendChunk(dataClient.fd,line.c_str(),line.size(),dataClient);
+            if(send(dataClient.fd,line.c_str(),line.size(),0) == -1)
+                throw std::runtime_error("error send");
         }
     }
     else
@@ -140,7 +142,10 @@ void fastCGI(Data &dataClient,std::string &type)
         {
             dataClient.startTime = getCurrentTime();
             dataClient.isFork = true;
-            fd = open("/tmp/tmpFile",O_RDONLY | O_WRONLY | O_CREAT ,0666);
+            std::ostringstream oss;
+            oss << getCurrentTime();
+            dataClient.cgiFile = "/tmp/tmpFile" + oss.str();
+            fd = open(dataClient.cgiFile.c_str() ,O_RDONLY | O_WRONLY | O_CREAT ,0666);
             if (fd == -1)
                 throw std::runtime_error ("internal server error");
             if(dataClient.requeste->method == "POST")
@@ -176,7 +181,7 @@ void fastCGI(Data &dataClient,std::string &type)
                 std::string status =" 504 Gateway Timeout"; 
                 sendResponse(dataClient,status);
                 dataClient.code = 504;
-                unlink("/tmp/tmpFile");
+                unlink(dataClient.cgiFile.c_str());
             }
         }
         else

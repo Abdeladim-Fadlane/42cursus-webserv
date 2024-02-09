@@ -31,6 +31,7 @@ void sendErrorResponse(Data &dataClient)
     if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
     {
         throw std::runtime_error("senddddddd");
+        dataClient.readyForClose = true;
     } 
 }
 
@@ -38,7 +39,10 @@ void    sendResponse(Data &dataClient,std::string &status)
 {
     std::string htttpresponce = dataClient.requeste->http_v + status + "\r\nContent-Type: text/html\r\n\r\n";
     if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
+    {
+        dataClient.readyForClose = true;
         std::runtime_error("ersdgsdgsdror");
+    }
 }
 
 bool checkPermission(Data &dataClient, const char *path,int type)

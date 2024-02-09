@@ -54,6 +54,7 @@ struct Data
     bool AlreadyRequestHeader;
     std::vector<std::string> autoFile;
     bool isExeceted;
+    std::string cgiFile;
 };
 
 struct Webserv
