@@ -32,23 +32,20 @@ void multiplexing(ConfigFile &config)
     int epollFD = epoll_create(1024);
     epoll_event event;
     int socketFD ;
+    int reuse = 1;
     
     for(size_t i = 0 ;i < config.Servers.size(); i++)
     {
         socketFD = socket(AF_INET,SOCK_STREAM,0);
         if (socketFD == -1)
-        {
-            std::cerr << "Error creating socket" << std::endl;
-            exit(EXIT_FAILURE);
-        }
+            throw std::runtime_error("Cannot create socket");
         sockaddr_in serverAdress;
         serverAdress.sin_family = AF_INET;
         serverAdress.sin_addr.s_addr = INADDR_ANY;
         serverAdress.sin_port = htons(config.Servers[i].listen);
-        int reuse = 1;
         if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
         {
-            perror("setsockopt(SO_REUSEADDR) failed");
+            throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
             continue;
         }
         if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
@@ -89,7 +86,7 @@ void multiplexing(ConfigFile &config)
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
                 if(clientSocketFD == -1)
                 {
-                    std::cerr << "Failed to accept connection .2" << std::endl;
+                    std::cerr << "Failed to accept connection ." << std::endl;
                     continue;
                 }
                 event.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP ;
@@ -153,6 +150,7 @@ void multiplexing(ConfigFile &config)
                         /* handle Get method  */
                         if(Request[events[i].data.fd].data.code != 0)
                         {
+                            // Request[events[i].data.fd].data.readyForClose = true;
                             sendErrorResponse(Request[events[i].data.fd].data);
                         }
                         else

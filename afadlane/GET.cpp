@@ -154,7 +154,8 @@ void serveFIle(Data& dataClient)
     {
         close(dataClient.fileFd);
         dataClient.readyForClose = true;
-        send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0);
+        if(send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
+           throw std::runtime_error("sgdfsgdsf");
         return ;
     }
     std::string httpresponse(buffer,byteRead);
@@ -210,7 +211,10 @@ void getMethod(Data & dataClient)
                 {
                     const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + dataClient.listDirectory;
                     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
+                    {
+                        throw std::runtime_error("sdagsg");
                         dataClient.readyForClose = true;
+                    }
                     dataClient.listDirectory.clear(); 
                     dataClient.readyForClose = true;
                     return ;

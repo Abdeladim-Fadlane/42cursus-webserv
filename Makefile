@@ -1,6 +1,7 @@
 NAME = webserv
 # curl -X GET http://127.1.1.0:8080/index.html
-CXXFLAGS =  -fsanitize=address -g3 -Wall -Wextra -Werror 
+# siege -c 100 -r 10 -b http://127.0.0.1:8082/dir/afadlane
+CXXFLAGS =  -Wall -Wextra -Werror -fsanitize=address -g3 
 CXX = c++
 
 CFILES = afadlane/SERVER.cpp \

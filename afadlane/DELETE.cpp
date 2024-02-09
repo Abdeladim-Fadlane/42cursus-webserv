@@ -17,17 +17,28 @@ void sendErrorResponse(Data &dataClient)
     ssize_t readByte = read(dataClient.errorFd,buffer,BUFFER_SIZE - 1);
     if(readByte == 0)
     {
+        close(dataClient.errorFd);
+        dataClient.readyForClose = true;
+        return;
+    }
+    if(readByte < 0)
+    {
+        close(dataClient.errorFd);
         dataClient.readyForClose = true;
         return;
     }
     std::string htttpresponce(buffer);
-    send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0); 
+    if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
+    {
+        throw std::runtime_error("senddddddd");
+    } 
 }
 
 void    sendResponse(Data &dataClient,std::string &status)
 {
     std::string htttpresponce = dataClient.requeste->http_v + status + "\r\nContent-Type: text/html\r\n\r\n";
-    send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0);
+    if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
+        std::runtime_error("ersdgsdgsdror");
 }
 
 bool checkPermission(Data &dataClient, const char *path,int type)
