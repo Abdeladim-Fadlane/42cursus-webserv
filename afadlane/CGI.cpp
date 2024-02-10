@@ -78,10 +78,14 @@ void   SendHeader(Data &dataClient)
 {
     dataClient.fileFd = open(dataClient.cgiFile.c_str(),O_RDONLY);
     if (dataClient.fileFd == -1)
-    {
-        close(dataClient.fileFd);
         throw std::runtime_error("internal server error");
-    }
+    // if(dataClient.fileFd == 0)
+    // {
+    //     dataClient.readyForClose = true;
+    //     return;
+    // }
+    std::cout<<"fd 2   = "<<dataClient.fileFd<<"\n";
+
     struct stat fileInfo;
     stat(dataClient.cgiFile.c_str(),&fileInfo);
     std::ostringstream oss;
@@ -121,7 +125,7 @@ void fastCGI(Data &dataClient,std::string &type)
         char buffer[BUFFER_SIZE];
         std::string httpResponse;
         ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE);
-        if(byteRead == 0)
+        if(byteRead <= 0)
         {
             close(dataClient.fileFd);
             dataClient.readyForClose = true;
@@ -137,33 +141,26 @@ void fastCGI(Data &dataClient,std::string &type)
     else
     {
         int fd;
-        int fd2;
         if(dataClient.isFork == false)
         {
             dataClient.startTime = getCurrentTime();
             dataClient.isFork = true;
             std::ostringstream oss;
-            oss << getCurrentTime();
-            dataClient.cgiFile = "/tmp/tmpFile" + oss.str();
-            fd = open(dataClient.cgiFile.c_str() ,O_RDONLY | O_WRONLY | O_CREAT ,0666);
+            oss <<  dataClient.fd;
+            dataClient.cgiFile = "/nfs/homes/afadlane/tmp/file" + oss.str();
+            fd = open(dataClient.cgiFile.c_str() ,O_WRONLY  | O_CREAT | O_TRUNC,0644);
             if (fd == -1)
                 throw std::runtime_error ("internal server error");
-            if(dataClient.requeste->method == "POST")
-            {
-                fd2 = open("/tmp/postfile",O_RDONLY);
-                if(fd == -1)
-                    throw std::runtime_error ("internal server error");
-            }
             dataClient.pid = fork();
             if(dataClient.pid == -1)
+            {
+                close(fd);
                 throw std::runtime_error("internal server error");
+            }
             if (dataClient.pid == 0)
             {
-                if(dataClient.requeste->method == "POST")
-                    dup2(fd2,0);
                 dup2(fd, 1);
                 close(fd);
-                close(fd2);
                 const char *args[] = {interpreter.c_str(), dataClient.Path.c_str(), NULL};
                 if(execve(interpreter.c_str(), const_cast<char* const*>(args), env) == -1)
                     throw std::runtime_error ("Cannot exectue script");
@@ -175,7 +172,6 @@ void fastCGI(Data &dataClient,std::string &type)
             /* child proccess still runing */
             if(getCurrentTime() - dataClient.startTime >=  3)
             {
-                close(fd2);
                 close(fd);
                 kill(dataClient.pid,SIGTERM);
                 std::string status =" 504 Gateway Timeout"; 
@@ -187,7 +183,6 @@ void fastCGI(Data &dataClient,std::string &type)
         else
         {
             close(fd);
-            close(fd2);
             SendHeader(dataClient);
             dataClient.isCgi = true;
         }

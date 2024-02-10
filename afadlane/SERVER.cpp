@@ -1,21 +1,42 @@
 #include"webserv.hpp"
+void    inisialData(std::map<int,struct Webserv> &Request ,ConfigFile &config,int &clientSocketFD)
+{
+    Webserv  Data;
+    Data.data.errorFd               =    -2;
+    Data.data.code                  =     0;
+    Data.data.Alreadyopen           = false;
+    Data.data.Alreadyopen           = false;
+    Data.data.isReading             = false;
+    Data.data.isFork                = false;
+    Data.data.isExeceted            = false;
+    Data.data.isReading             = false;
+    Data.data.readyForClose         = false;
+    Data.data.Alreadparce           = false;
+    Data.data.modeAutoIndex         = false;
+    Data.data.isCgi                 = false;
+    Data.data.AlreadyRequestHeader  = false;
+    Data.data.isDone                = false;
+    Data.data.autoIndex             = false;
+    Data.data.fd                    = clientSocketFD;
+    Data.data.requeste              = new Requeste(clientSocketFD,config);
+    Request[clientSocketFD]         = Data;
+}
 
-/* Analyze, Douiri */
 void    insialStruct(Data & datacleint)
 {
     if(datacleint.requeste->Location_Server.autoindex == "ON")
         datacleint.autoIndex = true;
     datacleint.autoFile = datacleint.requeste->Location_Server.indexs;
     datacleint.Path = datacleint.requeste->Location_Server.root;
-    // std::cout<<"root = "<<  datacleint.Path<<endl;
-    // std::cout<<"path = "<<   datacleint.requeste->path<<endl;
 }
+
 double    getCurrentTime(void)
 {
     struct timeval currentTime;
     gettimeofday(&currentTime,NULL);
     return ((currentTime.tv_sec) + (currentTime.tv_usec / 1000000));
 }
+
 bool isServer(std::vector<int> & Servers,int index)
 {
     for(size_t i  = 0 ; i < Servers.size() ; i++)
@@ -82,7 +103,7 @@ void multiplexing(ConfigFile &config)
         {
             if(isServer(Servers,events[i].data.fd) == true)
             { 
-                Webserv  Data;
+               
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
                 if(clientSocketFD == -1)
                 {
@@ -97,31 +118,17 @@ void multiplexing(ConfigFile &config)
                     close(clientSocketFD);
                     continue;
                 }
-                Data.data.Alreadyopen           = false;
-                Data.data.errorFd               = -2;
-                Data.data.code                  = 0;
-                Data.data.Alreadyopen           = false;
-                Data.data.isReading             = false;
-                Data.data.isFork                = false;
-                Data.data.isExeceted            = false;
-                Data.data.isReading             = false;
-                Data.data.readyForClose         = false;
-                Data.data.Alreadparce           = false;
-                Data.data.modeAutoIndex         = false;
-                Data.data.isCgi                 = false;
-                Data.data.AlreadyRequestHeader  = false;
-                Data.data.isDone                = false;
-                Data.data.autoIndex             = false;
-                Data.data.fd                    = clientSocketFD;
-                Data.data.requeste              = new Requeste(clientSocketFD,config);
-                Request[clientSocketFD]         = Data;
+                inisialData(Request,config,clientSocketFD);
             } 
             else
             {
                 if(events[i].events & EPOLLHUP)
                 {
                     /* client closed the connection */
-                    std::cerr<<"An error aka client disconnect\n";
+                    close(Request[events[i].data.fd].data.fileFd);
+                    unlink(Request[events[i].data.fd].data.cgiFile.c_str());
+                    //     std::cerr<<("sfgdadfg\n");
+                    // std::cerr<<"close ="<<Request[events[i].data.fd].data.fd<<"\n";
                     delete Request[events[i].data.fd].data.requeste;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
@@ -148,6 +155,7 @@ void multiplexing(ConfigFile &config)
                     if(Request[events[i].data.fd].data.requeste->method == "GET")
                     {
                         /* handle Get method  */
+                        // std::cout<<"fd socket = "<<Request[events[i].data.fd].data.fd<<"\n";
                         if(Request[events[i].data.fd].data.code != 0)
                         {
                             // Request[events[i].data.fd].data.readyForClose = true;

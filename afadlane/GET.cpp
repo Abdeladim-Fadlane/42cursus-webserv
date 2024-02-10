@@ -142,6 +142,7 @@ void    openFileAndSendHeader(Data& dataClient)
 
 void serveFIle(Data& dataClient)
 {
+    std::cout<<"ssddsdssd\n";
     char buffer[BUFFER_SIZE];
     ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE);
     if(byteRead == -1)
@@ -183,6 +184,7 @@ int checkFileOrDirectoryPermission(Data &dataClient)
 
 void getMethod(Data & dataClient)
 {
+    // std::cout<<dataClient.fd<<"------\n";
     try
     {
         if(dataClient.modeAutoIndex == true)
