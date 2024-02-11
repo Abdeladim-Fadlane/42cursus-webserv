@@ -183,7 +183,6 @@ int checkFileOrDirectoryPermission(Data &dataClient)
 
 void getMethod(Data & dataClient)
 {
-    // std::cout<<dataClient.fd<<"------\n";
     try
     {
         if(dataClient.modeAutoIndex == true)

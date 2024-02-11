@@ -32,47 +32,37 @@ std::string checkElemnetExit(std::vector<string> & header,const char *str)
     return "";
 }
 
-std::string splitHeader(std::string &line,std::string &lenght)
-{
-    std::istringstream wiss(line);
-    std::string token;
-    
-    std::string returnHerader;
-    std::vector<std::string>Header;
-    while(std::getline(wiss,token,'\n'))
-    {
-        Header.push_back(token);
-    }
-    if(checkElemnetExit(Header,"Status").empty())
-        returnHerader = std::string(" Status: 200 OK\r\n");
-    else
-        returnHerader = checkElemnetExit(Header,"Status");
-    if(!checkElemnetExit(Header,"Location:").empty())
-        returnHerader += checkElemnetExit(Header,"Location:");
-    if(checkElemnetExit(Header,"Content-Type:").empty())
-        returnHerader += "Content-Type: text/html\r\n";
-    else
-        returnHerader += checkElemnetExit(Header,"Content-Type:");
-    if(checkElemnetExit(Header,"Content-Length:").empty())
-        returnHerader += "Content-Length: " + lenght + "\r\n\r\n";
-    else
-        returnHerader += checkElemnetExit(Header,"Content-Length:") + "\r\n\r\n";
-    return returnHerader;
-}
+// std::string splitHeader(std::string &line,std::string &lenght)
+// {
+//     std::string token;
+//     std::string returnHerader;
+//     std::string body;
+
+//     size_t pos = line.find("\r\n\r\n");
+//     if(pos != std::string::npos)
+//     {
+//         returnHerader = line.substr(0,pos+1);
+
+//     }
+//     Header.append(returnHerader);
+//     return returnHerader;
+// }
 
 std::string makeHeader(std::string &line,std::string &lenght)
 {
-    std::string header;
-    std::string body;
-    size_t pos;
-    pos = line.find("\r\n\r\n");
-    if(pos != std::string::npos)
-    {
-        header = line.substr(0,pos);
-        header = splitHeader(header,lenght);
-        body   = line.substr(pos+1);
-    }
-    return header + body;
+    (void)lenght;
+    std::string Header("Status: 200 OK\r\nContent-type: text/html\r\n");
+    Header.append("\r\n");
+    // std::string body;
+    // std::string tmp;
+    // size_t pos;
+    // pos = line.find("\r\n\r\n");
+    // if(pos != std::string::npos)
+    // {
+    //     tmp = line.substr(0,pos+1);
+    //     body   = line.substr(pos+1);
+    // }
+    return Header + line;
 }
 void   SendHeader(Data &dataClient)
 {
@@ -91,9 +81,9 @@ void   SendHeader(Data &dataClient)
     if(byteRead <= 0)
         throw std::runtime_error("faild read");
     std::string line(buffer);
-    httpResponse = dataClient.requeste->http_v + makeHeader(line,lengh);
-    if(send(dataClient.fd,httpResponse.c_str(),httpResponse.size(),0) == -1)
-        throw std::runtime_error("error send ");
+    httpResponse = dataClient.requeste->http_v +" 200 OK\r\nContent-Type: text/html\r\nTransfer-Encoding: chunked\r\n";
+    httpResponse.append(line);
+    send(dataClient.fd,httpResponse.c_str(),httpResponse.size(),0);
 }
 
 void fastCGI(Data &dataClient,std::string &type)
@@ -123,12 +113,13 @@ void fastCGI(Data &dataClient,std::string &type)
             close(dataClient.fileFd);
             dataClient.readyForClose = true;
             unlink(dataClient.cgiFile.c_str());
+            if(send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
+                throw std::runtime_error("sgdfsgdsf");
         }
         else
         {
             std::string line(buffer,byteRead);
-            if(send(dataClient.fd,line.c_str(),line.size(),0) == -1)
-                throw std::runtime_error("error send");
+            sendChunk(dataClient.fd,line.c_str(),line.size(),dataClient);
         }
     }
     else
@@ -177,7 +168,6 @@ void fastCGI(Data &dataClient,std::string &type)
             close(dataClient.fileFd);
             SendHeader(dataClient);
             dataClient.isCgi = true;
-            // dataClient.readyForClose = true;
         }
     }
 }

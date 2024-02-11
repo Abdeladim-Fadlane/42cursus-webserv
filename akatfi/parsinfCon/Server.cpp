@@ -26,6 +26,11 @@ Server::Server()
     close = true;
     max_body = LONG_MAX;
     DIR* dir_error = opendir("akatfi/parsinfCon/error");
+    if(!dir_error)
+    {
+        throw std::runtime_error("error opning dir");
+        exit(1);
+    }
     dirent* path;
     while ((path = readdir(dir_error)))
     {

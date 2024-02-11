@@ -125,11 +125,7 @@ void multiplexing(ConfigFile &config)
                 if(events[i].events & EPOLLHUP)
                 {
                     /* client closed the connection */
-                    close(Request[events[i].data.fd].data.fileFd);
-                    unlink(Request[events[i].data.fd].data.cgiFile.c_str());
-                    //     std::cerr<<("sfgdadfg\n");
-                    // std::cerr<<"close ="<<Request[events[i].data.fd].data.fd<<"\n";
-                    delete Request[events[i].data.fd].data.requeste;
+                    // delete Request[events[i].data.fd].data.requeste;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
@@ -155,7 +151,6 @@ void multiplexing(ConfigFile &config)
                     if(Request[events[i].data.fd].data.requeste->method == "GET")
                     {
                         /* handle Get method  */
-                        // std::cout<<"fd socket = "<<Request[events[i].data.fd].data.fd<<"\n";
                         if(Request[events[i].data.fd].data.code != 0)
                         {
                             // Request[events[i].data.fd].data.readyForClose = true;
@@ -179,7 +174,7 @@ void multiplexing(ConfigFile &config)
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
                         Request.erase(events[i].data.fd);
-                        delete Request[events[i].data.fd].data.requeste;
+                        // delete Request[events[i].data.fd].data.requeste;
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
                     }
@@ -189,7 +184,7 @@ void multiplexing(ConfigFile &config)
                     /* an error has occurred */
                     std::string msg = " 500 Internal Server Error";
                     sendResponse(Request[events[i].data.fd].data,msg);
-                    delete Request[events[i].data.fd].data.requeste;
+                    // delete Request[events[i].data.fd].data.requeste;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
