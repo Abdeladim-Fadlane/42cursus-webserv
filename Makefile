@@ -1,6 +1,7 @@
 NAME = webserv
-# curl -X GET http://127.1.1.0:8080/index.html
-# siege -c 100 -r 10 -b http://127.0.0.1:8082/dir/afadlane
+# curl -i http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
+# wget http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
+# siege -c 225 -r 1 -b http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
 CXXFLAGS =  -Wall -Wextra -Werror -fsanitize=address -g3 
 CXX = c++
 

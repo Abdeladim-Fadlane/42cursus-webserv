@@ -32,38 +32,52 @@ std::string checkElemnetExit(std::vector<string> & header,const char *str)
     return "";
 }
 
-// std::string splitHeader(std::string &line,std::string &lenght)
-// {
-//     std::string token;
-//     std::string returnHerader;
-//     std::string body;
-
-//     size_t pos = line.find("\r\n\r\n");
-//     if(pos != std::string::npos)
-//     {
-//         returnHerader = line.substr(0,pos+1);
-
-//     }
-//     Header.append(returnHerader);
-//     return returnHerader;
-// }
-
-std::string makeHeader(std::string &line,std::string &lenght)
+std::string fillMap( std::map<int,std::string> &headerMap,std::string lenght,std::string line)
 {
-    (void)lenght;
-    std::string Header("Status: 200 OK\r\nContent-type: text/html\r\n");
-    Header.append("\r\n");
-    // std::string body;
-    // std::string tmp;
-    // size_t pos;
-    // pos = line.find("\r\n\r\n");
-    // if(pos != std::string::npos)
-    // {
-    //     tmp = line.substr(0,pos+1);
-    //     body   = line.substr(pos+1);
-    // }
-    return Header + line;
+    headerMap[0] = " 200 OK\r\n";
+    headerMap[1] = "Content-type: text/html\r\n";
+    headerMap[2] = std::string("Content-Lenght: ").append(lenght).append("\r\n");
+    std::istringstream wiss(line);
+    std::string token;
+    while(std::getline(wiss,token,'\n'))
+    {
+        if(token.find("Status:") != std::string::npos)
+            headerMap[0] = token.append("\n");
+        if(token.find("Content-type:") != std::string::npos)
+            headerMap[1] = token.append("\n");
+        if(token.find("Content-Lenght: ") != std::string::npos)
+            headerMap[2] = token;
+        if(token.find("Location: ") != std::string::npos)
+            headerMap[3] = token;
+    }
+    std::string header;
+    for (size_t i = 0; i < headerMap.size(); i++)
+    {
+        header.append(headerMap[i]);
+    }
+    return header;
 }
+
+void makeHeader(Data &dataClient,ssize_t &lenght)
+{
+    std::map<int,std::string> headerMap;
+    std::string body;
+    std::string tmp;
+    size_t pos;
+    pos = dataClient.restRead.find("\r\n\r\n");
+    if(pos != std::string::npos)
+    {
+        tmp = dataClient.restRead.substr(0,pos);
+        dataClient.restRead = dataClient.restRead.substr(pos+1);
+        size_t bodyLenght = lenght  - tmp.size();
+        std::stringstream ss;
+        ss << bodyLenght;
+        std::string header = dataClient.requeste->http_v.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
+        send(dataClient.fd,header.c_str(),header.size(),0);
+        dataClient.isCgi = true;
+    }
+}
+
 void   SendHeader(Data &dataClient)
 {
     dataClient.fileFd = open(dataClient.cgiFile.c_str(),O_RDONLY);
@@ -71,19 +85,13 @@ void   SendHeader(Data &dataClient)
         throw std::runtime_error("internal server error");
     struct stat fileInfo;
     stat(dataClient.cgiFile.c_str(),&fileInfo);
-    std::ostringstream oss;
-    oss << fileInfo.st_size;
-    std::string lengh = oss.str();
+    ssize_t lenght = fileInfo.st_size;
     char buffer[BUFFER_SIZE];
-    memset(buffer,0,BUFFER_SIZE);
-    std::string httpResponse;
     ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE -1);
     if(byteRead <= 0)
         throw std::runtime_error("faild read");
-    std::string line(buffer);
-    httpResponse = dataClient.requeste->http_v +" 200 OK\r\nContent-Type: text/html\r\nTransfer-Encoding: chunked\r\n";
-    httpResponse.append(line);
-    send(dataClient.fd,httpResponse.c_str(),httpResponse.size(),0);
+    dataClient.restRead.append(std::string(buffer,byteRead));
+    makeHeader(dataClient,lenght);
 }
 
 void fastCGI(Data &dataClient,std::string &type)
@@ -113,13 +121,12 @@ void fastCGI(Data &dataClient,std::string &type)
             close(dataClient.fileFd);
             dataClient.readyForClose = true;
             unlink(dataClient.cgiFile.c_str());
-            if(send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
-                throw std::runtime_error("sgdfsgdsf");
         }
         else
         {
-            std::string line(buffer,byteRead);
-            sendChunk(dataClient.fd,line.c_str(),line.size(),dataClient);
+            dataClient.restRead.append(buffer,byteRead);
+            send(dataClient.fd, dataClient.restRead.c_str(), dataClient.restRead.size(),0);
+            dataClient.restRead.clear();
         }
     }
     else
@@ -167,7 +174,6 @@ void fastCGI(Data &dataClient,std::string &type)
         {
             close(dataClient.fileFd);
             SendHeader(dataClient);
-            dataClient.isCgi = true;
         }
     }
 }
