@@ -46,7 +46,7 @@ std::string fillMap( std::map<int,std::string> &headerMap,std::string lenght,std
         if(token.find("Content-type:") != std::string::npos)
             headerMap[1] = token.append("\n");
         if(token.find("Content-Lenght: ") != std::string::npos)
-            headerMap[2] = token;
+            headerMap[2] = token.append("\n");
         if(token.find("Location: ") != std::string::npos)
             headerMap[3] = token;
     }
