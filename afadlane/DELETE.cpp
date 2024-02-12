@@ -1,47 +1,53 @@
 
 #include"webserv.hpp"
 bool checkPermission(Data &dataClient, const char *path,int type);
+
 void sendErrorResponse(Data &dataClient)
 {
     char buffer[BUFFER_SIZE];
-    memset(buffer,0,BUFFER_SIZE);
     if(dataClient.errorFd == -2)
     {
-        dataClient.errorFd = open(dataClient.requeste->Server_Requeste.error_pages[dataClient.code].c_str(),O_RDONLY);
+        std::string htttpresponce;
+        std::string filePath = dataClient.requeste->Server_Requeste.error_pages[dataClient.code];
+        struct stat fileInfo;
+        stat(filePath.c_str(),&fileInfo);
+        std::ostringstream wiss;
+        wiss <<fileInfo.st_size;
+        htttpresponce = dataClient.requeste->http_v.append(dataClient.statusCode).append("\r\nContent-Type: text/html\r\n");
+        htttpresponce.append("Content-Lenght: ").append(wiss.str()).append("\n\r\n\r");
+        if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
+        {
+            dataClient.readyForClose = true;
+            std::runtime_error("ersdgsdgsdror");
+        }
+        dataClient.errorFd = open(filePath.c_str(),O_RDONLY);
         if(dataClient.errorFd == -1)
         {
             dataClient.readyForClose = true;
             return;
         }
     }
-    ssize_t readByte = read(dataClient.errorFd,buffer,BUFFER_SIZE - 1);
-    if(readByte == 0)
+    else
     {
-        close(dataClient.errorFd);
-        dataClient.readyForClose = true;
-        return;
-    }
-    if(readByte < 0)
-    {
-        close(dataClient.errorFd);
-        dataClient.readyForClose = true;
-        return;
-    }
-    std::string htttpresponce(buffer);
-    if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
-    {
-        throw std::runtime_error("senddddddd");
-        dataClient.readyForClose = true;
-    } 
-}
-
-void    sendResponse(Data &dataClient,std::string &status)
-{
-    std::string htttpresponce = dataClient.requeste->http_v + status + "\r\nContent-Type: text/html\r\n\r\n";
-    if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
-    {
-        dataClient.readyForClose = true;
-        std::runtime_error("ersdgsdgsdror");
+        ssize_t readByte = read(dataClient.errorFd,buffer,BUFFER_SIZE - 1);
+        if(readByte == 0)
+        {
+            close(dataClient.errorFd);
+            dataClient.readyForClose = true;
+            return;
+        }
+        if(readByte < 0)
+        {
+            close(dataClient.errorFd);
+            dataClient.readyForClose = true;
+            return;
+        }
+        std::string htttpresponce(buffer,readByte);
+        if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
+        {
+            throw std::runtime_error("internal Server Error");
+            dataClient.readyForClose = true;
+        } 
     }
 }
 
@@ -51,9 +57,9 @@ bool checkPermission(Data &dataClient, const char *path,int type)
     std::string htttpresponce;
     if(access(path,type) != 0 )
     {
-        std::string status = " 403 FORBIDDEN";
+        dataClient.statusCode = " 403 FORBIDDEN";
         dataClient.code = 403;
-        sendResponse(dataClient,status);
+        
         return true;
     }
     return false;
@@ -67,9 +73,8 @@ bool   deleteMethod(Data &dataClient)
    
     if(access(path,F_OK) != 0 )
     {
-        std::string status = " 404 NOT FOUND";
+         dataClient.statusCode = " 404 NOT FOUND";
         dataClient.code = 404;
-        sendResponse(dataClient,status);
         return true;
     }
     struct stat statPath;
@@ -79,8 +84,7 @@ bool   deleteMethod(Data &dataClient)
         { 
             if(unlink(path) == 0)
             {
-                std::string status = "  204 No Content";
-                sendResponse(dataClient,status);
+                 dataClient.statusCode = "  204 No Content";
                 dataClient.readyForClose =true;
                 return true;
             }
@@ -91,9 +95,8 @@ bool   deleteMethod(Data &dataClient)
     DIR *dir = opendir(path);
     if(!dir)
     {
-        std::string status = " 500 Internal Server Error";
+         dataClient.statusCode = " 500 Internal Server Error";
         dataClient.code = 500;
-        sendResponse(dataClient,status);
         return true;
     }
     struct dirent * it;
@@ -121,8 +124,7 @@ bool   deleteMethod(Data &dataClient)
     closedir(dir);
     if (rmdir(path) == 0)
     {    
-        std::string status = "  204 No Content";
-        sendResponse(dataClient,status);
+         dataClient.statusCode = "  204 No Content";
         dataClient.readyForClose = true;
     }
     return true;

@@ -55,6 +55,8 @@ int    listingDirectory(Data &dataClient)
     list << "<table>";
     std::string directoryPath = dataClient.Path + "/";
     DIR *dir =  opendir(directoryPath.c_str());
+    if(!dir)
+        throw std::runtime_error("error");
     struct dirent *it;
     while((it = readdir(dir)) != NULL)
     {   
@@ -92,17 +94,16 @@ void sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClie
 
     totalChuncked = chunkHeaderStr + chunkData + "\r\n";
     if (send(clientSocket, totalChuncked.c_str(), totalChuncked.size(),0) ==  -1)
-    {
-        close(dataClient.fileFd);
-        dataClient.readyForClose = true;
-    }
+        throw std::runtime_error("error");
 }
+
 bool checkIsCgi(std::string &contentType)
 {
     if((contentType == ".sh" || contentType == ".php" || contentType == ".py") )
         return true;
     return false;
 }
+
 bool checkCgi(Data &dataClient ,std::string &contentType)
 {
     if(dataClient.requeste->Location_Server.cgi.find(contentType.c_str()) != dataClient.requeste->Location_Server.cgi.end())
@@ -130,14 +131,12 @@ void    openFileAndSendHeader(Data& dataClient)
     if (dataClient.fileFd == -1)
     {
         close(dataClient.fileFd);
-        throw std::runtime_error("internal server error");
+        throw std::runtime_error("error");
     }
-    std::string httpResponse = dataClient.requeste->http_v + " 200 OK\r\nContent-Type:" +contentType+ " \r\nTransfer-Encoding: chunked\r\n\r\n";
+    std::string httpResponse = dataClient.requeste->http_v.append(" 200 OK\r\nContent-Type: ");
+    httpResponse.append(contentType).append("\r\nTransfer-Encoding: chunked\r\n\r\n");
     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-    {
-        close(dataClient.fileFd);
-        dataClient.readyForClose = true;
-    } 
+        throw std::runtime_error("error");
 }
 
 void serveFIle(Data& dataClient)
@@ -147,16 +146,14 @@ void serveFIle(Data& dataClient)
     if(byteRead == -1)
     {
         close(dataClient.fileFd);
-        dataClient.readyForClose = true;
-        throw std::runtime_error("internal server error");
+        throw std::runtime_error("error");
     }
     if(byteRead == 0)
     {
         close(dataClient.fileFd);
         dataClient.readyForClose = true;
         if(send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
-           throw std::runtime_error("sgdfsgdsf");
-        return ;
+            throw std::runtime_error("error");
     }
     std::string httpresponse(buffer,byteRead);
     sendChunk(dataClient.fd,httpresponse.c_str(),httpresponse.size(),dataClient);  
@@ -202,19 +199,19 @@ void getMethod(Data & dataClient)
                 /* listing DIRECTORY */
                 if(dataClient.autoIndex == false)
                 {
-                    std::string msg = " 403 Forbidden";
+                    dataClient.statusCode = " 403 Forbidden";
                     dataClient.code = 403;
-                    sendResponse(dataClient,msg);
                     return;
                 }
                 if(listingDirectory(dataClient) == 0)
                 {
-                    const std::string httpResponse = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + dataClient.listDirectory;
+                    std::string httpResponse;
+                    std::ostringstream wiss;
+                    wiss << dataClient.listDirectory.size();
+                    httpResponse = dataClient.requeste->http_v.append(" 200 OK\r\nContent-Type: text/html\r\nContent-Lenght: ");
+                    httpResponse.append(wiss.str()).append("\r\n\r\n").append(dataClient.listDirectory);
                     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-                    {
-                        throw std::runtime_error("sdagsg");
-                        dataClient.readyForClose = true;
-                    }
+                        throw std::runtime_error("error");
                     dataClient.listDirectory.clear(); 
                     dataClient.readyForClose = true;
                     return ;
@@ -223,9 +220,8 @@ void getMethod(Data & dataClient)
             else if(i == 0)
             {
                 /* hundle Not Found case */
-                std::string msg = " 404 NOT FOUND";
+                dataClient.statusCode = " 404 NOT FOUND";
                 dataClient.code = 404;
-                sendResponse(dataClient,msg);
             }
             else if(i == 1)
             {
@@ -238,12 +234,10 @@ void getMethod(Data & dataClient)
     }
     catch (const std::runtime_error &e)
     {
-        if(strcmp(e.what() ,"internal server error") == 0)
+        if(strcmp(e.what() ,"error") == 0)
         {
-            std::string status = " 500 Internal Server Error";
-            sendResponse(dataClient,status);
+            dataClient.statusCode = " 500 Internal Server Error";
             dataClient.code = 500;
         }
-        return ;
     }
 }

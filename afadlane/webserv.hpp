@@ -55,6 +55,7 @@ struct Data
     std::vector<std::string> autoFile;
     bool isExeceted;
     std::string cgiFile;
+    std::string statusCode;
 };
 
 struct Webserv
@@ -68,7 +69,6 @@ bool    deleteMethod(Data &);
 double  getCurrentTime(void);
 void    fastCGI(Data &,std::string &);
 void    multiplexing(ConfigFile &config);
-void    sendResponse(Data &,std::string &);
 bool    checkPermission(Data &, const char *,int );
 void    sendErrorResponse(Data &dataClient);
 void    sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient);

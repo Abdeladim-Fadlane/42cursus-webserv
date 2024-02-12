@@ -46,7 +46,14 @@ bool isServer(std::vector<int> & Servers,int index)
     }
     return false;
 }
+void closeServers(std::vector<int> & Servers)
+{
+    for(size_t i  = 0 ; i < Servers.size() ; i++)
+    {
+        close(Servers[i]);
+    }
 
+}
 void multiplexing(ConfigFile &config)
 {
     std::vector<int> Servers;
@@ -103,7 +110,6 @@ void multiplexing(ConfigFile &config)
         {
             if(isServer(Servers,events[i].data.fd) == true)
             { 
-               
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
                 if(clientSocketFD == -1)
                 {
@@ -125,7 +131,6 @@ void multiplexing(ConfigFile &config)
                 if(events[i].events & EPOLLHUP)
                 {
                     /* client closed the connection */
-                    // delete Request[events[i].data.fd].data.requeste;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
@@ -140,28 +145,20 @@ void multiplexing(ConfigFile &config)
                         insialStruct(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
-                    {
-                        /* handle Post method  */
                         Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.isDone);
-                    }
                 }
                 else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.isDone == true)
                 {
                    /*  File descriptor ready for reading  */
                     if(Request[events[i].data.fd].data.requeste->method == "GET")
                     {
-                        /* handle Get method  */
                         if(Request[events[i].data.fd].data.code != 0)
-                        {
-                            // Request[events[i].data.fd].data.readyForClose = true;
                             sendErrorResponse(Request[events[i].data.fd].data);
-                        }
                         else
                             getMethod(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "DELETE")
                     {
-                        /* handle delete method  */
                         if(Request[events[i].data.fd].data.code != 0)
                             sendErrorResponse(Request[events[i].data.fd].data);
                         else
@@ -174,25 +171,14 @@ void multiplexing(ConfigFile &config)
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
                         Request.erase(events[i].data.fd);
-                        // delete Request[events[i].data.fd].data.requeste;
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
                     }
-                }
-                else if(events[i].events & EPOLLERR)
-                {
-                    /* an error has occurred */
-                    std::string msg = " 500 Internal Server Error";
-                    sendResponse(Request[events[i].data.fd].data,msg);
-                    // delete Request[events[i].data.fd].data.requeste;
-                    Request.erase(events[i].data.fd);
-                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    close(events[i].data.fd);
                 }
             }
         }
     }
     close(epollFD);
-    close(socketFD);
+    closeServers(Servers);
 }
 
