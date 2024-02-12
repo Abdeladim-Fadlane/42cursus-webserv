@@ -94,7 +94,10 @@ void sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClie
 
     totalChuncked = chunkHeaderStr + chunkData + "\r\n";
     if (send(clientSocket, totalChuncked.c_str(), totalChuncked.size(),0) ==  -1)
+    {
+        close(dataClient.fileFd);
         throw std::runtime_error("error");
+    }
 }
 
 bool checkIsCgi(std::string &contentType)
@@ -155,8 +158,11 @@ void serveFIle(Data& dataClient)
         if(send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
             throw std::runtime_error("error");
     }
-    std::string httpresponse(buffer,byteRead);
-    sendChunk(dataClient.fd,httpresponse.c_str(),httpresponse.size(),dataClient);  
+    else
+    {
+        std::string httpresponse(buffer,byteRead);
+        sendChunk(dataClient.fd,httpresponse.c_str(),httpresponse.size(),dataClient);  
+    }
 }
 
 int checkFileOrDirectoryPermission(Data &dataClient)
