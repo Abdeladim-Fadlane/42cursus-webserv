@@ -169,7 +169,7 @@ void fastCGI(Data &dataClient,std::string &type)
         if(waitpid(dataClient.pid,&status,WNOHANG) == 0)
         {
             /* child proccess still runing */
-            if(getCurrentTime() - dataClient.startTime >=  3)
+            if(getCurrentTime() - dataClient.startTime >=  5)
             {
                 close(dataClient.fileFd);
                 kill(dataClient.pid,SIGTERM);
