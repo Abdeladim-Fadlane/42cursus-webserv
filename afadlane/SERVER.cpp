@@ -1,15 +1,35 @@
 #include"webserv.hpp"
+void    inisialData(std::map<int,struct Webserv> &Request ,ConfigFile &config,int &clientSocketFD)
+{
+    Webserv  Data;
+    Data.data.errorFd               =    -2;
+    Data.data.code                  =     0;
+    Data.data.Alreadyopen           = false;
+    Data.data.Alreadyopen           = false;
+    Data.data.isReading             = false;
+    Data.data.isFork                = false;
+    Data.data.isExeceted            = false;
+    Data.data.isReading             = false;
+    Data.data.readyForClose         = false;
+    Data.data.Alreadparce           = false;
+    Data.data.modeAutoIndex         = false;
+    Data.data.isCgi                 = false;
+    Data.data.AlreadyRequestHeader  = false;
+    Data.data.isDone                = false;
+    Data.data.autoIndex             = false;
+    Data.data.fd                    = clientSocketFD;
+    Data.data.requeste              = new Requeste(clientSocketFD,config);
+    Request[clientSocketFD]         = Data;
+}
 
-/* Analyze, Douiri */
 void    insialStruct(Data & datacleint)
 {
     if(datacleint.requeste->Location_Server.autoindex == "ON")
         datacleint.autoIndex = true;
     datacleint.autoFile = datacleint.requeste->Location_Server.indexs;
     datacleint.Path = datacleint.requeste->Location_Server.root;
-    // std::cout<<"root = "<<  datacleint.Path<<endl;
-    // std::cout<<"path = "<<   datacleint.requeste->path<<endl;
 }
+
 double    getCurrentTime(void)
 {
     struct timeval currentTime;
@@ -26,30 +46,34 @@ bool isServer(std::vector<int> & Servers,int index)
     }
     return false;
 }
+void closeServers(std::vector<int> & Servers)
+{
+    for(size_t i  = 0 ; i < Servers.size() ; i++)
+    {
+        close(Servers[i]);
+    }
 
+}
 void multiplexing(ConfigFile &config)
 {
     std::vector<int> Servers;
     int epollFD = epoll_create(1024);
     epoll_event event;
     int socketFD ;
+    int reuse = 1;
     
     for(size_t i = 0 ;i < config.Servers.size(); i++)
     {
         socketFD = socket(AF_INET,SOCK_STREAM,0);
         if (socketFD == -1)
-        {
-            std::cerr << "Error creating socket" << std::endl;
-            exit(EXIT_FAILURE);
-        }
+            throw std::runtime_error("Cannot create socket");
         sockaddr_in serverAdress;
         serverAdress.sin_family = AF_INET;
         serverAdress.sin_addr.s_addr = INADDR_ANY;
         serverAdress.sin_port = htons(config.Servers[i].listen);
-        int reuse = 1;
         if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
         {
-            perror("setsockopt(SO_REUSEADDR) failed");
+            throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
             continue;
         }
         if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
@@ -86,11 +110,10 @@ void multiplexing(ConfigFile &config)
         {
             if(isServer(Servers,events[i].data.fd) == true)
             { 
-                Webserv  Data;
                 clientSocketFD = accept(events[i].data.fd,NULL,NULL);
                 if(clientSocketFD == -1)
                 {
-                    std::cerr << "Failed to accept connection .2" << std::endl;
+                    std::cerr << "Failed to accept connection ." << std::endl;
                     continue;
                 }
                 event.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP ;
@@ -101,35 +124,19 @@ void multiplexing(ConfigFile &config)
                     close(clientSocketFD);
                     continue;
                 }
-                Data.data.Alreadyopen           = false;
-                Data.data.isReading             = false;
-                Data.data.isFork                = false;
-                Data.data.isExeceted            = false;
-                Data.data.isReading             = false;
-                Data.data.readyForClose         = false;
-                Data.data.Alreadparce           = false;
-                Data.data.modeAutoIndex         = false;
-                Data.data.isCgi                 = false;
-                Data.data.AlreadyRequestHeader  = false;
-                Data.data.isDone                = false;
-                Data.data.autoIndex             = false;
-                Data.data.fd                    = clientSocketFD;
-                Data.data.requeste              = new Requeste(clientSocketFD,config);
-                Request[clientSocketFD]         = Data;
+                inisialData(Request,config,clientSocketFD);
             } 
             else
             {
                 if(events[i].events & EPOLLHUP)
                 {
                     /* client closed the connection */
-                    std::cerr<<"An error aka client disconnect\n";
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
                 }
                 else if(events[i].events & EPOLLIN && Request[events[i].data.fd].data.isDone == false)
                 {
-                    // std::cerr<<"123ct\n";
                     /* File descriptor ready for writing */
                     if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
@@ -138,24 +145,24 @@ void multiplexing(ConfigFile &config)
                         insialStruct(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
-                    {
-                        /* handle Post method  */
-                        Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.isDone);
-                    }
+                        Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.isDone, true);
                 }
                 else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.isDone == true)
                 {
                    /*  File descriptor ready for reading  */
-                //    std::cout << "done" << std::endl;
                     if(Request[events[i].data.fd].data.requeste->method == "GET")
                     {
-                        /* handle Get method  */
-                        getMethod(Request[events[i].data.fd].data);
+                        if(Request[events[i].data.fd].data.code != 0)
+                            sendErrorResponse(Request[events[i].data.fd].data);
+                        else
+                            getMethod(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "DELETE")
                     {
-                        /* handle delete method  */
-                        deleteMethod(Request[events[i].data.fd].data);
+                        if(Request[events[i].data.fd].data.code != 0)
+                            sendErrorResponse(Request[events[i].data.fd].data);
+                        else
+                            deleteMethod(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "POST" )
                         Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
@@ -163,28 +170,15 @@ void multiplexing(ConfigFile &config)
                         Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
-                        // std::cout << "-----> " << Request[events[i].data.fd].data.requeste->status_client << std::endl;
-                        /* close File descriptor of client */
                         Request.erase(events[i].data.fd);
-                        delete Request[events[i].data.fd].data.requeste;
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
                     }
-                }
-                else if(events[i].events & EPOLLERR)
-                {
-                    /* an error has occurred */
-                    std::string body = "<html><body><h1>Opss an error occurred. Please try again later.</h1></body></html>";
-                    const std::string httpResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + body;
-                    send(events[i].data.fd, httpResponse.c_str(), httpResponse.size(), 0);
-                    Request.erase(events[i].data.fd);
-                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    close(events[i].data.fd);
                 }
             }
         }
     }
     close(epollFD);
-    close(socketFD);
+    closeServers(Servers);
 }
 

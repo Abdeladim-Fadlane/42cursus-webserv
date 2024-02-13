@@ -25,9 +25,10 @@ class PostMethod
 {
     private:
         size_t              size;
+        size_t              time_out;
         std::string         boundary_separator;
-        size_t              separator_size;
         std::string         buffer_add;
+        size_t              buffer_add_size;
         Requeste            &req;
         std::fstream        Postfile;
         std::string         content_type;
@@ -35,6 +36,7 @@ class PostMethod
         std::string         Transfer_Encoding;
         bool                first_time;
         std::stringstream   ss;
+
         struct timeval      Time;
         std::map<std::string, std::string>  map_extation;
         std::vector<std::string>    vector_files;
@@ -42,7 +44,7 @@ class PostMethod
     public:
         std::string         path;
         PostMethod(Requeste& r);
-        void    PostingFileToServer(bool& isdone); 
+        void    PostingFileToServer(bool& isdone, bool); 
         void    chunked(std::string &buffer, bool& isdone);   
         void    boundary(std::string buffer, bool& isdone);
         size_t getContentLength(void) const;

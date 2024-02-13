@@ -19,6 +19,7 @@
 #include <string>
 #include <fstream>
 #include <fcntl.h>
+#include <sys/time.h>
 #include <algorithm>
 #include "parsinfCon/Configfile.hpp"
 class PostMethod;
@@ -30,6 +31,7 @@ class Requeste
         std::string                         body;
         ConfigFile                          &config;
         int                                 fdresponse;
+        long                                time_out;
     public:
         std::string                         headerResponse;
         Server                              Server_Requeste;
@@ -55,6 +57,7 @@ class Requeste
         int     getSocketFd() const;
         const std::string& getBody() const;
         const std::string&    getPath() const;
+        long    get_time();
         ~Requeste();
 };
 

@@ -1,5 +1,5 @@
-#!/bin/bash
+# !/bin/bash
 
-# while true; do
+while true; do
     echo "hello"
-# done
+done
