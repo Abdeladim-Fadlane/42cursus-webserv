@@ -64,6 +64,7 @@ void multiplexing(ConfigFile &config)
     
     for(size_t i = 0 ;i < config.Servers.size(); i++)
     {
+        
         socketFD = socket(AF_INET,SOCK_STREAM,0);
         if (socketFD == -1)
             throw std::runtime_error("Cannot create socket");
@@ -131,6 +132,7 @@ void multiplexing(ConfigFile &config)
                 if(events[i].events & EPOLLHUP)
                 {
                     /* client closed the connection */
+                    delete Request[events[i].data.fd].data.requeste;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
@@ -170,9 +172,11 @@ void multiplexing(ConfigFile &config)
                         Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
+                        delete Request[events[i].data.fd].data.requeste;
                         Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
+                        exit(EXIT_FAILURE);
                     }
                 }
             }
