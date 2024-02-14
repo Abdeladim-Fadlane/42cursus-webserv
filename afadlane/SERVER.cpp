@@ -64,7 +64,6 @@ void multiplexing(ConfigFile &config)
     
     for(size_t i = 0 ;i < config.Servers.size(); i++)
     {
-        
         socketFD = socket(AF_INET,SOCK_STREAM,0);
         if (socketFD == -1)
             throw std::runtime_error("Cannot create socket");
