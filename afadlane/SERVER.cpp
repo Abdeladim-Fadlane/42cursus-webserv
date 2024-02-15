@@ -175,7 +175,6 @@ void multiplexing(ConfigFile &config)
                         Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
-                        exit(EXIT_FAILURE);
                     }
                 }
             }

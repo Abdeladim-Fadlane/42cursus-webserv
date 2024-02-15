@@ -7,6 +7,7 @@ void sendErrorResponse(Data &dataClient)
     char buffer[BUFFER_SIZE];
     if(dataClient.errorFd == -2)
     {
+        
         std::string htttpresponce;
         std::string filePath = dataClient.requeste->Server_Requeste.error_pages[dataClient.code];
         struct stat fileInfo;
@@ -59,73 +60,89 @@ bool checkPermission(Data &dataClient, const char *path,int type)
     {
         dataClient.statusCode = " 403 FORBIDDEN";
         dataClient.code = 403;
-        
         return true;
     }
     return false;
 }
 
-bool   deleteMethod(Data &dataClient)
+void deleteMethod(Data &dataClient)
 {
-    std::string htmlMessage ;
-    std::string htttpresponce ;
     const char * path = dataClient.Path.c_str();
-   
-    if(access(path,F_OK) != 0 )
+    if (access(path, F_OK) != 0) 
     {
-         dataClient.statusCode = " 404 NOT FOUND";
+        dataClient.statusCode = " 404 NOT FOUND";
         dataClient.code = 404;
-        return true;
+        return;
     }
-    struct stat statPath;
-    if (stat(path,&statPath) == 0)
-    { 
-        if(S_ISREG(statPath.st_mode))
-        { 
-            if(unlink(path) == 0)
-            {
-                 dataClient.statusCode = "  204 No Content";
-                dataClient.readyForClose =true;
-                return true;
-            }
-        }
-    }
-    if(checkPermission(dataClient,path,W_OK) == true)
-        return true;
-    DIR *dir = opendir(path);
-    if(!dir)
-    {
-         dataClient.statusCode = " 500 Internal Server Error";
-        dataClient.code = 500;
-        return true;
-    }
-    struct dirent * it;
     struct stat statInfo;
-    while((it = readdir(dir)) != NULL)
+    if (stat(path, &statInfo) != 0)
     {
-        std::string itPath  = std::string(path) + it->d_name ;
-        if(strcmp(it->d_name,".") != 0 && strcmp(it->d_name,"..") != 0)
+        dataClient.statusCode = " 500 Internal Server Error";
+        dataClient.code = 500;
+        return;
+    }
+    if (S_ISREG(statInfo.st_mode)) 
+    { 
+        if (unlink(path) == 0) 
         {
-            if(stat(itPath.c_str(),&statInfo) == 0)
+            dataClient.statusCode = " 204 No Content";
+            dataClient.code = 204;
+        } else {
+            dataClient.statusCode = " 500 Internal Server Error";
+            dataClient.code = 500;
+        }
+        return;
+    } 
+    else if (S_ISDIR(statInfo.st_mode)) 
+    {
+        if (checkPermission(dataClient, path, W_OK) || checkPermission(dataClient, path, X_OK))
+            return;
+        DIR *dir = opendir(path);
+        if (!dir) 
+        {
+            dataClient.statusCode = " 500 Internal Server Error";
+            dataClient.code = 500;
+            return;
+        }
+        struct dirent * it;
+        while ((it = readdir(dir)) != NULL) 
+        {
+            if (strcmp(it->d_name, ".") != 0 && strcmp(it->d_name, "..") != 0)
             {
-                if(S_ISDIR(statInfo.st_mode))
+                std::string itPath = dataClient.Path + it->d_name;
+                if (stat(itPath.c_str(), &statInfo) == 0)
                 {
-                    dataClient.Path = itPath;
-                    itPath += "/";
-                    deleteMethod(dataClient);
-                }
-                else
+                    if (S_ISDIR(statInfo.st_mode))
+                    {
+                        Data subDirData = dataClient;
+                        subDirData.Path = itPath + "/";
+                        deleteMethod(subDirData); 
+                    } 
+                    else
+                    {
+                        if (unlink(itPath.c_str()) != 0)
+                        {
+                            dataClient.statusCode = " 500 Internal Server Error";
+                            dataClient.code = 500;
+                            closedir(dir);
+                            return;
+                        }
+                    }
+                } 
+                else 
                 {
-                    unlink(itPath.c_str());
+                    dataClient.statusCode = " 500 Internal Server Error";
+                    dataClient.code = 500;
+                    closedir(dir);
+                    return;
                 }
             }
         }
+        closedir(dir);
+        if (rmdir(path) == 0)
+        {    
+            dataClient.statusCode = " 204 No Content";
+            dataClient.code = 204;
+        }
     }
-    closedir(dir);
-    if (rmdir(path) == 0)
-    {    
-         dataClient.statusCode = "  204 No Content";
-        dataClient.readyForClose = true;
-    }
-    return true;
 }

@@ -65,7 +65,7 @@ struct Webserv
 
 
 void    getMethod(Data &);
-bool    deleteMethod(Data &);
+void    deleteMethod(Data &);
 double  getCurrentTime(void);
 void    fastCGI(Data &,std::string &);
 void    multiplexing(ConfigFile &config);
