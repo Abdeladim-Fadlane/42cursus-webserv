@@ -137,10 +137,14 @@ std::string delete_slash_path(std::string& path, bool& slash)
     return ( "/" + path);
 }
 
+
+
 void Requeste::get_infoConfig(bool& isdone)
 {
     struct stat statbuf;
     bool slash = false;
+    bool flag = false;
+    size_t length;
 
     path = delete_slash_path(path, slash);
     for (std::vector<Server>::iterator it = config.Servers.begin() ; it != config.Servers.end(); it++)
@@ -153,13 +157,17 @@ void Requeste::get_infoConfig(bool& isdone)
                 if (!strncmp(it->locations[i].location_name.c_str(),path.c_str(), it->locations[i].location_name.length()))
                 {
                     Location_Server = it->locations[i];
-                    stat((Location_Server.root + Location_Server.upload_location).c_str(), &statbuf);
-                    if (S_ISDIR(statbuf.st_mode) == false)
+                    if (stat((Location_Server.root + Location_Server.upload_location).c_str(), &statbuf) == 0  && 
+                        S_ISDIR(statbuf.st_mode) == false)
                         Location_Server.upload_location = "";
                     Location_Server.upload_location = Location_Server.root + Location_Server.upload_location;
-                    Location_Server.root  += path.substr(it->locations[i].location_name.length());
-                    stat(Location_Server.root.c_str(), &statbuf);
-                    if (path.length() && path[path.length() - 1] != '/' && S_ISDIR(statbuf.st_mode) == true)
+                    length = it->locations[i].location_name.length();
+                    if (length > 1)
+                        length += 1;
+                    Location_Server.root  += path.substr(length);
+                    std::cout <<  Location_Server.root << std::endl;
+                    if (stat(Location_Server.root.c_str(), &statbuf) == 0 && 
+                        S_ISDIR(statbuf.st_mode) == true &&  path.length() && path[path.length() - 1] != '/')
                     {
                         status_client = 0;
                         isdone = true;
@@ -167,12 +175,13 @@ void Requeste::get_infoConfig(bool& isdone)
                         headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
                             + std::to_string(Server_Requeste.listen) + path.append("/") + "\r\n\r\n";
                     }
+                    flag = true;
                     if (it->locations[i].location_name == "/")
                         continue;
                     else
                         break ;
                 }
-                else if (path == "/" && it->locations.size() - 1 == i)
+                else if (path == "/" && it->locations.size() - 1 == i && flag == false)
                 {
                     path = it->locations[0].location_name;
                     Location_Server = it->locations[0];
@@ -185,6 +194,10 @@ void Requeste::get_infoConfig(bool& isdone)
             break ;
         }
     }
+    std::cout << "  root : " << Location_Server.root << std::endl;
+    std::cout << "  path : " << path << std::endl;
+    // std::cout << "  upload path : " << Location_Server.upload_location << std::endl;
+    std::cout << "\t\t------------------" << std::endl;
 }
 
 void Requeste::MakeMapOfHeader(bool& isdone)

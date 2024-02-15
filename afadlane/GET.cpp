@@ -53,7 +53,7 @@ int    listingDirectory(Data &dataClient)
     list << "<html><head><title>Directory Listing</title></head><body>";
     list << "<h1>Index of: " << dataClient.requeste->path << "</h1>";
     list << "<table>";
-    std::string directoryPath = dataClient.Path + "/";
+    std::string directoryPath = dataClient.Path +  "/";
     DIR *dir =  opendir(directoryPath.c_str());
     if(!dir)
         throw std::runtime_error("error");

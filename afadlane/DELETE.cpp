@@ -18,7 +18,7 @@ void sendErrorResponse(Data &dataClient)
         if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
         {
             dataClient.readyForClose = true;
-            std::runtime_error("ersdgsdgsdror");
+            std::runtime_error("error");
         }
         dataClient.errorFd = open(filePath.c_str(),O_RDONLY);
         if(dataClient.errorFd == -1)

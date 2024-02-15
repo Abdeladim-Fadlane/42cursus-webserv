@@ -100,7 +100,7 @@ void    Location::add_location(std::fstream& os)
             uploadfile = arg[1];
         }
         else if (!arg[0].compare("upload_location") && arg.size() == 2)
-            upload_location = delete_Or_add_slash(arg[1], false, false);
+            upload_location = delete_Or_add_slash(arg[1], true, false);
         else if (!arg[0].compare("cgi_allowed") && arg.size() == 2)
         {
             if (arg[1].compare("ON") && arg[1].compare("OFF"))

@@ -30,6 +30,52 @@ PostMethod::PostMethod(Requeste& r) : req(r)
         Transfer_Encoding = this->req.requeste_map.find("Transfer-Encoding")->second;
     req.headerResponse = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\n\r\n";
     req.status_client = 201;
+    if (req.Location_Server.cgi_allowed == "ON")
+    {
+        cgi_file.open(req.Location_Server.upload_location + "/index_cgi", std::fstream::out);
+        cgi_path = req.Location_Server.upload_location + "/index_cgi";
+        ft_prepar_cgi();
+    }
+}
+
+void    PostMethod::ft_prepar_cgi()
+{
+    struct stat stat_buffer;
+    DIR *dir;
+    struct dirent* dirent;
+    std::vector<std::string> scripts;
+
+    if (stat(req.Location_Server.root.c_str(), &stat_buffer) == 0 && S_ISDIR(stat_buffer.st_mode))
+    {
+        for (std::vector<std::string>::iterator it = req.Location_Server.indexs.begin(); it != req.Location_Server.indexs.end(); it++)
+            if (it->find(".php") != std::string::npos || it->find(".py")  != std::string::npos)
+                scripts.push_back(*it);
+        dir = opendir(req.Location_Server.root.c_str());
+        while ((dirent = readdir(dir)) != NULL)
+        {
+            if (std::find(scripts.begin(),scripts.end(), dirent->d_name) != scripts.end())
+            {
+                script_path = req.Location_Server.root;
+                script_path.append(dirent->d_name);
+                cgi_extation = script_path.substr(script_path.rfind("."));
+                break ;
+            }
+        }
+        closedir(dir);
+    }
+    else
+    {
+        if (access(req.Location_Server.root.c_str(), X_OK) == -1 && req.Location_Server.uploadfile.compare("OFF"))
+        {
+            req.Location_Server.cgi_allowed = "OFF";
+            return ;
+        }
+        script_path = req.Location_Server.root;
+        cgi_extation = script_path.substr(script_path.rfind("."));
+    }
+    if (script_path.empty())
+        req.Location_Server.cgi_allowed = "OFF";
+    std::cout << script_path << "::" << cgi_extation << std::endl;
 }
 
 const std::string& PostMethod::getContentType(void) const 
@@ -81,6 +127,7 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
         buffer_add_size = 0;
         boundary(buffer, isdone);
         Postfile.close();
+        cgi_file.close();
         isdone = true;
     }
     else if (buffer.find(boundary_separator + "\r\n") != std::string::npos)
@@ -88,6 +135,8 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
         if (Postfile.is_open())
         {
             Postfile << buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2);
+            if (cgi_file.is_open())
+                cgi_file << buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2);
             content_file += buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2).length();
             Postfile.close();
             buffer = buffer.substr(buffer.find(boundary_separator + "\r\n"));
@@ -119,6 +168,8 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
         else
             index = buffer.length();
         Postfile << buffer.substr(0, index);
+        if (cgi_file.is_open())
+            cgi_file << buffer.substr(0, index);
         content_file += buffer.substr(0, index).length();
         buffer_add = buffer.substr(index);
     }
@@ -151,6 +202,7 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
             if (!size)
             {
                 Postfile.close();
+                cgi_file.close();
                 isdone = true;
                 return ;
             }
@@ -165,6 +217,8 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
     if (size && size >= buffer.length())
     {
         Postfile << buffer;
+        if (cgi_file.is_open())
+            cgi_file << buffer;
         size -= buffer.length();
         content_file += buffer.length();
         buffer_add = "";
@@ -172,6 +226,8 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
     else if (size)
     {
         Postfile << buffer.substr(0, size);
+        if (cgi_file.is_open())
+            cgi_file << buffer.substr(0, size);
         content_file += buffer.substr(0, size).length();
         buffer = buffer.substr(buffer.find("\r\n") + 2);
         size = 0;
@@ -197,12 +253,12 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
     }
     if (!req.Location_Server.uploadfile.compare("OFF") && !req.Location_Server.cgi_allowed.compare("OFF"))
     {
-        req.headerResponse = "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\n";
-        req.status_client = 405;
+        req.headerResponse = "HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\n\r\n";
+        req.status_client = 403;
         isdone = true;
         return ;
     }
-    if (content_type.empty() || (Transfer_Encoding == "chunked" && content_type.substr(0, content_type.find(";")) == "multipart/form-data"))
+    if (content_type.empty() || !content_length || (Transfer_Encoding == "chunked" && content_type.substr(0, content_type.find(";")) == "multipart/form-data"))
     {
         req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
         isdone = true;
@@ -274,9 +330,12 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
         buffer_add = "";
         content_file += buffer.length();
         Postfile << buffer;
+        if (cgi_file.is_open())
+            cgi_file << buffer;
         if (content_length == content_file)
         {
             Postfile.close();
+            cgi_file.close();
             isdone = true;
         }
     }
@@ -306,5 +365,8 @@ void PostMethod::unlink_all_file()
 
 PostMethod::~PostMethod()
 {
+    cgi_file.close();
     Postfile.close();
+    if (req.Location_Server.uploadfile == "OFF")
+        unlink_all_file();
 }

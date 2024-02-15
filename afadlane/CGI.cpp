@@ -146,7 +146,7 @@ void fastCGI(Data &dataClient,std::string &type)
             dataClient.isFork = true;
             std::ostringstream oss;
             oss <<  dataClient.fd;
-            dataClient.cgiFile = "/nfs/homes/afadlane/tmp/file" + oss.str();
+            dataClient.cgiFile = "/tmp/file" + oss.str();
             dataClient.fileFd = open(dataClient.cgiFile.c_str() ,O_WRONLY  | O_CREAT | O_TRUNC,0644);
             if (dataClient.fileFd == -1)
                 throw std::runtime_error ("error");
@@ -169,7 +169,7 @@ void fastCGI(Data &dataClient,std::string &type)
         if(waitpid(dataClient.pid,&status,WNOHANG) == 0)
         {
             /* child proccess still runing */
-            if(getCurrentTime() - dataClient.startTime >=  3)
+            if(getCurrentTime() - dataClient.startTime >=  5)
             {
                 close(dataClient.fileFd);
                 kill(dataClient.pid,SIGTERM);
