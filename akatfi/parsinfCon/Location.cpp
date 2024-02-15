@@ -12,9 +12,9 @@
 
 #include "Configfile.hpp"
 
-Location::Location(const std::string&  location_name)
+Location::Location(std::string&  location)
 {
-    this->location_name = location_name;
+    this->location_name = delete_Or_add_slash(location, true, false);
     close = true;
     uploadfile = "OFF";
     cgi_allowed = "OFF";
@@ -51,6 +51,8 @@ void    Location::add_location(std::fstream& os)
     
     while (getlineFromFile(os, input))
     {
+        if (input.empty())
+            continue;
         if (input != "}" && input != "{")
         {
             if (input[input.length() - 1] != ';')
@@ -69,7 +71,7 @@ void    Location::add_location(std::fstream& os)
         {
             if (!root.empty())
                 throw std::runtime_error("Error : duplicate member root in location");
-            root = arg[1];
+            root = delete_Or_add_slash(arg[1], true, true);
         }
         else if (!arg[0].compare("autoindex") && arg.size() == 2)
         {
@@ -98,7 +100,7 @@ void    Location::add_location(std::fstream& os)
             uploadfile = arg[1];
         }
         else if (!arg[0].compare("upload_location") && arg.size() == 2)
-            upload_location = arg[1];
+            upload_location = delete_Or_add_slash(arg[1], true, false);
         else if (!arg[0].compare("cgi_allowed") && arg.size() == 2)
         {
             if (arg[1].compare("ON") && arg[1].compare("OFF"))

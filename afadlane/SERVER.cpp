@@ -146,7 +146,7 @@ void multiplexing(ConfigFile &config)
                         insialStruct(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
-                        Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.isDone);
+                        Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.isDone, true);
                 }
                 else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.isDone == true)
                 {
