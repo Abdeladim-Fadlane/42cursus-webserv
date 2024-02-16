@@ -43,6 +43,7 @@ bool getlineFromFile(std::fstream& os, std::string& input)
         input = input.substr(0, input.length() - 1);
     if (input.empty())
         throw std::runtime_error("Error : th config file has a empty line");
+    // std::cout << input << std::endl;
     return true;
 }
 
@@ -77,19 +78,6 @@ std::vector<std::string> split_line(std::string line)
     return (words);
 }
 
-std::string delete_Or_add_slash(std::string& path, bool begin, bool end)
-{
-    while (path.size() > 0 && path[0] == '/')
-        path = path.substr(1);
-    while (path.size() > 0  && path[path.size() - 1] == '/')
-        path = path.substr(0, path.size() - 1);
-    if (begin == true)
-        path = "/" + path;
-    if (end == true)
-        path += "/";
-    return (path);
-}
-
 void    ConfigFile::parceConfig()
 {
     std::string input;
@@ -98,8 +86,6 @@ void    ConfigFile::parceConfig()
     
     while(getlineFromFile(config, input))
     {
-        if (input.empty())
-            continue;
         line_arg = split_line(input);
         if (!line_arg[0].compare("server") && line_arg.size() == 1)
         {

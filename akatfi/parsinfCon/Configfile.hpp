@@ -37,7 +37,7 @@ class Location
         std::string                 cgi_allowed;
         std::map<std::string, std::string>    cgi;
         bool                        close;
-        Location(std::string& location_name);
+        Location(const std::string& location_name);
         Location& operator=(const Location& obj);
         Location();
         void setLocationName(const std::string& new_name);
@@ -50,7 +50,6 @@ class Server
     public:
         long                                listen;
         std::string                         host;
-        size_t                              cgi_timeout;
         std::string                         server_name;
         std::map<long, std::string>  error_pages;
         size_t                                max_body;
@@ -78,6 +77,5 @@ class ConfigFile
 bool getlineFromFile(std::fstream& os, std::string& input);
 std::vector<std::string> split_line(std::string line);
 bool check_digit(std::string digit);
-std::string delete_Or_add_slash(std::string& path, bool begin, bool end);
 
 #endif

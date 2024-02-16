@@ -7,6 +7,7 @@ CXX = c++
 
 CFILES = afadlane/SERVER.cpp \
  		 afadlane/MAIN.cpp \
+ 		 afadlane/UTILS.cpp \
  		 afadlane/GET.cpp \
  		 afadlane/CGI.cpp \
  		 afadlane/DELETE.cpp \
