@@ -55,7 +55,7 @@ void    Server::init_data(std::fstream& os)
 
     while (getlineFromFile(os, input) && input != "server")
     {
-        if (input.empty())
+        if (input.empty() == true)
             continue;
         if (input != "}" && input != "{" && input.find("location") == std::string::npos)
         {
@@ -71,7 +71,7 @@ void    Server::init_data(std::fstream& os)
             close = true; 
             break ;
         }
-        else if (!arg[0].compare("listen") && arg.size() == 2 && !close)
+        else if (!arg[0].compare("listen") && arg.size() == 2 && !close && port_chose == false)
         {
             if (!check_digit(arg[1]))
                 throw std::runtime_error("Error : thee port will be a digit");
@@ -86,9 +86,9 @@ void    Server::init_data(std::fstream& os)
                 throw std::runtime_error("Error : thee timeout will be a digit");
             cgi_timeout = atoi(arg[1].c_str());
         }
-        else if (!arg[0].compare("host") && arg.size() == 2 && !close)
+        else if (!arg[0].compare("host") && arg.size() == 2 && !close && host.empty())
             host = arg[1];
-        else if (!arg[0].compare("server_name") && arg.size() == 2 && !close)
+        else if (!arg[0].compare("server_name") && arg.size() == 2 && !close && server_name.empty())
             server_name = arg[1];
         else if (!arg[0].compare("max_body_Size") && arg.size() == 2 && !close)
         {
@@ -110,7 +110,7 @@ void    Server::init_data(std::fstream& os)
             it->add_location(os);
         }
         else
-            throw std::runtime_error("Error : line have dosen't folow rules");
+            throw std::runtime_error("Error : line have dosen't folow rules or duplicated");
     }
     if (!close)
         throw std::runtime_error("Error : The brackets of server dosen't closed");

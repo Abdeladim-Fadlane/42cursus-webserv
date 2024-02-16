@@ -1,10 +1,14 @@
 NAME = webserv
-# curl -X GET http://127.1.1.0:8080/index.html
-# CXXFLAGS =  -fsanitize=address -g3 -Wall -Wextra -Werror 
+# curl -i http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
+# wget http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
+# siege -c 225 -r 1 -b http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
+# CXXFLAGS =  -Wall -Wextra -Werror -fsanitize=address -g3 
+
 CXX = c++
 
 CFILES = afadlane/SERVER.cpp \
  		 afadlane/MAIN.cpp \
+ 		 afadlane/UTILS.cpp \
  		 afadlane/GET.cpp \
  		 afadlane/CGI.cpp \
  		 afadlane/DELETE.cpp \
@@ -30,5 +34,4 @@ fclean :clean
 re : fclean all
 
 run : all clean
-	# rm -rf www/*
-	@  ./webserv 
+	@   ./webserv 

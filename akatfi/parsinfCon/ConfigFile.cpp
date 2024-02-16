@@ -21,7 +21,7 @@ ConfigFile::ConfigFile(const std::string& FileName)
         throw std::runtime_error("Error : cant opening this file");
     stat(FileName.c_str(), &fileStat);
     if (fileStat.st_size == 0)
-        close_and_throw("Error the file is empty");
+        close_and_throw("Error : the file is empty");
 }
 
 bool check_digit(std::string digit)
@@ -41,8 +41,6 @@ bool getlineFromFile(std::fstream& os, std::string& input)
         input = input.substr(1);
     while (!input.empty() && isspace(input[input.length() - 1]))
         input = input.substr(0, input.length() - 1);
-    if (input.empty())
-        throw std::runtime_error("Error : th config file has a empty line");
     return true;
 }
 
@@ -98,8 +96,8 @@ void    ConfigFile::parceConfig()
     
     while(getlineFromFile(config, input))
     {
-        if (input.empty())
-            continue;
+        if (input.empty() == true)
+            continue ;
         line_arg = split_line(input);
         if (!line_arg[0].compare("server") && line_arg.size() == 1)
         {
@@ -108,11 +106,8 @@ void    ConfigFile::parceConfig()
                 Servers.push_back(Server());
                 it = Servers.end() - 1;
                 it->init_data(config);
-                if (it->host.empty() || !it->port_chose)
+                if (it->host.empty() || !it->port_chose || it->server_name.empty())
                     throw std::runtime_error("Error : the server need host and post");
-                for (std::vector<Server>::iterator itServ = Servers.begin(); itServ != Servers.end() - 1; itServ++)
-                    if (it->host == itServ->host && it->listen == itServ->listen)
-                        throw std::runtime_error("Error : one server have port and host similar to other server");
             }
             catch(const std::exception& e)
             {
@@ -122,7 +117,6 @@ void    ConfigFile::parceConfig()
         }
         else
             close_and_throw("Error : line have dosen't follow rules");
-        
     }
     config.close();
 }

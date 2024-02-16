@@ -32,6 +32,7 @@ PostMethod::PostMethod(Requeste& r) : req(r)
     req.status_client = 201;
     if (req.Location_Server.cgi_allowed == "ON")
     {
+        std::cout << "running the cgi ... " << std::endl;
         cgi_file.open(req.Location_Server.upload_location + "/index_cgi", std::fstream::out);
         cgi_path = req.Location_Server.upload_location + "/index_cgi";
         ft_prepar_cgi();
@@ -53,7 +54,8 @@ void    PostMethod::ft_prepar_cgi()
         dir = opendir(req.Location_Server.root.c_str());
         while ((dirent = readdir(dir)) != NULL)
         {
-            if (std::find(scripts.begin(),scripts.end(), dirent->d_name) != scripts.end())
+            if (std::find(scripts.begin(),scripts.end(), dirent->d_name) != scripts.end() &&
+                access((req.Location_Server.root + dirent->d_name).c_str(), X_OK) == 0)
             {
                 script_path = req.Location_Server.root;
                 script_path.append(dirent->d_name);
@@ -62,10 +64,15 @@ void    PostMethod::ft_prepar_cgi()
             }
         }
         closedir(dir);
+        if (script_path.empty())
+        {
+            req.Location_Server.cgi_allowed = "OFF";
+            return ;
+        }
     }
     else
     {
-        if (access(req.Location_Server.root.c_str(), X_OK) == -1 && req.Location_Server.uploadfile.compare("OFF"))
+        if (access(req.Location_Server.root.c_str(), X_OK) == -1)
         {
             req.Location_Server.cgi_allowed = "OFF";
             return ;
@@ -75,7 +82,7 @@ void    PostMethod::ft_prepar_cgi()
     }
     if (script_path.empty())
         req.Location_Server.cgi_allowed = "OFF";
-    std::cout << script_path << "::" << cgi_extation << std::endl;
+    // std::cout << script_path << "::" << cgi_extation << std::endl;
 }
 
 const std::string& PostMethod::getContentType(void) const 
@@ -118,7 +125,18 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
     {
         first_time = false;
         boundary_separator = this->req.requeste_map.find("Content-Type")->second;
-        boundary_separator = std::string("--") + boundary_separator.substr(boundary_separator.find("boundary=") + strlen("boundary="));
+        if (boundary_separator.find("boundary=") != std::string::npos)
+            boundary_separator = std::string("--") + boundary_separator.substr(boundary_separator.find("boundary=") + strlen("boundary="));
+        else 
+           boundary_separator = ""; 
+        if (boundary_separator.empty())
+        {
+            std::cout << "poting with success" << std::endl;
+            req.status_client = 400;
+            req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+            isdone = true;
+            return ;
+        }
         buffer_add_size = (boundary_separator + "\r\n").length();
     }
     if (buffer.find(boundary_separator + "--\r\n") != std::string::npos)
@@ -258,7 +276,7 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
         isdone = true;
         return ;
     }
-    if (content_type.empty() || !content_length || (Transfer_Encoding == "chunked" && content_type.substr(0, content_type.find(";")) == "multipart/form-data"))
+    if (Transfer_Encoding == "chunked" && content_type.substr(0, content_type.find(";")) == "multipart/form-data")
     {
         req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
         isdone = true;
@@ -276,6 +294,12 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
             return ;
         }
         buffer.append(buffer_read, x);
+    }
+    if (buffer.length() == 0)
+    {
+        Postfile.close();
+        isdone = true;
+        return ;
     }
     if (Transfer_Encoding == "chunked")
     {

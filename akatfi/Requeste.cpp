@@ -100,6 +100,7 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
         this->MakeMapOfHeader(isdone);
         this->get_infoConfig(isdone);
         flag = true;
+        std::cout << "method of --> :: " << method << std::endl;
         if (isdone == false && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
         {
             status_client = 405;
@@ -125,6 +126,7 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
 
 std::string delete_slash_path(std::string& path, bool& slash)
 {
+    unsigned int i = 0;
     while (path.size() > 0 && path[0] == '/')
         path = path.substr(1);
     while (path.size() > 0  && path[path.size() - 1] == '/')
@@ -147,56 +149,50 @@ void Requeste::get_infoConfig(bool& isdone)
     size_t length;
 
     path = delete_slash_path(path, slash);
-    for (std::vector<Server>::iterator it = config.Servers.begin() ; it != config.Servers.end(); it++)
+    for (unsigned int i = 0; i < Server_Requeste.locations.size(); i++)
     {
-        if (it->host == this->host && it->listen == this->port)
+        if (!strncmp(Server_Requeste.locations[i].location_name.c_str(),path.c_str(), Server_Requeste.locations[i].location_name.length()))
         {
-            Server_Requeste = *it;
-            for (unsigned int i = 0; i < it->locations.size(); i++)
+            Location_Server = Server_Requeste.locations[i];
+            length = Server_Requeste.locations[i].location_name.length();
+            if (length > 1)
+                length += 1;
+            Location_Server.root  += path.substr(length);
+            if (stat(Location_Server.root.c_str(), &statbuf) == 0 && 
+                S_ISDIR(statbuf.st_mode) == true &&  path.length() && path[path.length() - 1] != '/')
             {
-                if (!strncmp(it->locations[i].location_name.c_str(),path.c_str(), it->locations[i].location_name.length()))
-                {
-                    Location_Server = it->locations[i];
-                    if (stat((Location_Server.root + Location_Server.upload_location).c_str(), &statbuf) == 0  && 
-                        S_ISDIR(statbuf.st_mode) == false)
-                        Location_Server.upload_location = "";
-                    Location_Server.upload_location = Location_Server.root + Location_Server.upload_location;
-                    length = it->locations[i].location_name.length();
-                    if (length > 1)
-                        length += 1;
-                    Location_Server.root  += path.substr(length);
-                    std::cout <<  Location_Server.root << std::endl;
-                    if (stat(Location_Server.root.c_str(), &statbuf) == 0 && 
-                        S_ISDIR(statbuf.st_mode) == true &&  path.length() && path[path.length() - 1] != '/')
-                    {
-                        status_client = 0;
-                        isdone = true;
-                        method =  "";
-                        headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
-                            + std::to_string(Server_Requeste.listen) + path.append("/") + "\r\n\r\n";
-                    }
-                    flag = true;
-                    if (it->locations[i].location_name == "/")
-                        continue;
-                    else
-                        break ;
-                }
-                else if (path == "/" && it->locations.size() - 1 == i && flag == false)
-                {
-                    path = it->locations[0].location_name;
-                    Location_Server = it->locations[0];
-                    if (stat((Location_Server.root + Location_Server.upload_location).c_str(), &statbuf) != 0)
-                        Location_Server.upload_location = "";
-                    Location_Server.upload_location = Location_Server.root + Location_Server.upload_location;
-                    break;
-                }
+                status_client = 0;
+                isdone = true;
+                method =  "";
+                headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
+                    + std::to_string(Server_Requeste.listen) + path.append("/") + "\r\n\r\n";
             }
-            break ;
+            flag = true;
+            if (Server_Requeste.locations[i].location_name == "/")
+                continue;
+            else
+                break ;
+        }
+        else if (path == "/" && Server_Requeste.locations.size() - 1 == i && flag == false)
+        {
+            path = Server_Requeste.locations[0].location_name;
+            Location_Server = Server_Requeste.locations[0];
+            if (path.length() && path[path.length() - 1] != '/')
+            {
+                status_client = 0;
+                isdone = true;
+                method =  "";
+                headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
+                    + std::to_string(Server_Requeste.listen) + path.append("/") + "\r\n\r\n";
+            }
+            break;
         }
     }
+    if (Location_Server.upload_location.empty())
+        Location_Server.upload_location = Location_Server.root;
     std::cout << "  root : " << Location_Server.root << std::endl;
     std::cout << "  path : " << path << std::endl;
-    // std::cout << "  upload path : " << Location_Server.upload_location << std::endl;
+    std::cout << "  upload path : " << Location_Server.upload_location << std::endl;
     std::cout << "\t\t------------------" << std::endl;
 }
 
@@ -250,6 +246,21 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         {
             port = atoi(host.substr(host.find(":") + 1).c_str());
             host = host.substr(0, host.find(":"));
+            for (size_t i = 0; i < config.Servers.size(); i++)
+                if (config.Servers[i].host == host && config.Servers[i].listen == port)
+                {
+                    Server_Requeste = config.Servers[i];
+                    break ;
+                }
+        }
+        else
+        {
+            for (size_t i = 0; i < config.Servers.size(); i++)
+                if (host == config.Servers[i].server_name)
+                {
+                    Server_Requeste = config.Servers[i];
+                    return ;
+                }
         }
     }
     if (host.empty() || !port)

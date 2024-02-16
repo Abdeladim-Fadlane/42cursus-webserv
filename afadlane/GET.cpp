@@ -53,7 +53,7 @@ int    listingDirectory(Data &dataClient)
     list << "<html><head><title>Directory Listing</title></head><body>";
     list << "<h1>Index of: " << dataClient.requeste->path << "</h1>";
     list << "<table>";
-    std::string directoryPath = dataClient.Path +  "/";
+    std::string directoryPath = dataClient.Path + "/";
     DIR *dir =  opendir(directoryPath.c_str());
     if(!dir)
         throw std::runtime_error("error");
@@ -127,7 +127,7 @@ void    openFileAndSendHeader(Data& dataClient)
         }
     }
     memset(buffer,0,sizeof(buffer));
-    if(checkPermission(dataClient,dataClient.Path.c_str(),R_OK) == true)
+    if(checkPermission(dataClient,R_OK) == true)
         return;
     dataClient.isReading = true;
     dataClient.fileFd = open(dataClient.Path.c_str(), O_RDONLY);
@@ -169,7 +169,7 @@ int checkFileOrDirectoryPermission(Data &dataClient)
 {
     if(access(dataClient.Path.c_str(),F_OK) != 0)
         return 0;
-    if(checkPermission(dataClient,dataClient.Path.c_str(),R_OK) == true)
+    if(checkPermission(dataClient,R_OK) == true)
         return 4;
     struct stat file;
     stat(dataClient.Path.c_str(), &file);
@@ -177,7 +177,7 @@ int checkFileOrDirectoryPermission(Data &dataClient)
         return 1;
     if (S_ISDIR(file.st_mode))
     {
-        if(checkPermission(dataClient,dataClient.Path.c_str(),X_OK) == true)
+        if(checkPermission(dataClient,X_OK) == true)
             return 4;;
         return 2;
     }
