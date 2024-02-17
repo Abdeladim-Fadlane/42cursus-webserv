@@ -93,6 +93,8 @@ void   SendHeader(Data &dataClient)
     ssize_t lenght = fileInfo.st_size;
     char buffer[BUFFER_SIZE];
     ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE -1);
+    if(byteRead == 0)
+        throw std::runtime_error("error");
     if(byteRead == -1)
         throw std::runtime_error("error");
     dataClient.restRead.append(std::string(buffer,byteRead));
@@ -189,7 +191,7 @@ void fastCGI(Data &dataClient,std::string &type)
             }
             close(dataClient.fileFd);
             dataClient.readyForClose = true;
-            unlink(dataClient.cgiFile.c_str());
+            // unlink(dataClient.cgiFile.c_str());
         }
         else
         {
