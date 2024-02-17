@@ -9,6 +9,7 @@ void environmentStore(Data &dataClient, std::vector<std::string> &environment)
     std::string CONTENT_LENGTH = dataClient.requeste->content_length;
     std::string QUERY_STRING = dataClient.requeste->query_str ; 
     std::string SCRIPT_FILENAM = dataClient.Path;
+    std::cout<<"----------"<<dataClient.Path<<"----\n";
     std::string SERVER_PROTOCOL = dataClient.requeste->http_v;
     std::string SERVER_ADDR = dataClient.requeste->host;
     std::string SERVER_PORT = wiss.str();
@@ -79,6 +80,7 @@ void makeHeader(Data &dataClient,ssize_t &lenght)
             throw std::runtime_error("error");
         dataClient.sendHeader = true;
     }
+
 }
 
 void   SendHeader(Data &dataClient)

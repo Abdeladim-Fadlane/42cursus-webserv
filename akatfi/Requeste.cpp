@@ -155,7 +155,7 @@ void Requeste::get_infoConfig(bool& isdone)
         {
             Location_Server = Server_Requeste.locations[i];
             length = Server_Requeste.locations[i].location_name.length();
-            if (length > 1)
+            if (length > 1 && length + 1 <= path.length())
                 length += 1;
             Location_Server.root  += path.substr(length);
             if (stat(Location_Server.root.c_str(), &statbuf) == 0 && 

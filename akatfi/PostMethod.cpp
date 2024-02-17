@@ -15,6 +15,7 @@
 PostMethod::PostMethod(Requeste& r) : req(r)
 {
     first_time = true;
+    isCgi = false;
     buffer_add = r.getBody();
     size = 0;
     content_file = 0;
@@ -60,6 +61,7 @@ void    PostMethod::ft_prepar_cgi()
                 script_path = req.Location_Server.root;
                 script_path.append(dirent->d_name);
                 cgi_extation = script_path.substr(script_path.rfind("."));
+                isCgi = true;
                 break ;
             }
         }
@@ -77,6 +79,7 @@ void    PostMethod::ft_prepar_cgi()
             req.Location_Server.cgi_allowed = "OFF";
             return ;
         }
+        isCgi = true;
         script_path = req.Location_Server.root;
         cgi_extation = script_path.substr(script_path.rfind("."));
     }

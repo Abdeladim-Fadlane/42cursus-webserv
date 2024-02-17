@@ -180,7 +180,12 @@ void multiplexing(ConfigFile &config)
                             
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "POST" )
-                        Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
+                    {
+                        if(Request[events[i].data.fd].data.requeste->post->isCgi == true)
+                            fastCGI(Request[events[i].data.fd].data,Request[events[i].data.fd].data.requeste->post->cgi_extation);
+                        else
+                            Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
+                    }
                     else
                         Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
                     if(Request[events[i].data.fd].data.readyForClose == true)

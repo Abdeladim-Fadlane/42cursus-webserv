@@ -47,6 +47,7 @@ class PostMethod
         std::string         cgi_path;
         std::string         script_path;
         std::string         cgi_extation;
+        bool                isCgi;
         PostMethod(Requeste& r);
         void    PostingFileToServer(bool& isdone, bool); 
         void    chunked(std::string &buffer, bool& isdone);   

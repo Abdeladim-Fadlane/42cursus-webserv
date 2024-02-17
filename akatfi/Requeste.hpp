@@ -38,6 +38,7 @@ class Requeste
         Location                            Location_Server;
         long                                status_client;
         int                                 port;
+        // bool isCgiPost;
         std::string                         query_str;
         std::string                         content_type;
         std::string                         content_length;
