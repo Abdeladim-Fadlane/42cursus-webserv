@@ -101,50 +101,23 @@ void   SendHeader(Data &dataClient)
 
 void fastCGI(Data &dataClient,std::string &type)
 {
-    std::vector<std::string> environment;
-    environmentStore(dataClient,environment);
-    char* env[environment.size() + 1]; 
-    for(size_t i = 0; i< environment.size();i++)
+    if(dataClient.sendHeader == false)
     {
-        env[i] = const_cast<char*>(environment[i].c_str());
-    }
-    env[environment.size()] = NULL;
-    std::string interpreter ;
-    if(type == ".py" )
-        interpreter = dataClient.requeste->Location_Server.cgi[".py"];
-    else if(type == ".php")
-        interpreter = dataClient.requeste->Location_Server.cgi[".php"];
-    else if(type == ".sh")
-        interpreter = dataClient.requeste->Location_Server.cgi[".sh"];
-
-    if(dataClient.sendHeader == true)
-    {
-        char buffer[BUFFER_SIZE];
-        std::string httpResponse;
-        ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE);
-        if(byteRead == -1)
-            throw std::runtime_error("error");
-        if(byteRead == 0)
+        std::vector<std::string> environment;
+        environmentStore(dataClient,environment);
+        char* env[environment.size() + 1]; 
+        for(size_t i = 0; i< environment.size();i++)
         {
-            if(!dataClient.restRead.empty())
-            {
-                if(send(dataClient.fd, dataClient.restRead.c_str(), dataClient.restRead.size(),0) == -1)
-                    throw std::runtime_error("error");
-            }
-            close(dataClient.fileFd);
-            dataClient.readyForClose = true;
-            unlink(dataClient.cgiFile.c_str());
+            env[i] = const_cast<char*>(environment[i].c_str());
         }
-        else
-        {
-            dataClient.restRead.append(buffer,byteRead);
-            if(send(dataClient.fd, dataClient.restRead.c_str(), dataClient.restRead.size(),0) == -1)
-                throw std::runtime_error("error");
-            dataClient.restRead.clear();
-        }
-    }
-    else
-    {
+        env[environment.size()] = NULL;
+        std::string interpreter ;
+        if(type == ".py" )
+            interpreter = dataClient.requeste->Location_Server.cgi[".py"];
+        else if(type == ".php")
+            interpreter = dataClient.requeste->Location_Server.cgi[".php"];
+        else if(type == ".sh")
+            interpreter = dataClient.requeste->Location_Server.cgi[".sh"];
         if(dataClient.isFork == false)
         {
             dataClient.startTime = getCurrentTime();
@@ -196,6 +169,33 @@ void fastCGI(Data &dataClient,std::string &type)
         {
             close(dataClient.fileFd);
             SendHeader(dataClient);
+        }
+    }
+
+    else if(dataClient.sendHeader == true)
+    {
+        char buffer[BUFFER_SIZE];
+        std::string httpResponse;
+        ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE);
+        if(byteRead == -1)
+            throw std::runtime_error("error");
+        if(byteRead == 0)
+        {
+            if(!dataClient.restRead.empty())
+            {
+                if(send(dataClient.fd, dataClient.restRead.c_str(), dataClient.restRead.size(),0) == -1)
+                    throw std::runtime_error("error");
+            }
+            close(dataClient.fileFd);
+            dataClient.readyForClose = true;
+            unlink(dataClient.cgiFile.c_str());
+        }
+        else
+        {
+            dataClient.restRead.append(buffer,byteRead);
+            if(send(dataClient.fd, dataClient.restRead.c_str(), dataClient.restRead.size(),0) == -1)
+                throw std::runtime_error("error");
+            dataClient.restRead.clear();
         }
     }
 }
