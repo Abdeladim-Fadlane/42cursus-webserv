@@ -40,7 +40,7 @@ struct Data
     bool  isFork;
     pid_t pid;
     long code;
-    bool isCgi;
+    bool sendHeader;
     double startTime;
     bool autoIndex;
     bool isReading;
@@ -85,4 +85,4 @@ void    multiplexing(ConfigFile &config);
 bool    checkPermission(Data &,int );
 void    sendErrorResponse(Data &dataClient);
 void    sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient);
-std::string makeHeader(std::string &line,std::string &lenght);
+// std::string makeHeader(std::string &line,std::string &lenght);

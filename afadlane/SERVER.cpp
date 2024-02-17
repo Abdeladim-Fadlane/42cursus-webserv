@@ -1,4 +1,5 @@
 #include"webserv.hpp"
+
 void    inisialData(std::map<int,struct Webserv> &Request ,ConfigFile &config,int &clientSocketFD)
 {
     Webserv  Data;
@@ -13,11 +14,11 @@ void    inisialData(std::map<int,struct Webserv> &Request ,ConfigFile &config,in
     Data.data.readyForClose         = false;
     Data.data.Alreadparce           = false;
     Data.data.modeAutoIndex         = false;
-    Data.data.isCgi                 = false;
+    Data.data.sendHeader            = false;
     Data.data.AlreadyRequestHeader  = false;
     Data.data.isDone                = false;
     Data.data.autoIndex             = false;
-    Data.data.isDelete             = false;
+    Data.data.isDelete              = false;
     Data.data.fd                    = clientSocketFD;
     Data.data.requeste              = new Requeste(clientSocketFD,config);
     Data.data.OBJDEL                = new DELETE();
@@ -59,6 +60,7 @@ void closeServers(std::vector<int> & Servers)
 }
 void multiplexing(ConfigFile &config)
 {
+   
     std::vector<int> Servers;
     int epollFD = epoll_create(1024);
     epoll_event event;
@@ -145,6 +147,7 @@ void multiplexing(ConfigFile &config)
                     {
                         /* readiing AND parsing request */
                         Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.isDone, Request[events[i].data.fd].data.AlreadyRequestHeader);
+                        
                         insialStruct(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
@@ -164,7 +167,7 @@ void multiplexing(ConfigFile &config)
                     {
                         if(Request[events[i].data.fd].data.code != 0)
                         {
-                            std::cout<<"--1--\n";
+                            // std::cout<<"--1--\n";
                             sendErrorResponse(Request[events[i].data.fd].data);
                         }
                         else

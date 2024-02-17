@@ -100,7 +100,7 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
         this->MakeMapOfHeader(isdone);
         this->get_infoConfig(isdone);
         flag = true;
-        std::cout << "method of --> :: " << method << std::endl;
+        // std::cout << "method of --> :: " << method << std::endl;
         if (isdone == false && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
         {
             status_client = 405;
@@ -126,7 +126,7 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
 
 std::string delete_slash_path(std::string& path, bool& slash)
 {
-    unsigned int i = 0;
+    // unsigned int i = 0;
     while (path.size() > 0 && path[0] == '/')
         path = path.substr(1);
     while (path.size() > 0  && path[path.size() - 1] == '/')
@@ -190,10 +190,10 @@ void Requeste::get_infoConfig(bool& isdone)
     }
     if (Location_Server.upload_location.empty())
         Location_Server.upload_location = Location_Server.root;
-    std::cout << "  root : " << Location_Server.root << std::endl;
-    std::cout << "  path : " << path << std::endl;
-    std::cout << "  upload path : " << Location_Server.upload_location << std::endl;
-    std::cout << "\t\t------------------" << std::endl;
+    // std::cout << "  root : " << Location_Server.root << std::endl;
+    // std::cout << "  path : " << path << std::endl;
+    // std::cout << "  upload path : " << Location_Server.upload_location << std::endl;
+    // std::cout << "\t\t-----------" << std::endl;
 }
 
 void Requeste::MakeMapOfHeader(bool& isdone)
