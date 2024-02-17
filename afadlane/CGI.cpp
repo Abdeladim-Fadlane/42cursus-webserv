@@ -9,7 +9,7 @@ void environmentStore(Data &dataClient, std::vector<std::string> &environment)
     std::string CONTENT_LENGTH = dataClient.requeste->content_length;
     std::string QUERY_STRING = dataClient.requeste->query_str ; 
     std::string SCRIPT_FILENAM = dataClient.Path;
-    std::cout<<"----------"<<dataClient.Path<<"----\n";
+    // std::cout<<"----------"<<dataClient.Path<<"----\n";
     std::string SERVER_PROTOCOL = dataClient.requeste->http_v;
     std::string SERVER_ADDR = dataClient.requeste->host;
     std::string SERVER_PORT = wiss.str();
@@ -139,7 +139,7 @@ void fastCGI(Data &dataClient,std::string &type)
             {
                 if(dataClient.requeste->method == "POST")
                 {
-                    fd = open(dataClient.cgiFile.c_str() ,O_RDONLY);
+                    fd = open(dataClient.requeste->post->cgi_path.c_str(),O_RDONLY);
                     if (dataClient.fileFd == -1)
                         throw std::runtime_error ("error");
                     dup2(fd,0);
@@ -167,11 +167,12 @@ void fastCGI(Data &dataClient,std::string &type)
         }
         else
         {
+            if(dataClient.requeste->method == "POST")
+                unlink(dataClient.requeste->post->cgi_path.c_str());
             close(dataClient.fileFd);
             SendHeader(dataClient);
         }
     }
-
     else if(dataClient.sendHeader == true)
     {
         char buffer[BUFFER_SIZE];
