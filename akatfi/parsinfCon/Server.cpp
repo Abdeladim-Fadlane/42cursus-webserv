@@ -25,19 +25,12 @@ Server::Server()
     port_chose = false;
     close = true;
     max_body = LONG_MAX;
+    cgi_timeout = 10;
     DIR* dir_error = opendir("akatfi/parsinfCon/error");
-    if(!dir_error)
-    {
-        throw std::runtime_error("error opning dir");
-        exit(1);
-    }
     dirent* path;
     while ((path = readdir(dir_error)))
-    {
-        // std::cout << path->d_name << std::endl;
         if (path->d_name[0] != '.')
             error_pages[init_numberError(std::string(path->d_name))] = std::string("akatfi/parsinfCon/error/").append(path->d_name);
-    }
     closedir(dir_error);
 }
 
@@ -62,6 +55,8 @@ void    Server::init_data(std::fstream& os)
 
     while (getlineFromFile(os, input) && input != "server")
     {
+        if (input.empty() == true)
+            continue;
         if (input != "}" && input != "{" && input.find("location") == std::string::npos)
         {
             if (input[input.length() - 1] != ';')
@@ -76,7 +71,7 @@ void    Server::init_data(std::fstream& os)
             close = true; 
             break ;
         }
-        else if (!arg[0].compare("listen") && arg.size() == 2 && !close)
+        else if (!arg[0].compare("listen") && arg.size() == 2 && !close && port_chose == false)
         {
             if (!check_digit(arg[1]))
                 throw std::runtime_error("Error : thee port will be a digit");
@@ -85,9 +80,15 @@ void    Server::init_data(std::fstream& os)
             if (!(listen >= 0 && listen <= 65535))
                 throw std::runtime_error("Error : the port is not available");
         }
-        else if (!arg[0].compare("host") && arg.size() == 2 && !close)
+        else if (!arg[0].compare("cgi_timeout") && arg.size() == 2 && !close)
+        {
+            if (!check_digit(arg[1]))
+                throw std::runtime_error("Error : thee timeout will be a digit");
+            cgi_timeout = atoi(arg[1].c_str());
+        }
+        else if (!arg[0].compare("host") && arg.size() == 2 && !close && host.empty())
             host = arg[1];
-        else if (!arg[0].compare("server_name") && arg.size() == 2 && !close)
+        else if (!arg[0].compare("server_name") && arg.size() == 2 && !close && server_name.empty())
             server_name = arg[1];
         else if (!arg[0].compare("max_body_Size") && arg.size() == 2 && !close)
         {
@@ -99,7 +100,8 @@ void    Server::init_data(std::fstream& os)
         {
             if (!check_digit(arg[1]))
                 throw std::runtime_error("Error : the number of error_page will be a digit");
-            error_pages[atoi(arg[1].c_str())] = arg[2];
+            if (access(arg[2].c_str(), R_OK) == 0)
+                error_pages[atoi(arg[1].c_str())] = arg[2];
         }
         else if (!arg[0].compare("location") && arg.size() == 2 && !close)
         {
@@ -108,7 +110,7 @@ void    Server::init_data(std::fstream& os)
             it->add_location(os);
         }
         else
-            throw std::runtime_error("Error : line have dosen't folow rules");
+            throw std::runtime_error("Error : line have dosen't folow rules or duplicated");
     }
     if (!close)
         throw std::runtime_error("Error : The brackets of server dosen't closed");

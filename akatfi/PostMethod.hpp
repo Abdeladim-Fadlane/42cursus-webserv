@@ -14,6 +14,7 @@
 #define POST_METHOD_HPP
 #include <fstream>
 #include <string>
+#include <algorithm>
 #include <sstream>
 #include <string.h>
 #include <stdio.h>
@@ -25,9 +26,10 @@ class PostMethod
 {
     private:
         size_t              size;
+        size_t              time_out;
         std::string         boundary_separator;
-        size_t              separator_size;
         std::string         buffer_add;
+        size_t              buffer_add_size;
         Requeste            &req;
         std::fstream        Postfile;
         std::string         content_type;
@@ -35,20 +37,26 @@ class PostMethod
         std::string         Transfer_Encoding;
         bool                first_time;
         std::stringstream   ss;
+        std::fstream        cgi_file;
         struct timeval      Time;
         std::map<std::string, std::string>  map_extation;
         std::vector<std::string>    vector_files;
         size_t              content_file;
     public:
         std::string         path;
+        std::string         cgi_path;
+        std::string         script_path;
+        std::string         cgi_extation;
+        bool                isCgi;
         PostMethod(Requeste& r);
-        void    PostingFileToServer(bool& isdone); 
+        void    PostingFileToServer(bool& isdone, bool); 
         void    chunked(std::string &buffer, bool& isdone);   
         void    boundary(std::string buffer, bool& isdone);
         size_t getContentLength(void) const;
         const std::string& getContentType(void) const;
         std::string init_contentType(std::string& buffer);
         void    unlink_all_file(void);
+        void    ft_prepar_cgi();
         ~PostMethod();
 };
 

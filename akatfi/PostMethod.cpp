@@ -15,11 +15,12 @@
 PostMethod::PostMethod(Requeste& r) : req(r)
 {
     first_time = true;
+    isCgi = false;
     buffer_add = r.getBody();
-    separator_size = 0;
     size = 0;
     content_file = 0;
     path = r.getPath();
+    time_out = req.get_time();
     content_length = 0;
     setFileextation("akatfi/fileExtation", map_extation);
     if (req.requeste_map.find("Content-Type") != req.requeste_map.end())
@@ -30,6 +31,61 @@ PostMethod::PostMethod(Requeste& r) : req(r)
         Transfer_Encoding = this->req.requeste_map.find("Transfer-Encoding")->second;
     req.headerResponse = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\n\r\n";
     req.status_client = 201;
+    if (req.Location_Server.cgi_allowed == "ON")
+    {
+        std::cout << "running the cgi ... " << std::endl;
+        cgi_file.open(req.Location_Server.upload_location + "/index_cgi", std::fstream::out);
+        cgi_path = req.Location_Server.upload_location + "/index_cgi";
+        ft_prepar_cgi();
+    }
+}
+
+void    PostMethod::ft_prepar_cgi()
+{
+    struct stat stat_buffer;
+    DIR *dir;
+    struct dirent* dirent;
+    std::vector<std::string> scripts;
+
+    if (stat(req.Location_Server.root.c_str(), &stat_buffer) == 0 && S_ISDIR(stat_buffer.st_mode))
+    {
+        for (std::vector<std::string>::iterator it = req.Location_Server.indexs.begin(); it != req.Location_Server.indexs.end(); it++)
+            if (it->find(".php") != std::string::npos || it->find(".py")  != std::string::npos)
+                scripts.push_back(*it);
+        dir = opendir(req.Location_Server.root.c_str());
+        while ((dirent = readdir(dir)) != NULL)
+        {
+            if (std::find(scripts.begin(),scripts.end(), dirent->d_name) != scripts.end() &&
+                access((req.Location_Server.root + dirent->d_name).c_str(), X_OK) == 0)
+            {
+                script_path = req.Location_Server.root;
+                script_path.append(dirent->d_name);
+                cgi_extation = script_path.substr(script_path.rfind("."));
+                isCgi = true;
+                break ;
+            }
+        }
+        closedir(dir);
+        if (script_path.empty())
+        {
+            req.Location_Server.cgi_allowed = "OFF";
+            return ;
+        }
+    }
+    else
+    {
+        if (access(req.Location_Server.root.c_str(), X_OK) == -1)
+        {
+            req.Location_Server.cgi_allowed = "OFF";
+            return ;
+        }
+        isCgi = true;
+        script_path = req.Location_Server.root;
+        cgi_extation = script_path.substr(script_path.rfind("."));
+    }
+    if (script_path.empty())
+        req.Location_Server.cgi_allowed = "OFF";
+    // std::cout << script_path << "::" << cgi_extation << std::endl;
 }
 
 const std::string& PostMethod::getContentType(void) const 
@@ -47,7 +103,7 @@ std::string PostMethod::init_contentType(std::string& buffer)
     std::string line;
     std::string content;
     
-    while (buffer.find("\r\n") != std::string::npos)
+    while (1)
     {
         line = buffer.substr(0, buffer.find("\r\n"));
         buffer = buffer.substr(buffer.find("\r\n") + 2);
@@ -61,83 +117,113 @@ std::string PostMethod::init_contentType(std::string& buffer)
     return ("");
 }
 
-
 void PostMethod::boundary(std::string buffer, bool& isdone)
 {
-    std::string line;
-    size_t      index;
-    
-    buffer = buffer_add + buffer;
-    content_file += buffer.length();
+    size_t index;
+    std::string type;
+
+    buffer =  buffer_add + buffer;
     buffer_add = "";
     if (first_time)
     {
         first_time = false;
         boundary_separator = this->req.requeste_map.find("Content-Type")->second;
-        boundary_separator = std::string("--") + boundary_separator.substr(boundary_separator.find("boundary=") + strlen("boundary="));
+        if (boundary_separator.find("boundary=") != std::string::npos)
+            boundary_separator = std::string("--") + boundary_separator.substr(boundary_separator.find("boundary=") + strlen("boundary="));
+        else 
+           boundary_separator = ""; 
+        if (boundary_separator.empty())
+        {
+            std::cout << "poting with success" << std::endl;
+            req.status_client = 400;
+            req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+            isdone = true;
+            return ;
+        }
+        buffer_add_size = (boundary_separator + "\r\n").length();
     }
-    if (buffer.find(boundary_separator + "--") != std::string::npos)
+    if (buffer.find(boundary_separator + "--\r\n") != std::string::npos)
     {
-        buffer = buffer.substr(0, buffer.find(boundary_separator + "--"));
+        buffer = buffer.substr(0, buffer.find(boundary_separator + "--\r\n") - 2);
+        buffer_add_size = 0;
         boundary(buffer, isdone);
-        buffer_add = boundary_separator + "--";
         Postfile.close();
+        cgi_file.close();
         isdone = true;
+    }
+    else if (buffer.find(boundary_separator + "\r\n") != std::string::npos)
+    {
+        if (Postfile.is_open())
+        {
+            Postfile << buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2);
+            if (cgi_file.is_open())
+                cgi_file << buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2);
+            content_file += buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2).length();
+            Postfile.close();
+            buffer = buffer.substr(buffer.find(boundary_separator + "\r\n"));
+        }
+        if (buffer.find("\r\n\r\n") == std::string::npos)
+        {
+            buffer_add = buffer;
+            return ;
+        }
+        type = init_contentType(buffer);
+        if (type.empty() == true)
+        {
+            req.status_client = 415;
+            req.headerResponse = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Type: text/html\r\n\r\n";
+            isdone = true;
+            return ;
+        }
+        gettimeofday(&Time, NULL);
+        ss << Time.tv_sec << "-" << Time.tv_usec;
+        vector_files.push_back(req.Location_Server.upload_location + "/index" + ss.str() + type);
+        Postfile.open((std::string(req.Location_Server.upload_location).append("/index") + ss.str() + type).c_str() , std::fstream::out);
+        ss.str("");
+        boundary(buffer, isdone);
     }
     else
     {
-        index = buffer.find("-");
-        separator_size = boundary_separator.length() - index;
-        if (buffer.find(boundary_separator) == 0)
-        {
-            if (Postfile.is_open())
-                Postfile.close();
-            content_type = init_contentType(buffer);
-            if (content_type.empty())
-            {
-                req.status_client = 415;
-                req.headerResponse = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Type: text/html\r\n\r\n";
-                isdone = true;
-            }
-            gettimeofday(&Time, NULL) ;
-            ss << Time.tv_sec << "-" << Time.tv_usec;
-            vector_files.push_back(req.Location_Server.upload_location + "/index" + ss.str() + content_type);
-            Postfile.open((std::string(req.Location_Server.upload_location).append("/index") + ss.str() + content_type).c_str() , std::fstream::out);
-            ss.str("");
-            boundary(buffer, isdone);
-        }
-        else if (buffer.find(boundary_separator) != std::string::npos)
-        {
-            Postfile << buffer.substr(0, buffer.find(boundary_separator) - 2);
-            buffer = buffer.substr(buffer.find(boundary_separator));
-            buffer_add = buffer;
-        }
-        else if (index != std::string::npos && index >= buffer.length() - separator_size)
-        {
-            Postfile << buffer.substr(0, index);
-            buffer_add = buffer.substr(index + 1);
-        }
+        if (buffer.length() > buffer_add_size)
+            index = buffer.length() - buffer_add_size;
         else
-            Postfile << buffer;
+            index = buffer.length();
+        Postfile << buffer.substr(0, index);
+        if (cgi_file.is_open())
+            cgi_file << buffer.substr(0, index);
+        content_file += buffer.substr(0, index).length();
+        buffer_add = buffer.substr(index);
     }
+}
+
+
+int hexCharToDecimal(char hexChar) {
+    if (std::isdigit(hexChar))
+        return hexChar - '0';
+    else
+        return std::tolower(hexChar) - 'a' + 10;
+}
+
+int hexStringToDecimal(const std::string& hexString) {
+    int decimalValue = 0;
+
+    for (size_t i = 0; i < hexString.length(); ++i) 
+        decimalValue = decimalValue * 16 + hexCharToDecimal(hexString[i]);
+    return decimalValue;
 }
 
 void PostMethod::chunked(std::string &buffer, bool& isdone)
 {
-    std::stringstream strhex;
-
     buffer = buffer_add + buffer;
-    content_file += buffer.length();
     if (!size)
     {
         if (buffer.find("\r\n") != std::string::npos)
         {
-            strhex << std::hex << buffer.substr(0, buffer.find("\r\n"));
-            strhex >> size;
-            strhex.str("");
+            size = hexStringToDecimal(buffer.substr(0, buffer.find("\r\n")));
             if (!size)
             {
                 Postfile.close();
+                cgi_file.close();
                 isdone = true;
                 return ;
             }
@@ -152,12 +238,18 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
     if (size && size >= buffer.length())
     {
         Postfile << buffer;
+        if (cgi_file.is_open())
+            cgi_file << buffer;
         size -= buffer.length();
+        content_file += buffer.length();
         buffer_add = "";
     }
     else if (size)
     {
         Postfile << buffer.substr(0, size);
+        if (cgi_file.is_open())
+            cgi_file << buffer.substr(0, size);
+        content_file += buffer.substr(0, size).length();
         buffer = buffer.substr(buffer.find("\r\n") + 2);
         size = 0;
         buffer_add = "";
@@ -165,46 +257,54 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
     }
 }
 
-
-
-void    PostMethod::PostingFileToServer(bool& isdone)
+void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
 {
     std::string buffer;
     char buffer_read[1024];
     int x;
 
-    // if (content_file >= req.Server_Requeste.max_body)
-    // {
-    //     unlink_all_file();
-    //     req.status_client = 413;
-    //     isdone = true;
-    //     req.headerResponse = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n";
-    // }
+    if (req.get_time() - time_out > 30)
+    {
+        Postfile.close();
+        unlink_all_file();
+        req.status_client = 408;
+        isdone = true;
+        req.headerResponse = "HTTP/1.1 408 Request Timeout\r\nContent-Type: text/html\r\n\r\n";
+        return ;
+    }
     if (!req.Location_Server.uploadfile.compare("OFF") && !req.Location_Server.cgi_allowed.compare("OFF"))
     {
-        req.headerResponse = "HTTP/1.1 405 Method Not Allowed\r\nContent-Type: text/html\r\n\r\n";
-        req.status_client = 405;
+        req.headerResponse = "HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\n\r\n";
+        req.status_client = 403;
         isdone = true;
         return ;
     }
-    if (content_type.empty() || !content_length)
+    if (Transfer_Encoding == "chunked" && content_type.substr(0, content_type.find(";")) == "multipart/form-data")
     {
         req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
         isdone = true;
         req.status_client = 400;
         return ;
     }
-    memset(buffer_read, 0, sizeof(buffer_read));
-    x = read(req.getSocketFd(), buffer_read, 1023);
-    buffer.append(buffer_read, x);
-    if ((buffer + req.getBody()).length() == 0)
+    if (readorno == true)
     {
-        req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+        memset(buffer_read, 0, sizeof(buffer_read));
+        if ((x = read(req.getSocketFd(), buffer_read, 1023)) == -1)
+        {
+            req.status_client = 500;
+            isdone = true;
+            req.headerResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n";
+            return ;
+        }
+        buffer.append(buffer_read, x);
+    }
+    if (buffer.length() == 0)
+    {
+        Postfile.close();
         isdone = true;
-        req.status_client = 400;
         return ;
     }
-    if (!Transfer_Encoding.compare("chunked"))
+    if (Transfer_Encoding == "chunked")
     {
         if (first_time)
         {
@@ -228,7 +328,7 @@ void    PostMethod::PostingFileToServer(bool& isdone)
         first_time = false;
         chunked(buffer, isdone);
     }
-    else if (!strncmp(this->req.requeste_map.find("Content-Type")->second.c_str(), "multipart/form-data", strlen("multipart/form-data")))
+    else if (content_type.substr(0, content_type.find(";")) == "multipart/form-data")
         boundary(buffer, isdone);
     else
     {
@@ -248,20 +348,39 @@ void    PostMethod::PostingFileToServer(bool& isdone)
             }
             ss << Time.tv_sec << "-" << Time.tv_usec;
             vector_files.push_back(req.Location_Server.upload_location + "/index" + ss.str() + content_type);
-            content_type =std::string(req.Location_Server.upload_location).append("/index")  + ss.str() + content_type;
+            content_type = std::string(req.Location_Server.upload_location).append("/index")  + ss.str() + content_type;
             Postfile.open(content_type.c_str(), std::fstream::out);
             ss.str("");
             first_time = false;
         }
         buffer = buffer_add + buffer;
         buffer_add = "";
-        Postfile << buffer;
         content_file += buffer.length();
+        Postfile << buffer;
+        if (cgi_file.is_open())
+            cgi_file << buffer;
         if (content_length == content_file)
         {
             Postfile.close();
+            cgi_file.close();
             isdone = true;
         }
+    }
+    if (Postfile.fail())
+    {
+        Postfile.close();
+        unlink_all_file();
+        req.status_client = 500;
+        isdone = true;
+        req.headerResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n";
+    }
+    if (content_file > req.Server_Requeste.max_body)
+    {
+        Postfile.close();
+        unlink_all_file();
+        req.status_client = 413;
+        isdone = true;
+        req.headerResponse = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n";
     }
 }
 
@@ -273,5 +392,8 @@ void PostMethod::unlink_all_file()
 
 PostMethod::~PostMethod()
 {
+    cgi_file.close();
     Postfile.close();
+    if (req.Location_Server.uploadfile == "OFF")
+        unlink_all_file();
 }

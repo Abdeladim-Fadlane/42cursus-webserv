@@ -19,6 +19,7 @@
 #include <string>
 #include <fstream>
 #include <fcntl.h>
+#include <sys/time.h>
 #include <algorithm>
 #include "parsinfCon/Configfile.hpp"
 class PostMethod;
@@ -30,12 +31,14 @@ class Requeste
         std::string                         body;
         ConfigFile                          &config;
         int                                 fdresponse;
+        long                                time_out;
     public:
         std::string                         headerResponse;
         Server                              Server_Requeste;
         Location                            Location_Server;
         long                                status_client;
         int                                 port;
+        // bool isCgiPost;
         std::string                         query_str;
         std::string                         content_type;
         std::string                         content_length;
@@ -55,6 +58,7 @@ class Requeste
         int     getSocketFd() const;
         const std::string& getBody() const;
         const std::string&    getPath() const;
+        long    get_time();
         ~Requeste();
 };
 

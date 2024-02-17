@@ -21,7 +21,7 @@ ConfigFile::ConfigFile(const std::string& FileName)
         throw std::runtime_error("Error : cant opening this file");
     stat(FileName.c_str(), &fileStat);
     if (fileStat.st_size == 0)
-        close_and_throw("Error the file is empty");
+        close_and_throw("Error : the file is empty");
 }
 
 bool check_digit(std::string digit)
@@ -41,9 +41,6 @@ bool getlineFromFile(std::fstream& os, std::string& input)
         input = input.substr(1);
     while (!input.empty() && isspace(input[input.length() - 1]))
         input = input.substr(0, input.length() - 1);
-    if (input.empty())
-        throw std::runtime_error("Error : th config file has a empty line");
-    // std::cout << input << std::endl;
     return true;
 }
 
@@ -78,6 +75,19 @@ std::vector<std::string> split_line(std::string line)
     return (words);
 }
 
+std::string delete_Or_add_slash(std::string& path, bool begin, bool end)
+{
+    while (path.size() > 0 && path[0] == '/')
+        path = path.substr(1);
+    while (path.size() > 0  && path[path.size() - 1] == '/')
+        path = path.substr(0, path.size() - 1);
+    if (begin == true)
+        path = "/" + path;
+    if (end == true)
+        path += "/";
+    return (path);
+}
+
 void    ConfigFile::parceConfig()
 {
     std::string input;
@@ -86,6 +96,8 @@ void    ConfigFile::parceConfig()
     
     while(getlineFromFile(config, input))
     {
+        if (input.empty() == true)
+            continue ;
         line_arg = split_line(input);
         if (!line_arg[0].compare("server") && line_arg.size() == 1)
         {
@@ -94,11 +106,8 @@ void    ConfigFile::parceConfig()
                 Servers.push_back(Server());
                 it = Servers.end() - 1;
                 it->init_data(config);
-                if (it->host.empty() || !it->port_chose)
+                if (it->host.empty() || !it->port_chose || it->server_name.empty())
                     throw std::runtime_error("Error : the server need host and post");
-                for (std::vector<Server>::iterator itServ = Servers.begin(); itServ != Servers.end() - 1; itServ++)
-                    if (it->host == itServ->host && it->listen == itServ->listen)
-                        throw std::runtime_error("Error : one server have port and host similar to other server");
             }
             catch(const std::exception& e)
             {
@@ -108,7 +117,6 @@ void    ConfigFile::parceConfig()
         }
         else
             close_and_throw("Error : line have dosen't follow rules");
-        
     }
     config.close();
 }
