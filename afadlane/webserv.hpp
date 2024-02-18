@@ -28,8 +28,36 @@
 
 #define  MAX_EVENTS 1024
 #define  BUFFER_SIZE 1024
-using namespace  std;
-class DELETE;
+struct Data;
+class GETMETHOD
+{
+    public:
+        void getMethod(Data &dataClient);
+        void sendChunk(int clientSocket, std::string &data,Data& dataClient);
+        void   openFileAndSendHeader(Data& dataClient);
+        int checkFileDirPermission(Data &dataClient);
+        void   openDirFIle(Data & dataClient);
+        void serveFIle(Data& dataClient);
+        void sendListDir(Data & dataClient);
+        int    listingDirectory(Data &dataClient);
+        std::string   getContentType(Data &method);
+};
+class CGI
+{
+    public:
+
+};
+class DELETE
+{
+    private:
+        struct stat statInfo;
+    public:
+        void  dataDel(Data &);
+        void  IsDir(Data &);
+        void  deleteMethod(Data &);
+        void  IsFIle(Data &);
+};
+
 struct Data
 {  
     int fd ;
@@ -53,6 +81,7 @@ struct Data
     bool readyForClose;
     Requeste *requeste ;
     DELETE *OBJDEL;
+    GETMETHOD OBJGET;
     std::string listDirectory;
     std::string restRead;
     bool AlreadyRequestHeader;
@@ -63,29 +92,15 @@ struct Data
     ssize_t lenghtFile;
 };
 
+
 struct Webserv
 {
     Data data;
 };
 
-class DELETE
-{
-    private:
-        struct stat statInfo;
-    public:
-        DELETE(){};
-        void  dataDel(Data &);
-        void  IsDir(Data &dataClient);
-        void  deleteMethod(Data &dataClient);
-        void  IsFIle(Data &dataClient);
-};
-
-void    getMethod(Data &);
-// void    deleteMethod(Data &);
 double  getCurrentTime(void);
 void    fastCGI(Data &,std::string &);
 void    multiplexing(ConfigFile &config);
 bool    checkPermission(Data &,int );
-void    sendErrorResponse(Data &dataClient);
-void    sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient);
-// std::string makeHeader(std::string &line,std::string &lenght);
+void    sendErrorResponse(Data &);
+void    sendChunk(int clientSocket, const char* data, ssize_t ,Data& );

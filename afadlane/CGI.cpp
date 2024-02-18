@@ -12,7 +12,6 @@ void environmentStore(Data &dataClient, std::vector<std::string> &environment)
     std::string SERVER_PROTOCOL = dataClient.requeste->http_v;
     std::string SERVER_ADDR = dataClient.requeste->host;
     std::string SERVER_PORT = wiss.str();
-
     environment.push_back("REQUEST_METHOD=GET");
     environment.push_back("REDIRECT_STATUS=200");
     environment.push_back("CONTENT_TYPE=" + CONTENT_TYPE);
@@ -24,7 +23,7 @@ void environmentStore(Data &dataClient, std::vector<std::string> &environment)
     environment.push_back("SERVER_PORT=" + SERVER_PORT); 
 }
 
-std::string checkElemnetExit(std::vector<string> & header,const char *str)
+std::string checkElemnetExit(std::vector<std::string> & header,const char *str)
 {
     for(size_t i  = 0; i < header.size(); i++)
     {

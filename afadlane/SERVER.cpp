@@ -60,7 +60,6 @@ void closeServers(std::vector<int> & Servers)
 }
 void multiplexing(ConfigFile &config)
 {
-   
     std::vector<int> Servers;
     int epollFD = epoll_create(1024);
     epoll_event event;
@@ -161,7 +160,7 @@ void multiplexing(ConfigFile &config)
                         if(Request[events[i].data.fd].data.code != 0)
                             sendErrorResponse(Request[events[i].data.fd].data);
                         else
-                            getMethod(Request[events[i].data.fd].data);
+                             Request[events[i].data.fd].data.OBJGET.getMethod(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "DELETE")
                     {
@@ -197,4 +196,3 @@ void multiplexing(ConfigFile &config)
     close(epollFD);
     closeServers(Servers);
 }
-
