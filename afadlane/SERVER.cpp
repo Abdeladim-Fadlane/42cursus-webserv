@@ -7,10 +7,10 @@ void    inisialData(std::map<int,struct Webserv> &Request ,ConfigFile &config,in
     Data.data.code                  =     0;
     Data.data.Alreadyopen           = false;
     Data.data.Alreadyopen           = false;
-    Data.data.isReading             = false;
     Data.data.isFork                = false;
     Data.data.isExeceted            = false;
     Data.data.isReading             = false;
+    Data.data.isReadingCgi          = false;
     Data.data.readyForClose         = false;
     Data.data.Alreadparce           = false;
     Data.data.modeAutoIndex         = false;

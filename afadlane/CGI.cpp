@@ -9,7 +9,6 @@ void environmentStore(Data &dataClient, std::vector<std::string> &environment)
     std::string CONTENT_LENGTH = dataClient.requeste->content_length;
     std::string QUERY_STRING = dataClient.requeste->query_str ; 
     std::string SCRIPT_FILENAM = dataClient.Path;
-    // std::cout<<"----------"<<dataClient.Path<<"----\n";
     std::string SERVER_PROTOCOL = dataClient.requeste->http_v;
     std::string SERVER_ADDR = dataClient.requeste->host;
     std::string SERVER_PORT = wiss.str();
@@ -61,7 +60,7 @@ std::string fillMap( std::map<int,std::string> &headerMap,std::string lenght,std
     return header;
 }
 
-void makeHeader(Data &dataClient,ssize_t &lenght)
+void makeHeader(Data &dataClient,bool eof)
 {
     std::map<int,std::string> headerMap;
     std::string body;
@@ -72,7 +71,7 @@ void makeHeader(Data &dataClient,ssize_t &lenght)
     {
         tmp = dataClient.restRead.substr(0,pos);
         dataClient.restRead = dataClient.restRead.substr(pos+1);
-        size_t bodyLenght = lenght  - tmp.size();
+        size_t bodyLenght = dataClient.lenghtFile  - tmp.size();
         std::stringstream ss;
         ss << bodyLenght;
         std::string header = dataClient.requeste->http_v.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
@@ -80,25 +79,39 @@ void makeHeader(Data &dataClient,ssize_t &lenght)
             throw std::runtime_error("error");
         dataClient.sendHeader = true;
     }
-
+    if(eof == true)
+    {
+        std::stringstream ss;
+        ss <<  dataClient.lenghtFile ;
+        std::string header = dataClient.requeste->http_v.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
+        header.append(dataClient.restRead);
+        if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
+            throw std::runtime_error("error");
+        dataClient.readyForClose = true;
+    }
 }
 
 void   SendHeader(Data &dataClient)
 {
-    dataClient.fileFd = open(dataClient.cgiFile.c_str(),O_RDONLY);
-    if (dataClient.fileFd == -1)
-        throw std::runtime_error("error");
-    struct stat fileInfo;
-    stat(dataClient.cgiFile.c_str(),&fileInfo);
-    ssize_t lenght = fileInfo.st_size;
+    if(dataClient.isReadingCgi == false)
+    {
+        dataClient.fileFd = open(dataClient.cgiFile.c_str(),O_RDONLY);
+        if (dataClient.fileFd == -1)
+            throw std::runtime_error("error");
+        dataClient.isReadingCgi = true;
+        struct stat fileInfo;
+        stat(dataClient.cgiFile.c_str(),&fileInfo);
+        dataClient.lenghtFile = fileInfo.st_size;
+    }
     char buffer[BUFFER_SIZE];
     ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE -1);
-    if(byteRead == 0)
-        throw std::runtime_error("error");
-    if(byteRead == -1)
-        throw std::runtime_error("error");
+    if(byteRead <= 0)
+    {
+        makeHeader(dataClient,true);
+        return ;
+    }
     dataClient.restRead.append(std::string(buffer,byteRead));
-    makeHeader(dataClient,lenght);
+    makeHeader(dataClient,false);
 }
 
 void fastCGI(Data &dataClient,std::string &type)
@@ -191,7 +204,7 @@ void fastCGI(Data &dataClient,std::string &type)
             }
             close(dataClient.fileFd);
             dataClient.readyForClose = true;
-            // unlink(dataClient.cgiFile.c_str());
+            unlink(dataClient.cgiFile.c_str());
         }
         else
         {

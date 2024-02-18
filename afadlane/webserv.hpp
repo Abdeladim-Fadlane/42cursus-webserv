@@ -44,6 +44,7 @@ struct Data
     double startTime;
     bool autoIndex;
     bool isReading;
+    bool isReadingCgi;
     bool Alreadyopen;
     bool Alreadparce;
     std::string Path;
@@ -58,6 +59,7 @@ struct Data
     bool isExeceted;
     std::string cgiFile;
     std::string statusCode;
+    ssize_t lenghtFile;
 };
 
 struct Webserv
