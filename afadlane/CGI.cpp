@@ -86,17 +86,13 @@ void makeHeader(Data &dataClient,bool eof)
         std::string header = dataClient.requeste->http_v.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
         header.append(dataClient.restRead);
         if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
-        {
-            perror("");
             throw std::runtime_error("error");
-        }
         dataClient.readyForClose = true;
     }
 }
 
 void   SendHeader(Data &dataClient)
 {
-    // std::cout<<"here ="<< dataClient.fileFdCgi <<"\n";
     if(dataClient.isReadingCgi == false)
     {
         dataClient.fileFdCgi = open(dataClient.cgiFile.c_str(),O_RDONLY);
@@ -114,7 +110,6 @@ void   SendHeader(Data &dataClient)
     ssize_t byteRead = read (dataClient.fileFdCgi,buffer,BUFFER_SIZE );
     if(byteRead == 0)
     {
-        // perror("");
         makeHeader(dataClient,true);
         return ;
     }
@@ -180,7 +175,6 @@ void fastCGI(Data &dataClient,std::string &type)
             /* child proccess still runing */
             if(getCurrentTime() - dataClient.startTime >=  5)
             {
-                // close(dataClient.fileFd);
                 kill(dataClient.pid,SIGTERM);
                 dataClient.statusCode =" 504 Gateway Timeout"; 
                 dataClient.code = 504;
@@ -191,7 +185,6 @@ void fastCGI(Data &dataClient,std::string &type)
         {
             if(dataClient.requeste->method == "POST")
                 unlink(dataClient.requeste->post->cgi_path.c_str());
-            // close(dataClient.fileFd);
             SendHeader(dataClient);
         }
     }
