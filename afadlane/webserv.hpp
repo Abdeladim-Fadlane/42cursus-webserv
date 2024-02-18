@@ -80,7 +80,7 @@ struct Data
     bool modeAutoIndex;
     bool readyForClose;
     Requeste *requeste ;
-    DELETE *OBJDEL;
+    DELETE OBJDEL;
     GETMETHOD OBJGET;
     std::string listDirectory;
     std::string restRead;

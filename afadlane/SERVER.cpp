@@ -21,7 +21,6 @@ void    inisialData(std::map<int,struct Webserv> &Request ,ConfigFile &config,in
     Data.data.isDelete              = false;
     Data.data.fd                    = clientSocketFD;
     Data.data.requeste              = new Requeste(clientSocketFD,config);
-    Data.data.OBJDEL                = new DELETE();
     Request[clientSocketFD]         = Data;
 }
 
@@ -135,7 +134,7 @@ void multiplexing(ConfigFile &config)
                 {
                     /* client closed the connection */
                     delete Request[events[i].data.fd].data.requeste;
-                    delete Request[events[i].data.fd].data.OBJDEL;
+                    // delete Request[events[i].data.fd].data.OBJDEL;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
@@ -169,7 +168,7 @@ void multiplexing(ConfigFile &config)
                         else
                         {
                             if(Request[events[i].data.fd].data.isDelete == false)
-                                Request[events[i].data.fd].data.OBJDEL->deleteMethod(Request[events[i].data.fd].data);
+                                Request[events[i].data.fd].data.OBJDEL.deleteMethod(Request[events[i].data.fd].data);
                         }   
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "POST" )
@@ -184,7 +183,6 @@ void multiplexing(ConfigFile &config)
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
                         delete Request[events[i].data.fd].data.requeste;
-                        delete Request[events[i].data.fd].data.OBJDEL;
                         Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
