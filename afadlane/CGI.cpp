@@ -179,7 +179,7 @@ void fastCGI(Data &dataClient,std::string &type)
         if(waitpid(dataClient.pid,&status,WNOHANG) == 0)
         {
             /* child proccess still runing */
-            if(getCurrentTime() - dataClient.startTime >=  5)
+            if(getCurrentTime() - dataClient.startTime >=  dataClient.requeste->Server_Requeste.cgi_timeout)
             {
                 kill(dataClient.pid,SIGTERM);
                 dataClient.statusCode =" 504 Gateway Timeout"; 
