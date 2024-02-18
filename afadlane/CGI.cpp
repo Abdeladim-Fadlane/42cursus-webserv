@@ -86,27 +86,35 @@ void makeHeader(Data &dataClient,bool eof)
         std::string header = dataClient.requeste->http_v.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
         header.append(dataClient.restRead);
         if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
+        {
+            perror("");
             throw std::runtime_error("error");
+        }
         dataClient.readyForClose = true;
     }
 }
 
 void   SendHeader(Data &dataClient)
 {
+    // std::cout<<"here ="<< dataClient.fileFdCgi <<"\n";
     if(dataClient.isReadingCgi == false)
     {
-        dataClient.fileFd = open(dataClient.cgiFile.c_str(),O_RDONLY);
-        if (dataClient.fileFd == -1)
+        dataClient.fileFdCgi = open(dataClient.cgiFile.c_str(),O_RDONLY);
+        if (dataClient.fileFdCgi == -1)
+        {
+            perror("");
             throw std::runtime_error("error");
+        }
         dataClient.isReadingCgi = true;
         struct stat fileInfo;
         stat(dataClient.cgiFile.c_str(),&fileInfo);
         dataClient.lenghtFile = fileInfo.st_size;
     }
     char buffer[BUFFER_SIZE];
-    ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE -1);
-    if(byteRead <= 0)
+    ssize_t byteRead = read (dataClient.fileFdCgi,buffer,BUFFER_SIZE );
+    if(byteRead == 0)
     {
+        // perror("");
         makeHeader(dataClient,true);
         return ;
     }
@@ -138,30 +146,29 @@ void fastCGI(Data &dataClient,std::string &type)
             dataClient.startTime = getCurrentTime();
             dataClient.isFork = true;
             std::ostringstream oss;
-            int fd ;
             oss <<  dataClient.fd;
             dataClient.cgiFile = "/tmp/file" + oss.str();
-            dataClient.fileFd = open(dataClient.cgiFile.c_str() ,O_WRONLY  | O_CREAT | O_TRUNC,0644);
-            if (dataClient.fileFd == -1)
-                throw std::runtime_error ("error");
+
             dataClient.pid = fork();
             if(dataClient.pid == -1)
             {
-                close(dataClient.fileFd);
                 throw std::runtime_error("error");
             }
             if (dataClient.pid == 0)
             {
+                int fd1 = open(dataClient.cgiFile.c_str() ,O_WRONLY  | O_CREAT | O_TRUNC,0644);
+                if (fd1 == -1)
+                    throw std::runtime_error ("error");
                 if(dataClient.requeste->method == "POST")
                 {
-                    fd = open(dataClient.requeste->post->cgi_path.c_str(),O_RDONLY);
-                    if (dataClient.fileFd == -1)
+                    int fd = open(dataClient.requeste->post->cgi_path.c_str(),O_RDONLY);
+                    if (fd == -1)
                         throw std::runtime_error ("error");
                     dup2(fd,0);
                     close(fd);
                 }
-                dup2(dataClient.fileFd, 1);
-                close(dataClient.fileFd);
+                dup2(fd1, 1);
+                close(fd1);
                 const char *args[] = {interpreter.c_str(), dataClient.Path.c_str(), NULL};
                 if(execve(interpreter.c_str(), const_cast<char* const*>(args), env) == -1)
                     throw std::runtime_error ("error");
@@ -173,7 +180,7 @@ void fastCGI(Data &dataClient,std::string &type)
             /* child proccess still runing */
             if(getCurrentTime() - dataClient.startTime >=  5)
             {
-                close(dataClient.fileFd);
+                // close(dataClient.fileFd);
                 kill(dataClient.pid,SIGTERM);
                 dataClient.statusCode =" 504 Gateway Timeout"; 
                 dataClient.code = 504;
@@ -184,7 +191,7 @@ void fastCGI(Data &dataClient,std::string &type)
         {
             if(dataClient.requeste->method == "POST")
                 unlink(dataClient.requeste->post->cgi_path.c_str());
-            close(dataClient.fileFd);
+            // close(dataClient.fileFd);
             SendHeader(dataClient);
         }
     }
@@ -192,9 +199,12 @@ void fastCGI(Data &dataClient,std::string &type)
     {
         char buffer[BUFFER_SIZE];
         std::string httpResponse;
-        ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE);
+        ssize_t byteRead = read (dataClient.fileFdCgi,buffer,BUFFER_SIZE);
         if(byteRead == -1)
+        {
+            perror("");
             throw std::runtime_error("error");
+        }
         if(byteRead == 0)
         {
             if(!dataClient.restRead.empty())

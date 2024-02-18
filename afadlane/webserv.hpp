@@ -35,6 +35,7 @@ struct Data
     int fd ;
     bool isDelete ;
     int fileFd;
+    int fileFdCgi;
     int errorFd;
     bool  isDone;
     bool  isFork;
