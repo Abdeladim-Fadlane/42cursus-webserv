@@ -91,6 +91,7 @@ void makeHeader(Data &dataClient,bool eof)
     }
 }
 
+
 void   SendHeader(Data &dataClient)
 {
     if(dataClient.isReadingCgi == false)
@@ -113,9 +114,14 @@ void   SendHeader(Data &dataClient)
         makeHeader(dataClient,true);
         return ;
     }
+    if(byteRead == -1)
+        throw std::runtime_error("error");
     dataClient.restRead.append(std::string(buffer,byteRead));
     makeHeader(dataClient,false);
 }
+
+
+
 
 void fastCGI(Data &dataClient,std::string &type)
 {
@@ -194,10 +200,7 @@ void fastCGI(Data &dataClient,std::string &type)
         std::string httpResponse;
         ssize_t byteRead = read (dataClient.fileFdCgi,buffer,BUFFER_SIZE);
         if(byteRead == -1)
-        {
-            perror("");
             throw std::runtime_error("error");
-        }
         if(byteRead == 0)
         {
             if(!dataClient.restRead.empty())
