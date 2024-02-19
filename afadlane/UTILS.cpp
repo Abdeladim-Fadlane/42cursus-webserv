@@ -12,11 +12,16 @@ void sendErrorResponse(Data &dataClient)
         std::ostringstream wiss;
         wiss <<fileInfo.st_size;
         htttpresponce = dataClient.requeste->http_v.append(dataClient.statusCode).append("\r\nContent-Type: text/html\r\n");
-        htttpresponce.append("Content-Lenght: ").append(wiss.str()).append("\n\r\n\r");
+        htttpresponce.append("Content-Lenght: ").append(wiss.str()).append("\r\n\r\n");
         if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
         {
             dataClient.readyForClose = true;
             std::runtime_error("error");
+        }
+        if(dataClient.code == 204)
+        {
+            dataClient.readyForClose = true;
+            return;
         }
         dataClient.errorFd = open(filePath.c_str(),O_RDONLY);
         if(dataClient.errorFd == -1)

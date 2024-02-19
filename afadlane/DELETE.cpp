@@ -15,6 +15,12 @@ void DELETE::IsFIle(Data &dataClient)
 
 void DELETE::IsDir(Data &dataClient)
 {
+    if(dataClient.Path[dataClient.Path.size() - 1]  != '/')
+    {
+        dataClient.statusCode = " 409 Conflict";
+        dataClient.code = 409;
+        return;
+    }
     if (checkPermission(dataClient, W_OK) || checkPermission(dataClient, X_OK))
         return;
     DIR *dir = opendir(dataClient.Path.c_str());

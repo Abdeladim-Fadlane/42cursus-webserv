@@ -33,9 +33,10 @@ PostMethod::PostMethod(Requeste& r) : req(r)
     req.status_client = 201;
     if (req.Location_Server.cgi_allowed == "ON")
     {
-        // std::cout << "running the cgi ... " << std::endl;
-        cgi_file.open(req.Location_Server.upload_location + "/index_cgi", std::fstream::out);
-        cgi_path = req.Location_Server.upload_location + "/index_cgi";
+        std::cout << "running the cgi ... " << std::endl;
+        cgi_file.open("/tmp/index_cgi", std::fstream::out);
+        cgi_path = "/tmp/index_cgi";
+   
         ft_prepar_cgi();
     }
 }
@@ -85,7 +86,6 @@ void    PostMethod::ft_prepar_cgi()
     }
     if (script_path.empty())
         req.Location_Server.cgi_allowed = "OFF";
-    // std::cout << script_path << "::" << cgi_extation << std::endl;
 }
 
 const std::string& PostMethod::getContentType(void) const 
@@ -134,7 +134,6 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
            boundary_separator = ""; 
         if (boundary_separator.empty())
         {
-            std::cout << "poting with success" << std::endl;
             req.status_client = 400;
             req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
             isdone = true;
@@ -155,8 +154,9 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
     {
         if (Postfile.is_open())
         {
-            Postfile << buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2);
-            if (cgi_file.is_open())
+            if (isCgi == false)
+                Postfile << buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2);
+            else
                 cgi_file << buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2);
             content_file += buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2).length();
             Postfile.close();
@@ -188,8 +188,9 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
             index = buffer.length() - buffer_add_size;
         else
             index = buffer.length();
-        Postfile << buffer.substr(0, index);
-        if (cgi_file.is_open())
+        if (isCgi == false)
+            Postfile << buffer.substr(0, index);
+        else
             cgi_file << buffer.substr(0, index);
         content_file += buffer.substr(0, index).length();
         buffer_add = buffer.substr(index);
@@ -237,8 +238,9 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
     }
     if (size && size >= buffer.length())
     {
-        Postfile << buffer;
-        if (cgi_file.is_open())
+        if (isCgi == false)
+            Postfile << buffer;
+        else
             cgi_file << buffer;
         size -= buffer.length();
         content_file += buffer.length();
@@ -246,8 +248,9 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
     }
     else if (size)
     {
-        Postfile << buffer.substr(0, size);
-        if (cgi_file.is_open())
+        if (isCgi == false)
+            Postfile << buffer.substr(0, size);
+        else
             cgi_file << buffer.substr(0, size);
         content_file += buffer.substr(0, size).length();
         buffer = buffer.substr(buffer.find("\r\n") + 2);
@@ -297,16 +300,17 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
             return ;
         }
         buffer.append(buffer_read, x);
-    }
-    if (buffer.length() == 0)
-    {
-        Postfile.close();
-        isdone = true;
-        return ;
+        if (buffer.length() == 0)
+        {
+            Postfile.close();
+            cgi_file.close();
+            isdone = true;
+            return ;
+        }
     }
     if (Transfer_Encoding == "chunked")
     {
-        if (first_time)
+        if (first_time && isCgi == false)
         {
             gettimeofday(&Time, NULL);
             if (map_extation.find(content_type) != map_extation.end())
@@ -332,7 +336,7 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
         boundary(buffer, isdone);
     else
     {
-        if (first_time)
+        if (first_time && isCgi == false)
         {
             gettimeofday(&Time, NULL) ;
             if (map_extation.find(content_type) != map_extation.end())
@@ -356,8 +360,9 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
         buffer = buffer_add + buffer;
         buffer_add = "";
         content_file += buffer.length();
-        Postfile << buffer;
-        if (cgi_file.is_open())
+        if (isCgi == false)
+            Postfile << buffer;
+        else
             cgi_file << buffer;
         if (content_length == content_file)
         {

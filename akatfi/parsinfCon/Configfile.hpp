@@ -35,6 +35,7 @@ class Location
         std::string                 uploadfile;
         std::string                 upload_location;
         std::string                 cgi_allowed;
+        std::string                 redirection;
         std::map<std::string, std::string>    cgi;
         bool                        close;
         Location(std::string& location_name);
