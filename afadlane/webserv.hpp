@@ -52,7 +52,7 @@ class DELETE
     private:
         struct stat statInfo;
     public:
-        void  dataDel(Data &);
+        // void  dataDel(Data &);
         void  IsDir(Data &);
         void  deleteMethod(Data &);
         void  IsFIle(Data &);
@@ -103,4 +103,3 @@ void    fastCGI(Data &,std::string &);
 void    multiplexing(ConfigFile &config);
 bool    checkPermission(Data &,int );
 void    sendErrorResponse(Data &);
-void    sendChunk(int clientSocket, const char* data, ssize_t ,Data& );
