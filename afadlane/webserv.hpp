@@ -52,7 +52,6 @@ class DELETE
     private:
         struct stat statInfo;
     public:
-        // void  dataDel(Data &);
         void  IsDir(Data &);
         void  deleteMethod(Data &);
         void  IsFIle(Data &);

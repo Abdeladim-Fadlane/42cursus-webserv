@@ -33,6 +33,7 @@ PostMethod::PostMethod(Requeste& r) : req(r)
     req.status_client = 201;
     if (req.Location_Server.cgi_allowed == "ON")
     {
+        std::cout << "running the cgi ... " << std::endl;
         cgi_file.open(req.Location_Server.upload_location + "/index_cgi", std::fstream::out);
         cgi_path = req.Location_Server.upload_location + "/index_cgi";
         ft_prepar_cgi();
@@ -84,7 +85,7 @@ void    PostMethod::ft_prepar_cgi()
     }
     if (script_path.empty())
         req.Location_Server.cgi_allowed = "OFF";
-
+    // std::cout << script_path << "::" << cgi_extation << std::endl;
 }
 
 const std::string& PostMethod::getContentType(void) const 

@@ -100,7 +100,8 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
         this->MakeMapOfHeader(isdone);
         this->get_infoConfig(isdone);
         flag = true;
-        if (isdone == false && Location_Server.location_name.empty() == false && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
+        // std::cout << "method of --> :: " << method << std::endl;
+        if (isdone == false && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
         {
             status_client = 405;
             isdone = true;

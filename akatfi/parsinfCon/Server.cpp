@@ -26,13 +26,11 @@ Server::Server()
     close = true;
     max_body = LONG_MAX;
     cgi_timeout = 10;
-    DIR* dir_error = opendir("pageError");
-    if(! dir_error)
-        throw std::runtime_error("error opning dir");
+    DIR* dir_error = opendir("akatfi/parsinfCon/error");
     dirent* path;
     while ((path = readdir(dir_error)))
         if (path->d_name[0] != '.')
-            error_pages[init_numberError(std::string(path->d_name))] = std::string("pageError").append(path->d_name);
+            error_pages[init_numberError(std::string(path->d_name))] = std::string("akatfi/parsinfCon/error/").append(path->d_name);
     closedir(dir_error);
 }
 

@@ -2,12 +2,7 @@
 
 void DELETE::IsFIle(Data &dataClient)
 {
-    if(dataClient.Path[dataClient.Path.size() -1] == '/')
-    {
-        dataClient.statusCode = " 409 Conflict";
-        dataClient.code = 409;
-    }
-    else if (unlink(dataClient.Path.c_str()) == 0) 
+    if (unlink(dataClient.Path.c_str()) == 0) 
     {
         dataClient.statusCode = " 204 No Content";
         dataClient.code = 204;
