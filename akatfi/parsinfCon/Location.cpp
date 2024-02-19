@@ -35,6 +35,7 @@ Location& Location::operator=(const Location& obj)
     upload_location = obj.upload_location;
     cgi_allowed = obj.cgi_allowed;
     cgi = obj.cgi;
+    redirection = obj.redirection;
     close = obj.close;
     return (*this);
 }
@@ -107,6 +108,8 @@ void    Location::add_location(std::fstream& os)
                 throw std::runtime_error("Error : the upload location '" + arg[1] + "' is not exist");
             upload_location = delete_Or_add_slash(arg[1], true, false);
         }
+        else if (!arg[0].compare("redirection") && arg.size() == 2)
+            redirection = delete_Or_add_slash(arg[1], true, false);
         else if (!arg[0].compare("cgi_allowed") && arg.size() == 2)
         {
             if (arg[1].compare("ON") && arg[1].compare("OFF"))
@@ -116,7 +119,9 @@ void    Location::add_location(std::fstream& os)
         else if (!arg[0].compare("cgi") && arg.size() == 3)
         {
             if (access(arg[1].c_str(), X_OK) == -1)
-                throw std::runtime_error(std::string("Error : can't execute file's of ").append(arg[2]) + " extation with this path");
+                throw std::runtime_error(std::string("Error : can't execute file's of '").append(arg[2]) + "' extation with this path");
+            if (arg[2] != ".php" && arg[2] != ".py" && arg[2] != ".sh")
+                throw std::runtime_error("Error : the server not support this '" + arg[2] + "' extation in cgi");
             cgi[arg[2]] = arg[1];
         }
         else

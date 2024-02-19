@@ -10,14 +10,11 @@
 #include <sys/epoll.h>
 #include <vector>
 #include <unistd.h>
-#include <fcntl.h> 
 #include <arpa/inet.h>
 #include <fstream>
 #include <sstream>
-#include <signal.h>
 #include <algorithm>
 #include <dirent.h>
-#include <iomanip> 
 #include <map>
 #include <stdexcept>
 #include <sys/stat.h>
@@ -28,13 +25,50 @@
 
 #define  MAX_EVENTS 1024
 #define  BUFFER_SIZE 1024
-using namespace  std;
-class DELETE;
+struct Data;
+class GETMETHOD
+{
+    public:
+        void getMethod(Data &);
+        void sendChunk(int , std::string &,Data& );
+        void   openFileAndSendHeader(Data& );
+        int checkFileDirPermission(Data &);
+        void   openDirFIle(Data & );
+        void serveFIle(Data& );
+        void sendListDir(Data & );
+        int    listingDirectory(Data &);
+        std::string   getContentType(Data &);
+};
+
+class CGI
+{
+    public:
+        void sendBody(Data &);
+        void   SendHeader(Data &);
+        void makeHeader(Data &,bool );
+        void fastCGI(Data &,std::string &);
+        void executeScript(Data &,std::string &);
+        std::string getType(Data&,std::string &);
+        void environmentStore(Data &, std::vector<std::string> &);
+        std::string fillMap(std::map<int,std::string> &,std::string ,std::string );
+};
+
+class DELETE
+{
+    private:
+        struct stat statInfo;
+    public:
+        void  IsDir(Data &);
+        void  deleteMethod(Data &);
+        void  IsFIle(Data &);
+};
+
 struct Data
 {  
     int fd ;
     bool isDelete ;
     int fileFd;
+    int fileFdCgi;
     int errorFd;
     bool  isDone;
     bool  isFork;
@@ -44,13 +78,16 @@ struct Data
     double startTime;
     bool autoIndex;
     bool isReading;
+    bool isReadingCgi;
     bool Alreadyopen;
     bool Alreadparce;
     std::string Path;
     bool modeAutoIndex;
     bool readyForClose;
     Requeste *requeste ;
-    DELETE *OBJDEL;
+    DELETE OBJDEL;
+    GETMETHOD OBJGET;
+    CGI OBJCGI;
     std::string listDirectory;
     std::string restRead;
     bool AlreadyRequestHeader;
@@ -58,31 +95,16 @@ struct Data
     bool isExeceted;
     std::string cgiFile;
     std::string statusCode;
+    ssize_t lenghtFile;
 };
+
 
 struct Webserv
 {
     Data data;
 };
 
-class DELETE
-{
-    private:
-        struct stat statInfo;
-    public:
-        DELETE(){};
-        void  dataDel(Data &);
-        void  IsDir(Data &dataClient);
-        void  deleteMethod(Data &dataClient);
-        void  IsFIle(Data &dataClient);
-};
-
-void    getMethod(Data &);
-// void    deleteMethod(Data &);
 double  getCurrentTime(void);
-void    fastCGI(Data &,std::string &);
-void    multiplexing(ConfigFile &config);
+void    multiplexing(ConfigFile &);
 bool    checkPermission(Data &,int );
-void    sendErrorResponse(Data &dataClient);
-void    sendChunk(int clientSocket, const char* data, ssize_t length,Data& dataClient);
-// std::string makeHeader(std::string &line,std::string &lenght);
+void    sendErrorResponse(Data &);

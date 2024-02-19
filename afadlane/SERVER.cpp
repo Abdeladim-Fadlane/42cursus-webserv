@@ -7,10 +7,10 @@ void    inisialData(std::map<int,struct Webserv> &Request ,ConfigFile &config,in
     Data.data.code                  =     0;
     Data.data.Alreadyopen           = false;
     Data.data.Alreadyopen           = false;
-    Data.data.isReading             = false;
     Data.data.isFork                = false;
     Data.data.isExeceted            = false;
     Data.data.isReading             = false;
+    Data.data.isReadingCgi          = false;
     Data.data.readyForClose         = false;
     Data.data.Alreadparce           = false;
     Data.data.modeAutoIndex         = false;
@@ -21,7 +21,6 @@ void    inisialData(std::map<int,struct Webserv> &Request ,ConfigFile &config,in
     Data.data.isDelete              = false;
     Data.data.fd                    = clientSocketFD;
     Data.data.requeste              = new Requeste(clientSocketFD,config);
-    Data.data.OBJDEL                = new DELETE();
     Request[clientSocketFD]         = Data;
 }
 
@@ -60,7 +59,6 @@ void closeServers(std::vector<int> & Servers)
 }
 void multiplexing(ConfigFile &config)
 {
-   
     std::vector<int> Servers;
     int epollFD = epoll_create(1024);
     epoll_event event;
@@ -147,7 +145,6 @@ void multiplexing(ConfigFile &config)
                     {
                         /* readiing AND parsing request */
                         Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.isDone, Request[events[i].data.fd].data.AlreadyRequestHeader);
-                        
                         insialStruct(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
@@ -161,28 +158,25 @@ void multiplexing(ConfigFile &config)
                         if(Request[events[i].data.fd].data.code != 0)
                             sendErrorResponse(Request[events[i].data.fd].data);
                         else
-                            getMethod(Request[events[i].data.fd].data);
+                             Request[events[i].data.fd].data.OBJGET.getMethod(Request[events[i].data.fd].data);
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "DELETE")
                     {
                         if(Request[events[i].data.fd].data.code != 0)
-                        {
-                            // std::cout<<"--1--\n";
                             sendErrorResponse(Request[events[i].data.fd].data);
-                        }
                         else
                         {
                             if(Request[events[i].data.fd].data.isDelete == false)
-                            {
-                                Request[events[i].data.fd].data.OBJDEL->deleteMethod(Request[events[i].data.fd].data);
-                            }
-                        }
-                            
+                                Request[events[i].data.fd].data.OBJDEL.deleteMethod(Request[events[i].data.fd].data);
+                        }   
                     }
                     else if(Request[events[i].data.fd].data.requeste->method == "POST" )
                     {
                         if(Request[events[i].data.fd].data.requeste->post->isCgi == true)
-                            fastCGI(Request[events[i].data.fd].data,Request[events[i].data.fd].data.requeste->post->cgi_extation);
+                        {
+                            std::string type = Request[events[i].data.fd].data.requeste->post->cgi_extation;
+                            Request[events[i].data.fd].data.OBJCGI.fastCGI(Request[events[i].data.fd].data,type);
+                        }
                         else
                             Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
                     }
@@ -191,7 +185,6 @@ void multiplexing(ConfigFile &config)
                     if(Request[events[i].data.fd].data.readyForClose == true)
                     {
                         delete Request[events[i].data.fd].data.requeste;
-                        delete Request[events[i].data.fd].data.OBJDEL;
                         Request.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
@@ -203,4 +196,3 @@ void multiplexing(ConfigFile &config)
     close(epollFD);
     closeServers(Servers);
 }
-

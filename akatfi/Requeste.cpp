@@ -17,6 +17,7 @@ Requeste::Requeste(int fd,ConfigFile &configfile) : config(configfile)
     fd_socket = fd;
     fdresponse = -1;
     post = NULL;
+    chose_location = false;
     port = 0;
     time_out = get_time();
 }
@@ -90,6 +91,7 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
     head.append(buffer, x);
     if (head.find("\r\n\r\n") != std::string::npos)
     {
+        // std::cout <<"\t\t -------------------------- \t\t\n" << head <<"\t\t -------------------------- \t\t" << std::endl;
         if (head.length() >= 4000)
         {
             status_client = 413;
@@ -100,8 +102,7 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
         this->MakeMapOfHeader(isdone);
         this->get_infoConfig(isdone);
         flag = true;
-        // std::cout << "method of --> :: " << method << std::endl;
-        if (isdone == false && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
+        if (isdone == false && chose_location && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
         {
             status_client = 405;
             isdone = true;
@@ -126,7 +127,7 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
 
 std::string delete_slash_path(std::string& path, bool& slash)
 {
-    // unsigned int i = 0;
+    unsigned int i = 0;
     while (path.size() > 0 && path[0] == '/')
         path = path.substr(1);
     while (path.size() > 0  && path[path.size() - 1] == '/')
@@ -153,13 +154,14 @@ void Requeste::get_infoConfig(bool& isdone)
     {
         if (!strncmp(Server_Requeste.locations[i].location_name.c_str(),path.c_str(), Server_Requeste.locations[i].location_name.length()))
         {
+            chose_location = true;
             Location_Server = Server_Requeste.locations[i];
             length = Server_Requeste.locations[i].location_name.length();
             if (length > 1 && length + 1 <= path.length())
                 length += 1;
             Location_Server.root  += path.substr(length);
             if (stat(Location_Server.root.c_str(), &statbuf) == 0 && 
-                S_ISDIR(statbuf.st_mode) == true &&  path.length() && path[path.length() - 1] != '/')
+                S_ISDIR(statbuf.st_mode) == true &&  path.length() && path[path.length() - 1] != '/' && method != "DELETE")
             {
                 status_client = 0;
                 isdone = true;
@@ -177,7 +179,8 @@ void Requeste::get_infoConfig(bool& isdone)
         {
             path = Server_Requeste.locations[0].location_name;
             Location_Server = Server_Requeste.locations[0];
-            if (path.length() && path[path.length() - 1] != '/')
+            chose_location = true;
+            if (path.length() && path[path.length() - 1] != '/' && method != "DELETE")
             {
                 status_client = 0;
                 isdone = true;
@@ -190,10 +193,15 @@ void Requeste::get_infoConfig(bool& isdone)
     }
     if (Location_Server.upload_location.empty())
         Location_Server.upload_location = Location_Server.root;
-    // std::cout << "  root : " << Location_Server.root << std::endl;
-    // std::cout << "  path : " << path << std::endl;
-    // std::cout << "  upload path : " << Location_Server.upload_location << std::endl;
-    // std::cout << "\t\t-----------" << std::endl;
+    if (Location_Server.redirection.empty() == false)
+    {
+        // std::cout << "redirction with success !" << std::endl;
+        status_client = 0;
+        isdone = true;
+        method =  "";
+        headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
+            + std::to_string(Server_Requeste.listen) + Location_Server.redirection + "\r\n\r\n";
+    }
 }
 
 void Requeste::MakeMapOfHeader(bool& isdone)
@@ -232,8 +240,9 @@ void Requeste::MakeMapOfHeader(bool& isdone)
     }
     if (path.find("?") != std::string::npos)
     {
-        query_str = path.substr(path.find("?") + 1);
+        query_str = path.substr(path.rfind("?") + 1);
         path = path.substr(0, path.rfind("?"));
+        std::cout << query_str << std::endl;
     }
     if (requeste_map.find("Content-Type") != requeste_map.end())
         content_type = requeste_map.find("Content-Type")->second;
@@ -270,6 +279,7 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         method = "";
         headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
     }
+    // std::cout << "request :: " << content_type << content_length << std::endl;
 }
 
 int Requeste::getSocketFd() const
