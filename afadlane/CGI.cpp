@@ -1,6 +1,6 @@
 #include"webserv.hpp"
 
-void environmentStore(Data &dataClient, std::vector<std::string> &environment)
+void CGI::environmentStore(Data &dataClient, std::vector<std::string> &environment)
 {
     std::stringstream wiss;
     wiss << dataClient.requeste->port;
@@ -23,7 +23,7 @@ void environmentStore(Data &dataClient, std::vector<std::string> &environment)
     environment.push_back("SERVER_PORT=" + SERVER_PORT); 
 }
 
-std::string fillMap( std::map<int,std::string> &headerMap,std::string lenght,std::string line)
+std::string CGI::fillMap( std::map<int,std::string> &headerMap,std::string lenght,std::string line)
 {
     headerMap[0] = " 200 OK\r\n";
     headerMap[1] = "Content-type: text/html\r\n";
@@ -49,7 +49,7 @@ std::string fillMap( std::map<int,std::string> &headerMap,std::string lenght,std
     return header;
 }
 
-void makeHeader(Data &dataClient,bool eof)
+void CGI::makeHeader(Data &dataClient,bool eof)
 {
     std::map<int,std::string> headerMap;
     std::string body;
@@ -82,7 +82,7 @@ void makeHeader(Data &dataClient,bool eof)
     }
 }
 
-void   SendHeader(Data &dataClient)
+void   CGI::SendHeader(Data &dataClient)
 {
     if(dataClient.isReadingCgi == false)
     {
@@ -107,7 +107,7 @@ void   SendHeader(Data &dataClient)
     makeHeader(dataClient,false);
 }
 
-void sendBody(Data &dataClient)
+void CGI::sendBody(Data &dataClient)
 {
     char buffer[BUFFER_SIZE];
     std::string httpResponse;
@@ -134,7 +134,7 @@ void sendBody(Data &dataClient)
     }
 }
 
-std::string getType(Data&dataClient,std::string &type)
+std::string CGI::getType(Data&dataClient,std::string &type)
 {
     dataClient.startTime = getCurrentTime();
     dataClient.isFork = true;
@@ -150,7 +150,7 @@ std::string getType(Data&dataClient,std::string &type)
     return "";
 }
 
-void executeScript(Data &dataClient,std::string &type)
+void CGI::executeScript(Data &dataClient,std::string &type)
 {
     std::vector<std::string> environment;
     environmentStore(dataClient,environment);
@@ -185,7 +185,7 @@ void executeScript(Data &dataClient,std::string &type)
     }
 }
 
-void fastCGI(Data &dataClient,std::string &type)
+void CGI::fastCGI(Data &dataClient,std::string &type)
 {
     if(dataClient.sendHeader == false)
     {
@@ -195,7 +195,7 @@ void fastCGI(Data &dataClient,std::string &type)
         if(waitpid(dataClient.pid,&status,WNOHANG) == 0)
         {
             size_t n = dataClient.requeste->Server_Requeste.cgi_timeout;
-            if(getCurrentTime() - dataClient.startTime >=  n)
+            if(getCurrentTime() - dataClient.startTime >= n)
             {
                 kill(dataClient.pid,SIGTERM);
                 dataClient.statusCode =" 504 Gateway Timeout"; 

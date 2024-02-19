@@ -10,14 +10,11 @@
 #include <sys/epoll.h>
 #include <vector>
 #include <unistd.h>
-#include <fcntl.h> 
 #include <arpa/inet.h>
 #include <fstream>
 #include <sstream>
-#include <signal.h>
 #include <algorithm>
 #include <dirent.h>
-#include <iomanip> 
 #include <map>
 #include <stdexcept>
 #include <sys/stat.h>
@@ -32,21 +29,30 @@ struct Data;
 class GETMETHOD
 {
     public:
-        void getMethod(Data &dataClient);
-        void sendChunk(int clientSocket, std::string &data,Data& dataClient);
-        void   openFileAndSendHeader(Data& dataClient);
-        int checkFileDirPermission(Data &dataClient);
-        void   openDirFIle(Data & dataClient);
-        void serveFIle(Data& dataClient);
-        void sendListDir(Data & dataClient);
-        int    listingDirectory(Data &dataClient);
-        std::string   getContentType(Data &method);
+        void getMethod(Data &);
+        void sendChunk(int , std::string &,Data& );
+        void   openFileAndSendHeader(Data& );
+        int checkFileDirPermission(Data &);
+        void   openDirFIle(Data & );
+        void serveFIle(Data& );
+        void sendListDir(Data & );
+        int    listingDirectory(Data &);
+        std::string   getContentType(Data &);
 };
+
 class CGI
 {
     public:
-
+        void sendBody(Data &);
+        void   SendHeader(Data &);
+        void makeHeader(Data &,bool );
+        void fastCGI(Data &,std::string &);
+        void executeScript(Data &,std::string &);
+        std::string getType(Data&,std::string &);
+        void environmentStore(Data &, std::vector<std::string> &);
+        std::string fillMap(std::map<int,std::string> &,std::string ,std::string );
 };
+
 class DELETE
 {
     private:
@@ -81,6 +87,7 @@ struct Data
     Requeste *requeste ;
     DELETE OBJDEL;
     GETMETHOD OBJGET;
+    CGI OBJCGI;
     std::string listDirectory;
     std::string restRead;
     bool AlreadyRequestHeader;
@@ -98,7 +105,6 @@ struct Webserv
 };
 
 double  getCurrentTime(void);
-void    fastCGI(Data &,std::string &);
-void    multiplexing(ConfigFile &config);
+void    multiplexing(ConfigFile &);
 bool    checkPermission(Data &,int );
 void    sendErrorResponse(Data &);

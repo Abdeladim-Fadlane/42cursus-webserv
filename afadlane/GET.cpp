@@ -28,7 +28,7 @@ bool getAutoFile(Data & dataClient,char * path)
     return false;
 }
 
-std::string    GETMETHOD::getContentType(Data &method)
+std::string    GETMETHOD::getContentType(Data &dataClient)
 {
     std::map<std::string, std::string> contentTypeMap;
     contentTypeMap[".html"] = "text/html";
@@ -45,10 +45,10 @@ std::string    GETMETHOD::getContentType(Data &method)
     contentTypeMap[".css"] = "text/css";
     contentTypeMap[".pdf"] = " application/pdf";
     contentTypeMap[".js"] = "application/javascript";
-    size_t pos = method.Path.find_last_of(".");
+    size_t pos = dataClient.Path.find_last_of(".");
     if(pos != std::string::npos)
     {
-        std::string extension = method.Path.substr(pos);
+        std::string extension = dataClient.Path.substr(pos);
         std::map<std::string,std::string>::iterator it = contentTypeMap.find(extension);
         if(it != contentTypeMap.end())
             return it->second;
@@ -111,7 +111,7 @@ void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
     {
         if(checkCgi(dataClient,contentType) == true)
         {
-            fastCGI(dataClient,contentType);
+            dataClient.OBJCGI.fastCGI(dataClient,contentType);
             return ;
         }
     }

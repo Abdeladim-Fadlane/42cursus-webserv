@@ -134,7 +134,6 @@ void multiplexing(ConfigFile &config)
                 {
                     /* client closed the connection */
                     delete Request[events[i].data.fd].data.requeste;
-                    // delete Request[events[i].data.fd].data.OBJDEL;
                     Request.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
@@ -174,7 +173,10 @@ void multiplexing(ConfigFile &config)
                     else if(Request[events[i].data.fd].data.requeste->method == "POST" )
                     {
                         if(Request[events[i].data.fd].data.requeste->post->isCgi == true)
-                            fastCGI(Request[events[i].data.fd].data,Request[events[i].data.fd].data.requeste->post->cgi_extation);
+                        {
+                            std::string type = Request[events[i].data.fd].data.requeste->post->cgi_extation;
+                            Request[events[i].data.fd].data.OBJCGI.fastCGI(Request[events[i].data.fd].data,type);
+                        }
                         else
                             Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
                     }

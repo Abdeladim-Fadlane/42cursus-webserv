@@ -33,7 +33,7 @@ PostMethod::PostMethod(Requeste& r) : req(r)
     req.status_client = 201;
     if (req.Location_Server.cgi_allowed == "ON")
     {
-        std::cout << "running the cgi ... " << std::endl;
+        // std::cout << "running the cgi ... " << std::endl;
         cgi_file.open(req.Location_Server.upload_location + "/index_cgi", std::fstream::out);
         cgi_path = req.Location_Server.upload_location + "/index_cgi";
         ft_prepar_cgi();
