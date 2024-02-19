@@ -82,17 +82,13 @@ void makeHeader(Data &dataClient,bool eof)
     }
 }
 
-
 void   SendHeader(Data &dataClient)
 {
     if(dataClient.isReadingCgi == false)
     {
         dataClient.fileFdCgi = open(dataClient.cgiFile.c_str(),O_RDONLY);
         if (dataClient.fileFdCgi == -1)
-        {
-            perror("");
             throw std::runtime_error("error");
-        }
         dataClient.isReadingCgi = true;
         struct stat fileInfo;
         stat(dataClient.cgiFile.c_str(),&fileInfo);
