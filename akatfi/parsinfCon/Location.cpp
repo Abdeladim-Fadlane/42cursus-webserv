@@ -120,7 +120,7 @@ void    Location::add_location(std::fstream& os)
         {
             if (access(arg[1].c_str(), X_OK) == -1)
                 throw std::runtime_error(std::string("Error : can't execute file's of '").append(arg[2]) + "' extation with this path");
-            if (arg[2] != ".php" && arg[2] != ".py" && arg[2] != ".sh")
+            if (arg[2] != ".php" && arg[2] != ".py" && arg[2] != ".pl")
                 throw std::runtime_error("Error : the server not support this '" + arg[2] + "' extation in cgi");
             cgi[arg[2]] = arg[1];
         }

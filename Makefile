@@ -2,7 +2,7 @@ NAME = webserv
 # curl -i http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
 # wget http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
 # siege -c 225 -r 1 -b http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
-CXXFLAGS =  -Wall -Wextra -Werror -fsanitize=address -g3 
+CXXFLAGS =  -Wall -Wextra -Werror  -g
 
 CXX = c++
 

@@ -2,7 +2,7 @@
 
 bool checkIsCgi(std::string &contentType)
 {
-    if((contentType == ".sh" || contentType == ".php" || contentType == ".py") )
+    if((contentType == ".pl" || contentType == ".php" || contentType == ".py") )
         return true;
     return false;
 }
@@ -41,7 +41,7 @@ std::string    GETMETHOD::getContentType(Data &dataClient)
     contentTypeMap[".mp4"] = "video/mp4";
     contentTypeMap[".php"] = ".php";
     contentTypeMap[".py"] = ".py";
-    contentTypeMap[".sh"] = ".sh";
+    contentTypeMap[".pl"] = ".pl";
     contentTypeMap[".css"] = "text/css";
     contentTypeMap[".pdf"] = " application/pdf";
     contentTypeMap[".js"] = "application/javascript";

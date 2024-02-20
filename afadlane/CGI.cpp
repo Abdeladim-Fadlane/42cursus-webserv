@@ -150,8 +150,8 @@ std::string CGI::getType(Data&dataClient,std::string &type)
         return dataClient.requeste->Location_Server.cgi[".py"];
     else if(type == ".php")
         return dataClient.requeste->Location_Server.cgi[".php"];
-    else if(type == ".sh")
-        return dataClient.requeste->Location_Server.cgi[".sh"];
+    else if(type == ".pl")
+        return dataClient.requeste->Location_Server.cgi[".pl"];
     return "";
 }
 
