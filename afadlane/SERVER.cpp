@@ -1,6 +1,6 @@
 #include"webserv.hpp"
 
-void    inisialData(std::map<int,struct Webserv> &Request ,ConfigFile &config,int &clientSocketFD)
+void    inisialData(std::map<int,struct Webserv> &Clients ,ConfigFile &config,int &clientSocketFD)
 {
     Webserv  Data;
     Data.data.errorFd               =    -2;
@@ -21,7 +21,7 @@ void    inisialData(std::map<int,struct Webserv> &Request ,ConfigFile &config,in
     Data.data.isDelete              = false;
     Data.data.fd                    = clientSocketFD;
     Data.data.requeste              = new Requeste(clientSocketFD,config);
-    Request[clientSocketFD]         = Data;
+    Clients[clientSocketFD]         = Data;
 }
 
 void    insialStruct(Data & datacleint)
@@ -63,7 +63,6 @@ void multiplexing(ConfigFile &config)
     int epollFD = epoll_create(1024);
     epoll_event event;
     int socketFD ;
-    int reuse = 1;
     for(size_t i = 0 ;i < config.Servers.size(); i++)
     {
         socketFD = socket(AF_INET,SOCK_STREAM,0);
@@ -73,24 +72,23 @@ void multiplexing(ConfigFile &config)
         serverAdress.sin_family = AF_INET;
         serverAdress.sin_addr.s_addr = INADDR_ANY;
         serverAdress.sin_port = htons(config.Servers[i].listen);
+        int reuse = 1;
         if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
         {
             throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
-            continue;
         }
         if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
         {
             close(socketFD);
             std::cerr<<"Cannot bind to port : "<<config.Servers[i].listen << std::endl ;
-            continue;
+            exit(1);
         }
         if(listen(socketFD,128) == 0)
             std::cout<<"listenning to "<< config.Servers[i].listen <<" [...]" <<std::endl;
         else
         {
             close(socketFD);
-            std::cout<<"Error listen\n";
-            continue;
+            throw std::runtime_error("Error listen\n");
         }
         event.events = EPOLLIN ;
         event.data.fd = socketFD;
@@ -102,12 +100,12 @@ void multiplexing(ConfigFile &config)
         }
         Servers.push_back(socketFD);
     }
-    std::map<int,struct Webserv> Request;
+    std::map<int,struct Webserv> Clients;
     epoll_event events[MAX_EVENTS];
     while (true)
     {
         int clientSocketFD;
-        int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,500); 
+        int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,500);
         for (int i = 0; i < numEvent; ++i)
         {
             if(isServer(Servers,events[i].data.fd) == true)
@@ -118,7 +116,7 @@ void multiplexing(ConfigFile &config)
                     std::cerr << "Failed to accept connection ." << std::endl;
                     continue;
                 }
-                event.events = EPOLLIN | EPOLLOUT | EPOLLERR | EPOLLHUP ;
+                event.events = EPOLLIN | EPOLLOUT | EPOLLHUP ;
                 event.data.fd = clientSocketFD;
                 if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
                 {
@@ -126,66 +124,65 @@ void multiplexing(ConfigFile &config)
                     close(clientSocketFD);
                     continue;
                 }
-                inisialData(Request,config,clientSocketFD);
+                inisialData(Clients,config,clientSocketFD);
             } 
             else
             {
                 if(events[i].events & EPOLLHUP)
                 {
-                    /* client closed the connection */
-                    delete Request[events[i].data.fd].data.requeste;
-                    Request.erase(events[i].data.fd);
+                    delete Clients[events[i].data.fd].data.requeste;
+                    Clients.erase(events[i].data.fd);
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
                 }
-                else if(events[i].events & EPOLLIN && Request[events[i].data.fd].data.isDone == false)
+                else if(events[i].events & EPOLLIN && Clients[events[i].data.fd].data.isDone == false)
                 {
                     /* File descriptor ready for writing */
-                    if(Request[events[i].data.fd].data.AlreadyRequestHeader == false)
+                    if(Clients[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
-                        /* readiing AND parsing request */
-                        Request[events[i].data.fd].data.requeste->readFromSocketFd(Request[events[i].data.fd].data.isDone, Request[events[i].data.fd].data.AlreadyRequestHeader);
-                        insialStruct(Request[events[i].data.fd].data);
+                        /* readiing AND parsing Clients */
+                        Clients[events[i].data.fd].data.requeste->readFromSocketFd(Clients[events[i].data.fd].data.isDone, Clients[events[i].data.fd].data.AlreadyRequestHeader);
+                        insialStruct(Clients[events[i].data.fd].data);
                     }
-                    else if(Request[events[i].data.fd].data.AlreadyRequestHeader  == true && Request[events[i].data.fd].data.requeste->method == "POST")
-                        Request[events[i].data.fd].data.requeste->post->PostingFileToServer(Request[events[i].data.fd].data.isDone, true);
+                    else if(Clients[events[i].data.fd].data.AlreadyRequestHeader  == true && Clients[events[i].data.fd].data.requeste->method == "POST")
+                        Clients[events[i].data.fd].data.requeste->post->PostingFileToServer(Clients[events[i].data.fd].data.isDone, true);
                 }
-                else if (events[i].events & EPOLLOUT && Request[events[i].data.fd].data.isDone == true)
+                else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
                 {
                    /*  File descriptor ready for reading  */
-                    if(Request[events[i].data.fd].data.requeste->method == "GET")
+                    if(Clients[events[i].data.fd].data.requeste->method == "GET")
                     {
-                        if(Request[events[i].data.fd].data.code != 0)
-                            sendErrorResponse(Request[events[i].data.fd].data);
+                        if(Clients[events[i].data.fd].data.code != 0)
+                            sendErrorResponse(Clients[events[i].data.fd].data);
                         else
-                             Request[events[i].data.fd].data.OBJGET.getMethod(Request[events[i].data.fd].data);
+                             Clients[events[i].data.fd].data.OBJGET.getMethod(Clients[events[i].data.fd].data);
                     }
-                    else if(Request[events[i].data.fd].data.requeste->method == "DELETE")
+                    else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
                     {
-                        if(Request[events[i].data.fd].data.code != 0)
-                            sendErrorResponse(Request[events[i].data.fd].data);
+                        if(Clients[events[i].data.fd].data.code != 0)
+                            sendErrorResponse(Clients[events[i].data.fd].data);
                         else
                         {
-                            if(Request[events[i].data.fd].data.isDelete == false)
-                                Request[events[i].data.fd].data.OBJDEL.deleteMethod(Request[events[i].data.fd].data);
+                            if(Clients[events[i].data.fd].data.isDelete == false)
+                                Clients[events[i].data.fd].data.OBJDEL.deleteMethod(Clients[events[i].data.fd].data);
                         }   
                     }
-                    else if(Request[events[i].data.fd].data.requeste->method == "POST" )
+                    else if(Clients[events[i].data.fd].data.requeste->method == "POST" )
                     {
-                        if(Request[events[i].data.fd].data.requeste->post->isCgi == true)
+                        if(Clients[events[i].data.fd].data.requeste->post->isCgi == true)
                         {
-                            std::string type = Request[events[i].data.fd].data.requeste->post->cgi_extation;
-                            Request[events[i].data.fd].data.OBJCGI.fastCGI(Request[events[i].data.fd].data,type);
+                            std::string type = Clients[events[i].data.fd].data.requeste->post->cgi_extation;
+                            postCgi(Clients[events[i].data.fd].data,type);
                         }
                         else
-                            Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
+                            Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
                     }
                     else
-                        Request[events[i].data.fd].data.requeste->set_status_client(Request[events[i].data.fd].data.readyForClose);
-                    if(Request[events[i].data.fd].data.readyForClose == true)
+                        Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
+                    if(Clients[events[i].data.fd].data.readyForClose == true)
                     {
-                        delete Request[events[i].data.fd].data.requeste;
-                        Request.erase(events[i].data.fd);
+                        delete Clients[events[i].data.fd].data.requeste;
+                        Clients.erase(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         close(events[i].data.fd);
                     }

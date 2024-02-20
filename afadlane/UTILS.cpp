@@ -64,3 +64,20 @@ bool checkPermission(Data &dataClient,int type)
     }
     return false;
 }
+
+
+void postCgi(Data &dataClient,std::string & type)
+{
+    try
+    {
+        dataClient.OBJCGI.fastCGI(dataClient,type);
+    }
+    catch (const std::runtime_error &e)
+    {
+        if(strcmp(e.what() ,"error") == 0)
+        {
+            dataClient.statusCode = " 500 Internal Server Error";
+            dataClient.code = 500;
+        }
+    }
+}
