@@ -2,7 +2,7 @@
 
 void DELETE::IsFIle(Data &dataClient)
 {
-    if (unlink(dataClient.Path.c_str()) == 0) 
+    if (remove(dataClient.Path.c_str()) == 0) 
     {
         dataClient.statusCode = " 204 No Content";
         dataClient.code = 204;
@@ -46,7 +46,7 @@ void DELETE::IsDir(Data &dataClient)
                 } 
                 else
                 {
-                    if (unlink(itPath.c_str()) != 0)
+                    if (remove(itPath.c_str()) != 0)
                     {
                         dataClient.statusCode = " 500 Internal Server Error";
                         dataClient.code = 500;

@@ -60,7 +60,6 @@ void CGI::makeHeader(Data &dataClient,bool eof)
     {
         tmp = restRead.substr(0,pos);
         restRead = restRead.substr(pos+1);
-        // std::cout<<lenghtFile<<"----------\n";
         size_t bodyLenght = lenghtFile  - tmp.size();
         std::stringstream ss;
         ss << bodyLenght;
@@ -205,18 +204,20 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
                 size_t n = dataClient.requeste->Server_Requeste.cgi_timeout;
                 if(getCurrentTime() - dataClient.startTime >= n)
                 {
-                    if(kill(dataClient.pid,SIGTERM) == -1)
-                        throw std::runtime_error("kill error");
+                    kill(dataClient.pid,SIGTERM);
                     dataClient.statusCode =" 504 Gateway Timeout"; 
                     dataClient.code = 504;
-                    if(unlink(cgiFile.c_str()) == -1)
-                        throw std::runtime_error("erroror unlink");
+                    if(remove(cgiFile.c_str()) == -1)
+                        throw std::runtime_error("erroror delete");
                 }
             }
             else
             {
                 if(dataClient.requeste->method == "POST")
-                    unlink(dataClient.requeste->post->cgi_path.c_str());
+                {
+                    if(remove(dataClient.requeste->post->cgi_path.c_str()) == -1)
+                        throw std::runtime_error("error delete");
+                }
                 SendHeader(dataClient);
             }
         }
