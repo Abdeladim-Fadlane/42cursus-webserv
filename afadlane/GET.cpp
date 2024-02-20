@@ -2,7 +2,7 @@
 
 bool checkIsCgi(std::string &contentType)
 {
-    if((contentType == ".sh" || contentType == ".php" || contentType == ".py") )
+    if((contentType == ".pl" || contentType == ".php" || contentType == ".py") )
         return true;
     return false;
 }
@@ -16,11 +16,11 @@ bool checkCgi(Data &dataClient ,std::string &contentType)
 
 bool getAutoFile(Data & dataClient,char * path)
 {
-    for(size_t i = 0;i < dataClient.autoFile.size(); i++)
+    for(size_t i = 0;i < dataClient.requeste->Location_Server.indexs.size(); i++)
     {
-        if(strcmp(path,dataClient.autoFile[i].c_str()) == 0)
+        if(strcmp(path,dataClient.requeste->Location_Server.indexs[i].c_str()) == 0)
         {
-            dataClient.Path = dataClient.Path + "/" + dataClient.autoFile[i];
+            dataClient.Path = dataClient.Path + "/" + dataClient.requeste->Location_Server.indexs[i];
             dataClient.modeAutoIndex = true;
             return true ;
         }
@@ -41,7 +41,7 @@ std::string    GETMETHOD::getContentType(Data &dataClient)
     contentTypeMap[".mp4"] = "video/mp4";
     contentTypeMap[".php"] = ".php";
     contentTypeMap[".py"] = ".py";
-    contentTypeMap[".sh"] = ".sh";
+    contentTypeMap[".pl"] = ".pl";
     contentTypeMap[".css"] = "text/css";
     contentTypeMap[".pdf"] = " application/pdf";
     contentTypeMap[".js"] = "application/javascript";
@@ -86,7 +86,7 @@ int    GETMETHOD::listingDirectory(Data &dataClient)
     }
     closedir(dir);
     list << "</table></body></html>";
-    dataClient.listDirectory =  list.str();
+    listDirectory =  list.str();
     return(0);
 }
 
@@ -177,12 +177,13 @@ void GETMETHOD::sendListDir(Data & dataClient)
 {
     std::string httpResponse;
     std::ostringstream wiss;
-    wiss << dataClient.listDirectory.size();
-    httpResponse = dataClient.requeste->http_v.append(" 200 OK\r\nContent-Type: text/html\r\nContent-Lenght: ");
-    httpResponse.append(wiss.str()).append("\r\n\r\n").append(dataClient.listDirectory);
+    wiss << listDirectory.size();
+    httpResponse = dataClient.requeste->http_v;
+    httpResponse.append(" 200 OK\r\nContent-Type: text/html\r\nContent-Lenght: ");
+    httpResponse.append(wiss.str()).append("\r\n\r\n").append(listDirectory);
     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
         throw std::runtime_error("error");
-    dataClient.listDirectory.clear(); 
+    listDirectory.clear(); 
     dataClient.readyForClose = true;
 }
 
@@ -228,10 +229,12 @@ void GETMETHOD::getMethod(Data & dataClient)
     }
     catch (const std::runtime_error &e)
     {
-        if(strcmp(e.what() ,"error") == 0)
-        {
-            dataClient.statusCode = " 500 Internal Server Error";
-            dataClient.code = 500;
-        }
+        std::cout<<e.what()<<std::endl;
+        // if(strcmp( ,"error") == 0)
+        // {
+        //     dataClient.readyForClose = true;
+        //     // dataClient.statusCode = " 500 Internal Server Error";
+        //     // dataClient.code = 500;
+        // }
     }
 }

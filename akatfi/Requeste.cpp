@@ -91,7 +91,6 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
     head.append(buffer, x);
     if (head.find("\r\n\r\n") != std::string::npos)
     {
-        // std::cout <<"\t\t -------------------------- \t\t\n" << head <<"\t\t -------------------------- \t\t" << std::endl;
         if (head.length() >= 4000)
         {
             status_client = 413;
@@ -127,7 +126,6 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
 
 std::string delete_slash_path(std::string& path, bool& slash)
 {
-    unsigned int i = 0;
     while (path.size() > 0 && path[0] == '/')
         path = path.substr(1);
     while (path.size() > 0  && path[path.size() - 1] == '/')
@@ -148,6 +146,8 @@ void Requeste::get_infoConfig(bool& isdone)
     bool slash = false;
     bool flag = false;
     size_t length;
+    std::stringstream ss;
+
 
     path = delete_slash_path(path, slash);
     for (unsigned int i = 0; i < Server_Requeste.locations.size(); i++)
@@ -166,8 +166,10 @@ void Requeste::get_infoConfig(bool& isdone)
                 status_client = 0;
                 isdone = true;
                 method =  "";
+                ss << Server_Requeste.listen;
                 headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
-                    + std::to_string(Server_Requeste.listen) + path.append("/") + "\r\n\r\n";
+                    + ss.str() + path.append("/") + "\r\n\r\n";
+                ss.str("");
             }
             flag = true;
             if (Server_Requeste.locations[i].location_name == "/")
@@ -185,8 +187,10 @@ void Requeste::get_infoConfig(bool& isdone)
                 status_client = 0;
                 isdone = true;
                 method =  "";
+                ss << Server_Requeste.listen;
                 headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
-                    + std::to_string(Server_Requeste.listen) + path.append("/") + "\r\n\r\n";
+                    + ss.str() + path.append("/") + "\r\n\r\n";
+                ss.str("");
             }
             break;
         }
@@ -199,8 +203,10 @@ void Requeste::get_infoConfig(bool& isdone)
         status_client = 0;
         isdone = true;
         method =  "";
+        ss << Server_Requeste.listen;
         headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
-            + std::to_string(Server_Requeste.listen) + Location_Server.redirection + "\r\n\r\n";
+            + ss.str() + Location_Server.redirection + "\r\n\r\n";
+        ss.str("");
     }
 }
 
@@ -242,7 +248,6 @@ void Requeste::MakeMapOfHeader(bool& isdone)
     {
         query_str = path.substr(path.rfind("?") + 1);
         path = path.substr(0, path.rfind("?"));
-        std::cout << query_str << std::endl;
     }
     if (requeste_map.find("Content-Type") != requeste_map.end())
         content_type = requeste_map.find("Content-Type")->second;
@@ -279,7 +284,6 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         method = "";
         headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
     }
-    // std::cout << "request :: " << content_type << content_length << std::endl;
 }
 
 int Requeste::getSocketFd() const
