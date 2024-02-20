@@ -28,7 +28,6 @@ void    insialStruct(Data & datacleint)
 {
     if(datacleint.requeste->Location_Server.autoindex == "ON")
         datacleint.autoIndex = true;
-    datacleint.autoFile = datacleint.requeste->Location_Server.indexs;
     datacleint.Path = datacleint.requeste->Location_Server.root;
 }
 
@@ -137,10 +136,8 @@ void multiplexing(ConfigFile &config)
                 }
                 else if(events[i].events & EPOLLIN && Clients[events[i].data.fd].data.isDone == false)
                 {
-                    /* File descriptor ready for writing */
                     if(Clients[events[i].data.fd].data.AlreadyRequestHeader == false)
                     {
-                        /* readiing AND parsing Clients */
                         Clients[events[i].data.fd].data.requeste->readFromSocketFd(Clients[events[i].data.fd].data.isDone, Clients[events[i].data.fd].data.AlreadyRequestHeader);
                         insialStruct(Clients[events[i].data.fd].data);
                     }
@@ -149,13 +146,12 @@ void multiplexing(ConfigFile &config)
                 }
                 else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
                 {
-                   /*  File descriptor ready for reading  */
                     if(Clients[events[i].data.fd].data.requeste->method == "GET")
                     {
                         if(Clients[events[i].data.fd].data.code != 0)
                             sendErrorResponse(Clients[events[i].data.fd].data);
                         else
-                             Clients[events[i].data.fd].data.OBJGET.getMethod(Clients[events[i].data.fd].data);
+                            Clients[events[i].data.fd].data.OBJGET.getMethod(Clients[events[i].data.fd].data);
                     }
                     else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
                     {
@@ -179,6 +175,7 @@ void multiplexing(ConfigFile &config)
                     }
                     else
                         Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
+
                     if(Clients[events[i].data.fd].data.readyForClose == true)
                     {
                         delete Clients[events[i].data.fd].data.requeste;

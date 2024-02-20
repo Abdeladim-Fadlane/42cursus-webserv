@@ -28,6 +28,8 @@
 struct Data;
 class GETMETHOD
 {
+    private :
+        std::string listDirectory;
     public:
         void getMethod(Data &);
         void sendChunk(int , std::string &,Data& );
@@ -42,6 +44,10 @@ class GETMETHOD
 
 class CGI
 {
+    private:
+        std::string cgiFile;
+        ssize_t lenghtFile;
+        std::string restRead;
     public:
         void sendBody(Data &);
         void   SendHeader(Data &);
@@ -88,14 +94,9 @@ struct Data
     DELETE OBJDEL;
     GETMETHOD OBJGET;
     CGI OBJCGI;
-    std::string listDirectory;
-    std::string restRead;
     bool AlreadyRequestHeader;
-    std::vector<std::string> autoFile;
     bool isExeceted;
-    std::string cgiFile;
     std::string statusCode;
-    ssize_t lenghtFile;
 };
 
 

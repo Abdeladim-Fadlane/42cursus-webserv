@@ -55,12 +55,13 @@ void CGI::makeHeader(Data &dataClient,bool eof)
     std::string body;
     std::string tmp;
     size_t pos;
-    pos = dataClient.restRead.find("\r\n\r\n");
+    pos = restRead.find("\r\n\r\n");
     if(pos != std::string::npos)
     {
-        tmp = dataClient.restRead.substr(0,pos);
-        dataClient.restRead = dataClient.restRead.substr(pos+1);
-        size_t bodyLenght = dataClient.lenghtFile  - tmp.size();
+        tmp = restRead.substr(0,pos);
+        restRead = restRead.substr(pos+1);
+        // std::cout<<lenghtFile<<"----------\n";
+        size_t bodyLenght = lenghtFile  - tmp.size();
         std::stringstream ss;
         ss << bodyLenght;
         std::string header = dataClient.requeste->http_v;
@@ -72,10 +73,10 @@ void CGI::makeHeader(Data &dataClient,bool eof)
     if(eof == true)
     {
         std::stringstream ss;
-        ss <<  dataClient.lenghtFile ;
+        ss <<  lenghtFile ;
         std::string header = dataClient.requeste->http_v;
         header.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
-        header.append(dataClient.restRead);
+        header.append(restRead);
         if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
             throw std::runtime_error("error");
         dataClient.readyForClose = true;
@@ -86,13 +87,18 @@ void   CGI::SendHeader(Data &dataClient)
 {
     if(dataClient.isReadingCgi == false)
     {
-        dataClient.fileFdCgi = open(dataClient.cgiFile.c_str(),O_RDONLY);
+        dataClient.fileFdCgi = open(cgiFile.c_str(),O_RDONLY);
         if (dataClient.fileFdCgi == -1)
             throw std::runtime_error("error");
         dataClient.isReadingCgi = true;
         struct stat fileInfo;
-        stat(dataClient.cgiFile.c_str(),&fileInfo);
-        dataClient.lenghtFile = fileInfo.st_size;
+        if(stat(cgiFile.c_str(),&fileInfo))
+        {
+            dataClient.statusCode = " 500 Internal Server Error";
+            dataClient.code = 500;
+            return;
+        }
+        lenghtFile = fileInfo.st_size;
     }
     char buffer[BUFFER_SIZE];
     ssize_t byteRead = read (dataClient.fileFdCgi,buffer,BUFFER_SIZE );
@@ -103,7 +109,7 @@ void   CGI::SendHeader(Data &dataClient)
     }
     if(byteRead == -1)
         throw std::runtime_error("error");
-    dataClient.restRead.append(std::string(buffer,byteRead));
+    restRead.append(std::string(buffer,byteRead));
     makeHeader(dataClient,false);
 }
 
@@ -116,31 +122,30 @@ void CGI::sendBody(Data &dataClient)
         throw std::runtime_error("error");
     if(byteRead == 0)
     {
-        if(!dataClient.restRead.empty())
+        if(!restRead.empty())
         {
-            if(send(dataClient.fd, dataClient.restRead.c_str(), dataClient.restRead.size(),0) == -1)
+            if(send(dataClient.fd, restRead.c_str(), restRead.size(),0) == -1)
                 throw std::runtime_error("error");
         }
-        close(dataClient.fileFd);
+        close(dataClient.fileFdCgi);
         dataClient.readyForClose = true;
-        unlink(dataClient.cgiFile.c_str());
+        unlink(cgiFile.c_str());
     }
     else
     {
-        dataClient.restRead.append(buffer,byteRead);
-        if(send(dataClient.fd, dataClient.restRead.c_str(), dataClient.restRead.size(),0) == -1)
+        restRead.append(buffer,byteRead);
+        if(send(dataClient.fd, restRead.c_str(), restRead.size(),0) == -1)
             throw std::runtime_error("error");
-        dataClient.restRead.clear();
+        restRead.clear();
     }
 }
 
 std::string CGI::getType(Data&dataClient,std::string &type)
 {
-    dataClient.startTime = getCurrentTime();
     dataClient.isFork = true;
     std::ostringstream oss;
     oss <<  dataClient.fd;
-    dataClient.cgiFile = "/tmp/file" + oss.str();
+    cgiFile.append("file").append(oss.str());
     if(type == ".py" )
         return dataClient.requeste->Location_Server.cgi[".py"];
     else if(type == ".php")
@@ -161,12 +166,13 @@ void CGI::executeScript(Data &dataClient,std::string &type)
     }
     env[environment.size()] = NULL;
     std::string interpreter = getType(dataClient,type);
+    dataClient.startTime = getCurrentTime();
     dataClient.pid = fork();
     if(dataClient.pid == -1)
         throw std::runtime_error("error");
     if (dataClient.pid == 0)
     {
-        int fd1 = open(dataClient.cgiFile.c_str() ,O_WRONLY  | O_CREAT | O_TRUNC,0644);
+        int fd1 = open(cgiFile.c_str() ,O_WRONLY  | O_CREAT | O_TRUNC,0644);
         if (fd1 == -1)
             throw std::runtime_error ("error");
         if(dataClient.requeste->method == "POST")
@@ -187,29 +193,39 @@ void CGI::executeScript(Data &dataClient,std::string &type)
 
 void CGI::fastCGI(Data &dataClient,std::string &type)
 {
-    if(dataClient.sendHeader == false)
+    try
     {
-        int status;
-        if(dataClient.isFork == false)
-            executeScript(dataClient,type);
-        if(waitpid(dataClient.pid,&status,WNOHANG) == 0)
+        if(dataClient.sendHeader == false)
         {
-            size_t n = dataClient.requeste->Server_Requeste.cgi_timeout;
-            if(getCurrentTime() - dataClient.startTime >= n)
+            int status;
+            if(dataClient.isFork == false)
+                executeScript(dataClient,type);
+            if(waitpid(dataClient.pid,&status,WNOHANG) == 0)
             {
-                kill(dataClient.pid,SIGTERM);
-                dataClient.statusCode =" 504 Gateway Timeout"; 
-                dataClient.code = 504;
-                unlink(dataClient.cgiFile.c_str());
+                size_t n = dataClient.requeste->Server_Requeste.cgi_timeout;
+                if(getCurrentTime() - dataClient.startTime >= n)
+                {
+                    if(kill(dataClient.pid,SIGTERM) == -1)
+                        throw std::runtime_error("kill error");
+                    dataClient.statusCode =" 504 Gateway Timeout"; 
+                    dataClient.code = 504;
+                    if(unlink(cgiFile.c_str()) == -1)
+                        throw std::runtime_error("erroror unlink");
+                }
+            }
+            else
+            {
+                if(dataClient.requeste->method == "POST")
+                    unlink(dataClient.requeste->post->cgi_path.c_str());
+                SendHeader(dataClient);
             }
         }
-        else
-        {
-            if(dataClient.requeste->method == "POST")
-                unlink(dataClient.requeste->post->cgi_path.c_str());
-            SendHeader(dataClient);
-        }
+        else if(dataClient.sendHeader == true)
+            sendBody(dataClient);
     }
-    else if(dataClient.sendHeader == true)
-        sendBody(dataClient);
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
 }
