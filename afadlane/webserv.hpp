@@ -33,8 +33,9 @@ class DELETE
         struct stat statInfo;
     public:
         void  IsDir(Data &);
-        void  deleteMethod(Data &);
         void  IsFIle(Data &);
+        void  deleteMethod(Data &);
+        void  checkErrnoStat(Data &);
 };
 
 class GETMETHOD
