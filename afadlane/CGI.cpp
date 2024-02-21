@@ -210,7 +210,7 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
                     kill(pid,SIGTERM);
                     dataClient.statusCode =" 504 Gateway Timeout"; 
                     dataClient.code = 504;
-                    if(remove(cgiFile.c_str()) == -1)
+                    if(std::remove(cgiFile.c_str()) == -1)
                         throw std::runtime_error("error");
                 }
             }
@@ -218,7 +218,7 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
             {
                 if(dataClient.requeste->method == "POST")
                 {
-                    if(remove(dataClient.requeste->post->cgi_path.c_str()) == -1)
+                    if(std::remove(dataClient.requeste->post->cgi_path.c_str()) == -1)
                         throw std::runtime_error("error");
                 }
                 SendHeader(dataClient);
