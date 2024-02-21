@@ -6,11 +6,12 @@ void DELETE::IsFIle(Data &dataClient)
     {
         dataClient.statusCode = " 204 No Content";
         dataClient.code = 204;
-    } else {
-        dataClient.statusCode = " 500 Internal Server Error";
-        dataClient.code = 500;
+    } 
+    else
+    {
+        dataClient.statusCode = " 403 FORBIDDEN";
+        dataClient.code = 403;
     }
-    return;
 }
 
 void DELETE::IsDir(Data &dataClient)
@@ -21,13 +22,11 @@ void DELETE::IsDir(Data &dataClient)
         dataClient.code = 409;
         return;
     }
-    if (checkPermission(dataClient, W_OK) || checkPermission(dataClient, X_OK))
-        return;
     DIR *dir = opendir(dataClient.Path.c_str());
     if (!dir) 
     {
-        dataClient.statusCode = " 500 Internal Server Error";
-        dataClient.code = 500;
+        dataClient.statusCode = " 403 FORBIDDEN";
+        dataClient.code = 403;
         return;
     }
     struct dirent * it;
@@ -48,8 +47,8 @@ void DELETE::IsDir(Data &dataClient)
                 {
                     if (remove(itPath.c_str()) != 0)
                     {
-                        dataClient.statusCode = " 500 Internal Server Error";
-                        dataClient.code = 500;
+                        dataClient.statusCode = " 403 FORBIDDEN";
+                        dataClient.code = 403;
                         closedir(dir);
                         return;
                     }
@@ -72,23 +71,17 @@ void DELETE::IsDir(Data &dataClient)
     }
     else
     {
-        dataClient.statusCode = " 500 Internal Server Error";
-        dataClient.code = 500;
+        dataClient.statusCode = " 403 FORBIDDEN";
+        dataClient.code = 403;
     }
 }
 
 void    DELETE::deleteMethod(Data &dataClient)
 {
-    if (access(dataClient.Path.c_str(), F_OK) != 0) 
+    if (stat(dataClient.Path.c_str(), &statInfo) != 0)
     {
         dataClient.statusCode = " 404 NOT FOUND";
         dataClient.code = 404;
-        return;
-    }
-    if (stat(dataClient.Path.c_str(), &statInfo) != 0)
-    {
-        dataClient.statusCode = " 500 Internal Server Error";
-        dataClient.code = 500;
         return;
     }
     if (S_ISDIR(statInfo.st_mode)) 
