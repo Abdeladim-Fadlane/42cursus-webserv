@@ -5,16 +5,8 @@ void    inisialData(std::map<int,struct Webserv> &Clients ,ConfigFile &config,in
     Webserv  Data;
     Data.data.errorFd               =    -2;
     Data.data.code                  =     0;
-    Data.data.Alreadyopen           = false;
-    Data.data.Alreadyopen           = false;
-    Data.data.isFork                = false;
-    Data.data.isExeceted            = false;
-    Data.data.isReading             = false;
-    Data.data.isReadingCgi          = false;
     Data.data.readyForClose         = false;
     Data.data.Alreadparce           = false;
-    Data.data.modeAutoIndex         = false;
-    Data.data.sendHeader            = false;
     Data.data.AlreadyRequestHeader  = false;
     Data.data.isDone                = false;
     Data.data.autoIndex             = false;

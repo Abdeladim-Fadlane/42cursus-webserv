@@ -14,18 +14,25 @@ bool checkCgi(Data &dataClient ,std::string &contentType)
     return false;
 }
 
-bool getAutoFile(Data & dataClient,char * path)
+bool GETMETHOD::getAutoFile(Data & dataClient,char * path)
 {
     for(size_t i = 0;i < dataClient.requeste->Location_Server.indexs.size(); i++)
     {
         if(strcmp(path,dataClient.requeste->Location_Server.indexs[i].c_str()) == 0)
         {
             dataClient.Path = dataClient.Path + "/" + dataClient.requeste->Location_Server.indexs[i];
-            dataClient.modeAutoIndex = true;
+            modeAutoIndex = true;
             return true ;
         }
     }
     return false;
+}
+
+GETMETHOD::GETMETHOD()
+{
+    isReading = false;
+    Alreadyopen = false;
+    modeAutoIndex = false;
 }
 
 std::string    GETMETHOD::getContentType(Data &dataClient)
@@ -90,7 +97,7 @@ int    GETMETHOD::listingDirectory(Data &dataClient)
     return(0);
 }
 
-void GETMETHOD::sendChunk(int clientSocket, std::string &data,Data& dataClient)
+void GETMETHOD::sendChunk(int clientSocket, std::string &data)
 {
     std::string totalChuncked ;
     std::stringstream chunkHeader;
@@ -99,7 +106,7 @@ void GETMETHOD::sendChunk(int clientSocket, std::string &data,Data& dataClient)
     totalChuncked = chunkHeaderStr.append(data).append("\r\n");
     if (send(clientSocket, totalChuncked.c_str(), totalChuncked.size(),0) ==  -1)
     {
-        close(dataClient.fileFd);
+        close(fileFd);
         throw std::runtime_error("error send");
     }
 }
@@ -117,11 +124,11 @@ void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
     }
     if(checkPermission(dataClient,R_OK) == true)
         return;
-    dataClient.isReading = true;
-    dataClient.fileFd = open(dataClient.Path.c_str(), O_RDONLY);
-    if (dataClient.fileFd == -1)
+    isReading = true;
+    fileFd = open(dataClient.Path.c_str(), O_RDONLY);
+    if (fileFd == -1)
     {
-        close(dataClient.fileFd);
+        close(fileFd);
         throw std::runtime_error("error");
     }
     std::string httpResponse;
@@ -134,15 +141,15 @@ void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
 void GETMETHOD::serveFIle(Data& dataClient)
 {
     char buffer[BUFFER_SIZE];
-    ssize_t byteRead = read (dataClient.fileFd,buffer,BUFFER_SIZE);
+    ssize_t byteRead = read (fileFd,buffer,BUFFER_SIZE);
     if(byteRead == -1)
     {
-        close(dataClient.fileFd);
+        close(fileFd);
         throw std::runtime_error("error");
     }
     if(byteRead == 0)
     {
-        close(dataClient.fileFd);
+        close(fileFd);
         dataClient.readyForClose = true;
         if(send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
             throw std::runtime_error("error send");
@@ -150,7 +157,7 @@ void GETMETHOD::serveFIle(Data& dataClient)
     else
     {
         std::string httpresponse(buffer,byteRead);
-        sendChunk(dataClient.fd,httpresponse,dataClient);  
+        sendChunk(dataClient.fd,httpresponse);  
     }
 }
 
@@ -167,7 +174,7 @@ int GETMETHOD::checkFileDirPermission(Data &dataClient)
     if (S_ISDIR(file.st_mode))
     {
         if(checkPermission(dataClient,X_OK) == true)
-            return 4;;
+            return 4;
         return 2;
     }
     return 3;
@@ -215,14 +222,14 @@ void GETMETHOD::getMethod(Data & dataClient)
 {
     try
     {
-        if(dataClient.modeAutoIndex == true)
+        if(modeAutoIndex == true)
         {
-            if(dataClient.isReading == false)
+            if(isReading == false)
                 openFileAndSendHeader(dataClient);
             else
                 serveFIle(dataClient);
         }
-        else if(dataClient.isReading == false)
+        else if(isReading == false)
             openDirFIle(dataClient);
         else
             serveFIle(dataClient);

@@ -1,5 +1,12 @@
 #include"webserv.hpp"
 
+CGI::CGI()
+{
+    isFork = false;
+    sendHeader = false;
+    isReadingCgi = false;
+}
+
 void CGI::environmentStore(Data &dataClient, std::vector<std::string> &environment)
 {
     std::stringstream wiss;
@@ -67,7 +74,7 @@ void CGI::makeHeader(Data &dataClient,bool eof)
         header.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
         if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
             throw std::runtime_error("error send");
-        dataClient.sendHeader = true;
+        sendHeader = true;
     }
     if(eof == true)
     {
@@ -84,19 +91,19 @@ void CGI::makeHeader(Data &dataClient,bool eof)
 
 void   CGI::SendHeader(Data &dataClient)
 {
-    if(dataClient.isReadingCgi == false)
+    if(isReadingCgi == false)
     {
-        dataClient.fileFdCgi = open(cgiFile.c_str(),O_RDONLY);
-        if (dataClient.fileFdCgi == -1)
+        fileFdCgi = open(cgiFile.c_str(),O_RDONLY);
+        if (fileFdCgi == -1)
             throw std::runtime_error("error");
-        dataClient.isReadingCgi = true;
+        isReadingCgi = true;
         struct stat fileInfo;
         if(stat(cgiFile.c_str(),&fileInfo))
             throw std::runtime_error("error");
         lenghtFile = fileInfo.st_size;
     }
     char buffer[BUFFER_SIZE];
-    ssize_t byteRead = read (dataClient.fileFdCgi,buffer,BUFFER_SIZE );
+    ssize_t byteRead = read (fileFdCgi,buffer,BUFFER_SIZE );
     if(byteRead == 0)
     {
         makeHeader(dataClient,true);
@@ -112,7 +119,7 @@ void CGI::sendBody(Data &dataClient)
 {
     char buffer[BUFFER_SIZE];
     std::string httpResponse;
-    ssize_t byteRead = read (dataClient.fileFdCgi,buffer,BUFFER_SIZE);
+    ssize_t byteRead = read (fileFdCgi,buffer,BUFFER_SIZE);
     if(byteRead == -1)
         throw std::runtime_error("error");
     if(byteRead == 0)
@@ -122,7 +129,7 @@ void CGI::sendBody(Data &dataClient)
             if(send(dataClient.fd, restRead.c_str(), restRead.size(),0) == -1)
                 throw std::runtime_error("error send");
         }
-        close(dataClient.fileFdCgi);
+        close(fileFdCgi);
         dataClient.readyForClose = true;
         unlink(cgiFile.c_str());
     }
@@ -137,7 +144,7 @@ void CGI::sendBody(Data &dataClient)
 
 std::string CGI::getType(Data&dataClient,std::string &type)
 {
-    dataClient.isFork = true;
+    isFork = true;
     std::ostringstream oss;
     oss <<  dataClient.fd;
     cgiFile.append("file").append(oss.str());
@@ -161,11 +168,11 @@ void CGI::executeScript(Data &dataClient,std::string &type)
     }
     env[environment.size()] = NULL;
     std::string interpreter = getType(dataClient,type);
-    dataClient.startTime = getCurrentTime();
-    dataClient.pid = fork();
-    if(dataClient.pid == -1)
+    startTime = getCurrentTime();
+    pid = fork();
+    if(pid == -1)
         throw std::runtime_error("error");
-    if (dataClient.pid == 0)
+    if (pid == 0)
     {
         int fd1 = open(cgiFile.c_str() ,O_WRONLY  | O_CREAT | O_TRUNC,0644);
         if (fd1 == -1)
@@ -190,17 +197,17 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
 {
     try
     {
-        if(dataClient.sendHeader == false)
+        if(sendHeader == false)
         {
             int status;
-            if(dataClient.isFork == false)
+            if(isFork == false)
                 executeScript(dataClient,type);
-            if(waitpid(dataClient.pid,&status,WNOHANG) == 0)
+            if(waitpid(pid,&status,WNOHANG) == 0)
             {
                 size_t n = dataClient.requeste->Server_Requeste.cgi_timeout;
-                if(getCurrentTime() - dataClient.startTime >= n)
+                if(getCurrentTime() - startTime >= n)
                 {
-                    kill(dataClient.pid,SIGTERM);
+                    kill(pid,SIGTERM);
                     dataClient.statusCode =" 504 Gateway Timeout"; 
                     dataClient.code = 504;
                     if(remove(cgiFile.c_str()) == -1)
@@ -217,7 +224,7 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
                 SendHeader(dataClient);
             }
         }
-        else if(dataClient.sendHeader == true)
+        else if(sendHeader == true)
             sendBody(dataClient);
     }
     catch(const std::exception& e)
