@@ -18,7 +18,7 @@ void sendErrorResponse(Data &dataClient)
             if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
             {
                 dataClient.readyForClose = true;
-                std::runtime_error("error");
+                std::runtime_error("error send");
             }
             if(dataClient.code == 204)
             {
@@ -50,17 +50,15 @@ void sendErrorResponse(Data &dataClient)
             std::string htttpresponce(buffer,readByte);
             if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
             {
-                throw std::runtime_error("internal Server Error");
+                throw std::runtime_error("error send");
                 dataClient.readyForClose = true;
             } 
         }
-        /* code */
     }
     catch(const std::exception& e)
     {
         dataClient.readyForClose = true;
-    }
-    
+    } 
 }
 
 bool checkPermission(Data &dataClient,int type)
@@ -72,21 +70,4 @@ bool checkPermission(Data &dataClient,int type)
         return true;
     }
     return false;
-}
-
-
-void postCgi(Data &dataClient,std::string & type)
-{
-    try
-    {
-        dataClient.OBJCGI.fastCGI(dataClient,type);
-    }
-    catch (const std::runtime_error &e)
-    {
-        if(strcmp(e.what() ,"error") == 0)
-        {
-            dataClient.statusCode = " 500 Internal Server Error";
-            dataClient.code = 500;
-        }
-    }
 }

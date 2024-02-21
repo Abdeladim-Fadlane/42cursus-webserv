@@ -109,4 +109,3 @@ double  getCurrentTime(void);
 void    sendErrorResponse(Data &);
 void    multiplexing(ConfigFile &);
 bool    checkPermission(Data &,int );
-void    postCgi(Data &,std::string & );

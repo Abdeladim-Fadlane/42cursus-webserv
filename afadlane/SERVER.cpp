@@ -168,7 +168,7 @@ void multiplexing(ConfigFile &config)
                         if(Clients[events[i].data.fd].data.requeste->post->isCgi == true)
                         {
                             std::string type = Clients[events[i].data.fd].data.requeste->post->cgi_extation;
-                            postCgi(Clients[events[i].data.fd].data,type);
+                            Clients[events[i].data.fd].data.OBJCGI.fastCGI(Clients[events[i].data.fd].data,type);
                         }
                         else
                             Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);

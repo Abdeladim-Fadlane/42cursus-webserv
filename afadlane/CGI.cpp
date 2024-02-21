@@ -66,7 +66,7 @@ void CGI::makeHeader(Data &dataClient,bool eof)
         std::string header = dataClient.requeste->http_v;
         header.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
         if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
-            throw std::runtime_error("error");
+            throw std::runtime_error("error send");
         dataClient.sendHeader = true;
     }
     if(eof == true)
@@ -77,7 +77,7 @@ void CGI::makeHeader(Data &dataClient,bool eof)
         header.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
         header.append(restRead);
         if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
-            throw std::runtime_error("error");
+            throw std::runtime_error("error send");
         dataClient.readyForClose = true;
     }
 }
@@ -92,11 +92,7 @@ void   CGI::SendHeader(Data &dataClient)
         dataClient.isReadingCgi = true;
         struct stat fileInfo;
         if(stat(cgiFile.c_str(),&fileInfo))
-        {
-            dataClient.statusCode = " 500 Internal Server Error";
-            dataClient.code = 500;
-            return;
-        }
+            throw std::runtime_error("error");
         lenghtFile = fileInfo.st_size;
     }
     char buffer[BUFFER_SIZE];
@@ -124,7 +120,7 @@ void CGI::sendBody(Data &dataClient)
         if(!restRead.empty())
         {
             if(send(dataClient.fd, restRead.c_str(), restRead.size(),0) == -1)
-                throw std::runtime_error("error");
+                throw std::runtime_error("error send");
         }
         close(dataClient.fileFdCgi);
         dataClient.readyForClose = true;
@@ -134,7 +130,7 @@ void CGI::sendBody(Data &dataClient)
     {
         restRead.append(buffer,byteRead);
         if(send(dataClient.fd, restRead.c_str(), restRead.size(),0) == -1)
-            throw std::runtime_error("error");
+            throw std::runtime_error("error send");
         restRead.clear();
     }
 }
@@ -208,7 +204,7 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
                     dataClient.statusCode =" 504 Gateway Timeout"; 
                     dataClient.code = 504;
                     if(remove(cgiFile.c_str()) == -1)
-                        throw std::runtime_error("erroror delete");
+                        throw std::runtime_error("error");
                 }
             }
             else
@@ -216,7 +212,7 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
                 if(dataClient.requeste->method == "POST")
                 {
                     if(remove(dataClient.requeste->post->cgi_path.c_str()) == -1)
-                        throw std::runtime_error("error delete");
+                        throw std::runtime_error("error");
                 }
                 SendHeader(dataClient);
             }
@@ -226,7 +222,13 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
     }
     catch(const std::exception& e)
     {
-        std::cerr << e.what() << '\n';
+        if(strcmp(e.what(),"error send") == 0)
+            dataClient.readyForClose = true;
+        else
+        {
+            dataClient.statusCode = " 500 Internal Server Error";
+            dataClient.code = 500;
+        }     
     }
     
 }

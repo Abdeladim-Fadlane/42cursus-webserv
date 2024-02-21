@@ -100,7 +100,7 @@ void GETMETHOD::sendChunk(int clientSocket, std::string &data,Data& dataClient)
     if (send(clientSocket, totalChuncked.c_str(), totalChuncked.size(),0) ==  -1)
     {
         close(dataClient.fileFd);
-        throw std::runtime_error("error");
+        throw std::runtime_error("error send");
     }
 }
 
@@ -128,7 +128,7 @@ void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
     httpResponse = dataClient.requeste->http_v.append(" 200 OK\r\nContent-Type: ");
     httpResponse.append(contentType).append("\r\nTransfer-Encoding: chunked\r\n\r\n");
     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-        throw std::runtime_error("error");
+        throw std::runtime_error("error send");
 }
 
 void GETMETHOD::serveFIle(Data& dataClient)
@@ -145,7 +145,7 @@ void GETMETHOD::serveFIle(Data& dataClient)
         close(dataClient.fileFd);
         dataClient.readyForClose = true;
         if(send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
-            throw std::runtime_error("error");
+            throw std::runtime_error("error send");
     }
     else
     {
@@ -182,7 +182,7 @@ void GETMETHOD::sendListDir(Data & dataClient)
     httpResponse.append(" 200 OK\r\nContent-Type: text/html\r\nContent-Lenght: ");
     httpResponse.append(wiss.str()).append("\r\n\r\n").append(listDirectory);
     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-        throw std::runtime_error("error");
+        throw std::runtime_error("error send");
     listDirectory.clear(); 
     dataClient.readyForClose = true;
 }
@@ -227,14 +227,14 @@ void GETMETHOD::getMethod(Data & dataClient)
         else
             serveFIle(dataClient);
     }
-    catch (const std::runtime_error &e)
+    catch (const std::exception &e)
     {
-        std::cout<<e.what()<<std::endl;
-        // if(strcmp( ,"error") == 0)
-        // {
-        //     dataClient.readyForClose = true;
-        //     // dataClient.statusCode = " 500 Internal Server Error";
-        //     // dataClient.code = 500;
-        // }
+        if(strcmp(e.what() ,"error send") == 0)
+            dataClient.readyForClose = true;
+        else
+        {
+            dataClient.statusCode = " 500 Internal Server Error";
+            dataClient.code = 500;
+        }
     }
 }
