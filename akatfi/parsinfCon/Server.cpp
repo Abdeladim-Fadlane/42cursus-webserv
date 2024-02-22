@@ -44,7 +44,6 @@ Server& Server::operator=(const Server& obj)
     locations = obj.locations;
     close = obj.close;
     port_chose = obj.port_chose;
-    cgi_timeout = obj.cgi_timeout;
     return (*this);
 }
 

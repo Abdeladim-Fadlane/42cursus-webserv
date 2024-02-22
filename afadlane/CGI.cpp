@@ -27,7 +27,9 @@ void CGI::environmentStore(Data &dataClient, std::vector<std::string> &environme
     environment.push_back("SCRIPT_FILENAME="+ SCRIPT_FILENAM); 
     environment.push_back("SERVER_PROTOCOL=" + SERVER_PROTOCOL);
     environment.push_back("SERVER_ADDR=" + SERVER_ADDR);
-    environment.push_back("SERVER_PORT=" + SERVER_PORT); 
+    environment.push_back("SERVER_PORT=" + SERVER_PORT);
+    if (dataClient.requeste->requeste_map.find("Cookie") != dataClient.requeste->requeste_map.end())
+        environment.push_back("HTTP_COOKIE=" + dataClient.requeste->requeste_map.find("Cookie")->second);
 }
 
 std::string CGI::fillMap( std::map<int,std::string> &headerMap,std::string lenght,std::string line)
@@ -47,6 +49,8 @@ std::string CGI::fillMap( std::map<int,std::string> &headerMap,std::string lengh
             headerMap[2] = token.append("\n");
         if(token.find("Location: ") != std::string::npos)
             headerMap[3] = token;
+        if(token.find("Set-Cookie: ") != std::string::npos)
+            headerMap[4] = token;
     }
     std::string header;
     for (size_t i = 0; i < headerMap.size(); i++)
