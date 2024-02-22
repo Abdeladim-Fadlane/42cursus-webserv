@@ -122,6 +122,8 @@ void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
             return ;
         }
     }
+    
+    std::cout<<"------\n";
     if(checkPermission(dataClient,R_OK) == true)
         return;
     isReading = true;
@@ -136,6 +138,7 @@ void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
     httpResponse.append(contentType).append("\r\nTransfer-Encoding: chunked\r\n\r\n");
     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
         throw std::runtime_error("error send");
+    
 }
 
 void GETMETHOD::serveFIle(Data& dataClient)

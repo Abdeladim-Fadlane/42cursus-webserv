@@ -72,7 +72,7 @@ void multiplexing(ConfigFile &config)
         {
             close(socketFD);
             std::cerr<<"Cannot bind to port : "<<config.Servers[i].listen << std::endl ;
-            exit(1);
+            continue;
         }
         if(listen(socketFD,128) == 0)
             std::cout<<"listenning to "<< config.Servers[i].listen <<" [...]" <<std::endl;
@@ -139,7 +139,12 @@ void multiplexing(ConfigFile &config)
                 else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
                 {
                     if(Clients[events[i].data.fd].data.requeste->method == "GET")
+                    {
+                        if(Clients[events[i].data.fd].data.code != 0)
+                            sendErrorResponse(Clients[events[i].data.fd].data);
+                        else
                             Clients[events[i].data.fd].data.OBJGET.getMethod(Clients[events[i].data.fd].data);
+                    }
                     else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
                     {
                         if(Clients[events[i].data.fd].data.isDelete == false)
@@ -158,7 +163,7 @@ void multiplexing(ConfigFile &config)
                     else
                         Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
                     if(Clients[events[i].data.fd].data.code != 0)
-                            sendErrorResponse(Clients[events[i].data.fd].data);
+                        sendErrorResponse(Clients[events[i].data.fd].data);
                     if(Clients[events[i].data.fd].data.readyForClose == true)
                     {
                         delete Clients[events[i].data.fd].data.requeste;

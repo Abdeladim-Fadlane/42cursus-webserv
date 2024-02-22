@@ -135,7 +135,9 @@ void CGI::sendBody(Data &dataClient)
         }
         close(fileFdCgi);
         dataClient.readyForClose = true;
-        unlink(cgiFile.c_str());
+        if(remove(cgiFile.c_str()) == -1)
+                throw std::runtime_error("error");
+            
     }
     else
     {
@@ -149,8 +151,10 @@ void CGI::sendBody(Data &dataClient)
 std::string CGI::getType(Data&dataClient,std::string &type)
 {
     isFork = true;
+    struct timeval currentTime;
+    gettimeofday(&currentTime,NULL);
     std::ostringstream oss;
-    oss <<  dataClient.fd;
+    oss << currentTime.tv_sec <<"_"<<currentTime.tv_usec;
     cgiFile.append("file").append(oss.str());
     if(type == ".py" )
         return dataClient.requeste->Location_Server.cgi[".py"];
@@ -211,18 +215,15 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
                 size_t n = dataClient.requeste->Server_Requeste.cgi_timeout;
                 if(getCurrentTime() - startTime >= n)
                 {
-                    
                     kill(pid,SIGTERM);
                     dataClient.statusCode =" 504 Gateway Timeout"; 
                     dataClient.code = 504;
                     if(std::remove(cgiFile.c_str()) == -1)
                         throw std::runtime_error("error");
-                    std::cout<<"--------------------------\n";
                 }
             }
             else
             {
-                
                 if(dataClient.requeste->method == "POST")
                 {
                     if(std::remove(dataClient.requeste->post->cgi_path.c_str()) == -1)
@@ -237,9 +238,13 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
     catch(const std::exception& e)
     {
         if(strcmp(e.what(),"error send") == 0)
+        {
+            std::cout<<"here1\n";
             dataClient.readyForClose = true;
+        }
         else
         {
+            std::cout<<"here2\n";
             dataClient.statusCode = " 500 Internal Server Error";
             dataClient.code = 500;
         }     
