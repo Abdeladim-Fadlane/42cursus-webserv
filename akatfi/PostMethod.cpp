@@ -16,6 +16,7 @@ PostMethod::PostMethod(Requeste& r) : req(r)
 {
     first_time = true;
     isCgi = false;
+    // std::cout << isCgi << "   hadi lawla" << std::endl;
     buffer_add = r.getBody();
     size = 0;
     content_file = 0;
@@ -35,8 +36,6 @@ PostMethod::PostMethod(Requeste& r) : req(r)
     {
         std::cout << "running the cgi ... " << std::endl;
         cgi_file.open("/tmp/index_cgi", std::fstream::out);
-        if (cgi_file.is_open() == false)
-            std::cout << "can't opening file of cgi" << std::endl;
         cgi_path = "/tmp/index_cgi";
         ft_prepar_cgi();
     }
@@ -52,7 +51,7 @@ void    PostMethod::ft_prepar_cgi()
     if (stat(req.Location_Server.root.c_str(), &stat_buffer) == 0 && S_ISDIR(stat_buffer.st_mode))
     {
         for (std::vector<std::string>::iterator it = req.Location_Server.indexs.begin(); it != req.Location_Server.indexs.end(); it++)
-            if (it->find(".php") != std::string::npos || it->find(".py")  != std::string::npos)
+            if (it->find(".php") != std::string::npos || it->find(".py")  != std::string::npos || it->find(".pl")  != std::string::npos)
                 scripts.push_back(*it);
         dir = opendir(req.Location_Server.root.c_str());
         while ((dirent = readdir(dir)) != NULL)
@@ -79,6 +78,7 @@ void    PostMethod::ft_prepar_cgi()
         if (access(req.Location_Server.root.c_str(), X_OK) == -1)
         {
             req.Location_Server.cgi_allowed = "OFF";
+            // std::cout << "path is dienid : " << req.Location_Server.root << "::  " << isCgi << std::endl;
             return ;
         }
         isCgi = true;
@@ -206,7 +206,7 @@ int hexCharToDecimal(char hexChar) {
         return std::tolower(hexChar) - 'a' + 10;
 }
 
-int hexStringToDecimal(const std::string& hexString) {
+int hexStringToDecimal(const std::string hexString) {
     int decimalValue = 0;
 
     for (size_t i = 0; i < hexString.length(); ++i) 
@@ -217,12 +217,14 @@ int hexStringToDecimal(const std::string& hexString) {
 void PostMethod::chunked(std::string &buffer, bool& isdone)
 {
     buffer = buffer_add + buffer;
+    buffer_add = "";
+  
     if (!size)
     {
         if (buffer.find("\r\n") != std::string::npos)
         {
             size = hexStringToDecimal(buffer.substr(0, buffer.find("\r\n")));
-            if (!size)
+            if (size == 0)
             {
                 Postfile.close();
                 cgi_file.close();
@@ -245,7 +247,6 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
             cgi_file << buffer;
         size -= buffer.length();
         content_file += buffer.length();
-        buffer_add = "";
     }
     else if (size)
     {
@@ -256,7 +257,6 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
         content_file += buffer.substr(0, size).length();
         buffer = buffer.substr(buffer.find("\r\n") + 2);
         size = 0;
-        buffer_add = "";
         chunked(buffer, isdone);
     }
 }
@@ -276,7 +276,7 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
         req.headerResponse = "HTTP/1.1 408 Request Timeout\r\nContent-Type: text/html\r\n\r\n";
         return ;
     }
-    if (!req.Location_Server.uploadfile.compare("OFF") && !req.Location_Server.cgi_allowed.compare("OFF"))
+    if (req.Location_Server.uploadfile == "OFF" && req.Location_Server.cgi_allowed == "OFF")
     {
         req.headerResponse = "HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\n\r\n";
         req.status_client = 403;
@@ -301,13 +301,13 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
             return ;
         }
         buffer.append(buffer_read, x);
-        if (buffer.length() == 0)
-        {
-            Postfile.close();
-            cgi_file.close();
-            isdone = true;
-            return ;
-        }
+    }
+    if ((buffer + buffer_add).length() == 0)
+    {
+        Postfile.close();
+        cgi_file.close();
+        isdone = true;
+        return ;
     }
     if (Transfer_Encoding == "chunked")
     {

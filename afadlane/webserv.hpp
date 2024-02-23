@@ -26,38 +26,6 @@
 #define  MAX_EVENTS 1024
 #define  BUFFER_SIZE 1024
 struct Data;
-class GETMETHOD
-{
-    private :
-        std::string listDirectory;
-    public:
-        void getMethod(Data &);
-        void sendChunk(int , std::string &,Data& );
-        void   openFileAndSendHeader(Data& );
-        int checkFileDirPermission(Data &);
-        void   openDirFIle(Data & );
-        void serveFIle(Data& );
-        void sendListDir(Data & );
-        int    listingDirectory(Data &);
-        std::string   getContentType(Data &);
-};
-
-class CGI
-{
-    private:
-        std::string cgiFile;
-        ssize_t lenghtFile;
-        std::string restRead;
-    public:
-        void sendBody(Data &);
-        void   SendHeader(Data &);
-        void makeHeader(Data &,bool );
-        void fastCGI(Data &,std::string &);
-        void executeScript(Data &,std::string &);
-        std::string getType(Data&,std::string &);
-        void environmentStore(Data &, std::vector<std::string> &);
-        std::string fillMap(std::map<int,std::string> &,std::string ,std::string );
-};
 
 class DELETE
 {
@@ -65,40 +33,75 @@ class DELETE
         struct stat statInfo;
     public:
         void  IsDir(Data &);
-        void  deleteMethod(Data &);
         void  IsFIle(Data &);
+        void  deleteMethod(Data &);
+        void  checkErrnoStat(Data &);
+};
+
+class GETMETHOD
+{
+    private :
+        int             fileFd;
+        bool            isReading;
+        bool            Alreadyopen;
+        bool            modeAutoIndex;
+        std::string     listDirectory;
+    public:
+        GETMETHOD();
+        std::string     getContentType(Data &);
+        void            getMethod(Data &);
+        void            sendChunk(int , std::string &);
+        void            openFileAndSendHeader(Data& );
+        int             checkFileDirPermission(Data &);
+        void            openDirFIle(Data & );
+        void            serveFIle(Data& );
+        void            sendListDir(Data & );
+        int             listingDirectory(Data &);
+        bool            getAutoFile(Data & ,char * );
+};
+
+class CGI
+{
+    private:
+        int             fileFdCgi;
+        bool            isFork;
+        ssize_t         lenghtFile;
+        std::string     restRead;
+        double          startTime;
+        bool            isReadingCgi;
+        bool            sendHeader;
+    public:
+        std::string     cgiFile;
+        pid_t           pid;
+        CGI();
+        void            sendBody(Data &);
+        void            SendHeader(Data &);
+        void            makeHeader(Data &,bool );
+        void            fastCGI(Data &,std::string &);
+        void            executeScript(Data &,std::string &);
+        std::string     getType(Data&,std::string &);
+        void            environmentStore(Data &, std::vector<std::string> &);
+        std::string     fillMap(std::map<int,std::string>&,std::string,std::string);
 };
 
 struct Data
 {  
     int fd ;
-    bool isDelete ;
-    int fileFd;
-    int fileFdCgi;
+    long code;
+    CGI OBJCGI;
     int errorFd;
     bool  isDone;
-    bool  isFork;
-    pid_t pid;
-    long code;
-    bool sendHeader;
-    double startTime;
-    bool autoIndex;
-    bool isReading;
-    bool isReadingCgi;
-    bool Alreadyopen;
-    bool Alreadparce;
-    std::string Path;
-    bool modeAutoIndex;
-    bool readyForClose;
-    Requeste *requeste ;
     DELETE OBJDEL;
+    bool isDelete ;
+    bool autoIndex;
+    std::string Path;
+    bool Alreadparce;
     GETMETHOD OBJGET;
-    CGI OBJCGI;
-    bool AlreadyRequestHeader;
-    bool isExeceted;
+    Requeste *requeste ;
+    bool readyForClose;
     std::string statusCode;
+    bool AlreadyRequestHeader;
 };
-
 
 struct Webserv
 {
@@ -109,4 +112,3 @@ double  getCurrentTime(void);
 void    sendErrorResponse(Data &);
 void    multiplexing(ConfigFile &);
 bool    checkPermission(Data &,int );
-void    postCgi(Data &,std::string & );

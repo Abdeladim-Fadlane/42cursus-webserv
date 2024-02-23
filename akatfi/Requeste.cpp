@@ -114,7 +114,9 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
             post->PostingFileToServer(isdone, false);
         }
         else if (isdone == false)
+        {
             isdone = true;
+        }
     }
     else if (head.length() == 0 && flag == false)
     {
@@ -138,13 +140,10 @@ std::string delete_slash_path(std::string& path, bool& slash)
     return ( "/" + path);
 }
 
-
-
 void Requeste::get_infoConfig(bool& isdone)
 {
     struct stat statbuf;
     bool slash = false;
-    bool flag = false;
     size_t length;
     std::stringstream ss;
 
@@ -171,13 +170,12 @@ void Requeste::get_infoConfig(bool& isdone)
                     + ss.str() + path.append("/") + "\r\n\r\n";
                 ss.str("");
             }
-            flag = true;
             if (Server_Requeste.locations[i].location_name == "/")
                 continue;
             else
-                break ;
+                break;
         }
-        else if (path == "/" && Server_Requeste.locations.size() - 1 == i && flag == false)
+        else if (path == "/" && Server_Requeste.locations.size() - 1 == i && chose_location == false)
         {
             path = Server_Requeste.locations[0].location_name;
             Location_Server = Server_Requeste.locations[0];
@@ -199,7 +197,6 @@ void Requeste::get_infoConfig(bool& isdone)
         Location_Server.upload_location = Location_Server.root;
     if (Location_Server.redirection.empty() == false)
     {
-        // std::cout << "redirction with success !" << std::endl;
         status_client = 0;
         isdone = true;
         method =  "";
@@ -210,11 +207,22 @@ void Requeste::get_infoConfig(bool& isdone)
     }
 }
 
+bool check_string(const std::string&  str1 , std::string  str2)
+{
+    for (size_t i = 0; i <= str1.length() ; i++)
+    {
+        if (str2.find(str1[i]) != std::string::npos)
+            return true;
+    }
+    return (false);
+}
+
 void Requeste::MakeMapOfHeader(bool& isdone)
 {
     std::string     new_req;
     std::string     line;
     std::vector<std::string> line_request;
+    std::vector<Server> s;
     
     body = head.substr(head.find("\r\n\r\n") + 4);
     head = head.substr(0, head.find("\r\n\r\n"));
@@ -235,7 +243,6 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         isdone = true;
         method = "";
         headerResponse = "HTTP/1.1 505 HTTP Version Not Supported\r\nContent-Type: text/html\r\n\r\n";
-
     }
     if (path.length() > 2048)
     {
@@ -249,6 +256,15 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         query_str = path.substr(path.rfind("?") + 1);
         path = path.substr(0, path.rfind("?"));
     }
+    if (check_string(path, "[]{}|\\”%~#<>"))
+    {
+        // std::cout << "done" << std::endl;
+        status_client = 400;
+        isdone = true;
+        method = "";
+        headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+        return ;
+    }
     if (requeste_map.find("Content-Type") != requeste_map.end())
         content_type = requeste_map.find("Content-Type")->second;
     if (requeste_map.find("Content-Length") != requeste_map.end())
@@ -260,21 +276,28 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         {
             port = atoi(host.substr(host.find(":") + 1).c_str());
             host = host.substr(0, host.find(":"));
-            for (size_t i = 0; i < config.Servers.size(); i++)
-                if (config.Servers[i].host == host && config.Servers[i].listen == port)
+            // std::cout << port<<"::"<< host << std::endl;
+            for (size_t j = 0; j < config.Servers.size(); j++)
+                if (config.Servers[j].listen == port)
+                    s.push_back(config.Servers[j]);
+            for (size_t i = 0; i < s.size(); i++)
+            {
+                if (s[i].host == host)
                 {
-                    Server_Requeste = config.Servers[i];
+                    Server_Requeste = s[i];
                     break ;
                 }
-        }
-        else
-        {
-            for (size_t i = 0; i < config.Servers.size(); i++)
-                if (host == config.Servers[i].server_name)
+                if (s[i].server_name == host)
                 {
-                    Server_Requeste = config.Servers[i];
-                    return ;
+                    Server_Requeste = s[i];
+                    break ;
                 }
+                if (i + 1 == s.size() && host.empty() == false)
+                {
+                    Server_Requeste = s[0];
+                    break ;
+                }
+            }
         }
     }
     if (host.empty() || !port)

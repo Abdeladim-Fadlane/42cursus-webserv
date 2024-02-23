@@ -5,16 +5,8 @@ void    inisialData(std::map<int,struct Webserv> &Clients ,ConfigFile &config,in
     Webserv  Data;
     Data.data.errorFd               =    -2;
     Data.data.code                  =     0;
-    Data.data.Alreadyopen           = false;
-    Data.data.Alreadyopen           = false;
-    Data.data.isFork                = false;
-    Data.data.isExeceted            = false;
-    Data.data.isReading             = false;
-    Data.data.isReadingCgi          = false;
     Data.data.readyForClose         = false;
     Data.data.Alreadparce           = false;
-    Data.data.modeAutoIndex         = false;
-    Data.data.sendHeader            = false;
     Data.data.AlreadyRequestHeader  = false;
     Data.data.isDone                = false;
     Data.data.autoIndex             = false;
@@ -56,6 +48,7 @@ void closeServers(std::vector<int> & Servers)
     }
 
 }
+#include <fcntl.h>
 void multiplexing(ConfigFile &config)
 {
     std::vector<int> Servers;
@@ -74,6 +67,7 @@ void multiplexing(ConfigFile &config)
         int reuse = 1;
         if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
         {
+            close(socketFD);
             throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
         }
         if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
@@ -104,18 +98,20 @@ void multiplexing(ConfigFile &config)
     while (true)
     {
         int clientSocketFD;
-        int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,500);
+        int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,-1);
         for (int i = 0; i < numEvent; ++i)
         {
             if(isServer(Servers,events[i].data.fd) == true)
-            { 
-                clientSocketFD = accept(events[i].data.fd,NULL,NULL);
+            {
+                struct sockaddr_in address;
+                size_t addrlen = sizeof(address);
+                clientSocketFD = accept(events[i].data.fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
                 if(clientSocketFD == -1)
                 {
                     std::cerr << "Failed to accept connection ." << std::endl;
                     continue;
                 }
-                event.events = EPOLLIN | EPOLLOUT | EPOLLHUP ;
+                event.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLERR | EPOLLRDHUP ;
                 event.data.fd = clientSocketFD;
                 if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
                 {
@@ -127,12 +123,16 @@ void multiplexing(ConfigFile &config)
             } 
             else
             {
-                if(events[i].events & EPOLLHUP)
+                if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLERR || events[i].events & EPOLLERR)
                 {
+                    if(std::remove(Clients[events[i].data.fd].data.OBJCGI.cgiFile.c_str()) == -1)
+                        throw std::runtime_error("error1"); 
+                    kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGTERM);
+                    if(epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL) == -1)
+                        perror("");
+                    close(events[i].data.fd);
                     delete Clients[events[i].data.fd].data.requeste;
                     Clients.erase(events[i].data.fd);
-                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    close(events[i].data.fd);
                 }
                 else if(events[i].events & EPOLLIN && Clients[events[i].data.fd].data.isDone == false)
                 {
@@ -146,42 +146,33 @@ void multiplexing(ConfigFile &config)
                 }
                 else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
                 {
-                    if(Clients[events[i].data.fd].data.requeste->method == "GET")
+                    if(Clients[events[i].data.fd].data.code == 0)
                     {
-                        if(Clients[events[i].data.fd].data.code != 0)
-                            sendErrorResponse(Clients[events[i].data.fd].data);
-                        else
+                        if(Clients[events[i].data.fd].data.requeste->method == "GET" )
                             Clients[events[i].data.fd].data.OBJGET.getMethod(Clients[events[i].data.fd].data);
-                    }
-                    else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
-                    {
-                        if(Clients[events[i].data.fd].data.code != 0)
-                            sendErrorResponse(Clients[events[i].data.fd].data);
-                        else
+                        else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
+                            Clients[events[i].data.fd].data.OBJDEL.deleteMethod(Clients[events[i].data.fd].data); 
+                        else if(Clients[events[i].data.fd].data.requeste->method == "POST" )
                         {
-                            if(Clients[events[i].data.fd].data.isDelete == false)
-                                Clients[events[i].data.fd].data.OBJDEL.deleteMethod(Clients[events[i].data.fd].data);
-                        }   
-                    }
-                    else if(Clients[events[i].data.fd].data.requeste->method == "POST" )
-                    {
-                        if(Clients[events[i].data.fd].data.requeste->post->isCgi == true)
-                        {
-                            std::string type = Clients[events[i].data.fd].data.requeste->post->cgi_extation;
-                            postCgi(Clients[events[i].data.fd].data,type);
+                            if(Clients[events[i].data.fd].data.requeste->post->isCgi == true)
+                            {
+                                std::string type = Clients[events[i].data.fd].data.requeste->post->cgi_extation;
+                                Clients[events[i].data.fd].data.OBJCGI.fastCGI(Clients[events[i].data.fd].data,type);
+                            }
+                            else
+                                Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
                         }
                         else
                             Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
                     }
-                    else
-                        Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
-
+                    else if(Clients[events[i].data.fd].data.code != 0)
+                        sendErrorResponse(Clients[events[i].data.fd].data);
                     if(Clients[events[i].data.fd].data.readyForClose == true)
                     {
+                        close(events[i].data.fd);
+                        epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         delete Clients[events[i].data.fd].data.requeste;
                         Clients.erase(events[i].data.fd);
-                        epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                        close(events[i].data.fd);
                     }
                 }
             }

@@ -2,32 +2,25 @@
 
 void DELETE::IsFIle(Data &dataClient)
 {
-    if (unlink(dataClient.Path.c_str()) == 0) 
+    if (std::remove(dataClient.Path.c_str()) == 0) 
     {
         dataClient.statusCode = " 204 No Content";
         dataClient.code = 204;
-    } else {
-        dataClient.statusCode = " 500 Internal Server Error";
+    } 
+    else
+    {
+        dataClient.statusCode = "500 Internal Server Error";
         dataClient.code = 500;
     }
-    return;
 }
 
 void DELETE::IsDir(Data &dataClient)
 {
-    if(dataClient.Path[dataClient.Path.size() - 1]  != '/')
-    {
-        dataClient.statusCode = " 409 Conflict";
-        dataClient.code = 409;
-        return;
-    }
-    if (checkPermission(dataClient, W_OK) || checkPermission(dataClient, X_OK))
-        return;
     DIR *dir = opendir(dataClient.Path.c_str());
     if (!dir) 
     {
-        dataClient.statusCode = " 500 Internal Server Error";
-        dataClient.code = 500;
+        dataClient.statusCode = " 403 Forbidden";
+        dataClient.code = 403;
         return;
     }
     struct dirent * it;
@@ -46,7 +39,7 @@ void DELETE::IsDir(Data &dataClient)
                 } 
                 else
                 {
-                    if (unlink(itPath.c_str()) != 0)
+                    if (std::remove(itPath.c_str()) != 0)
                     {
                         dataClient.statusCode = " 500 Internal Server Error";
                         dataClient.code = 500;
@@ -72,6 +65,30 @@ void DELETE::IsDir(Data &dataClient)
     }
     else
     {
+        dataClient.statusCode = " 403 Forbidden";
+        dataClient.code = 403;
+    }
+}
+void  DELETE::checkErrnoStat(Data &dataClient)
+{
+    if (errno == EACCES)
+    {
+        dataClient.statusCode = " 403 Forbidden";
+        dataClient.code = 403;
+    }
+    else if(errno == ENOENT)
+    {
+        dataClient.statusCode = " 404 NOT FOUND";
+        dataClient.code = 404;
+        
+    }
+    else if(errno == ENOTDIR)
+    {
+        dataClient.statusCode = " 409 Conflict";
+        dataClient.code = 409;
+    }
+    else 
+    {
         dataClient.statusCode = " 500 Internal Server Error";
         dataClient.code = 500;
     }
@@ -79,20 +96,21 @@ void DELETE::IsDir(Data &dataClient)
 
 void    DELETE::deleteMethod(Data &dataClient)
 {
-    if (access(dataClient.Path.c_str(), F_OK) != 0) 
-    {
-        dataClient.statusCode = " 404 NOT FOUND";
-        dataClient.code = 404;
-        return;
-    }
     if (stat(dataClient.Path.c_str(), &statInfo) != 0)
     {
-        dataClient.statusCode = " 500 Internal Server Error";
-        dataClient.code = 500;
+        checkErrnoStat(dataClient);
         return;
     }
-    if (S_ISDIR(statInfo.st_mode)) 
-        IsDir(dataClient);
+    if (S_ISDIR(statInfo.st_mode))
+    {
+        if(dataClient.Path[dataClient.Path.length() - 1] != '/')
+        {
+            dataClient.statusCode = " 409 Conflict";
+            dataClient.code = 409;
+        }
+        else
+            IsDir(dataClient);
+    } 
     else if (S_ISREG(statInfo.st_mode)) 
         IsFIle(dataClient);
     dataClient.isDelete = true;

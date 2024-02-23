@@ -1,5 +1,12 @@
 #include"webserv.hpp"
 
+CGI::CGI()
+{
+    isFork = false;
+    sendHeader = false;
+    isReadingCgi = false;
+}
+
 void CGI::environmentStore(Data &dataClient, std::vector<std::string> &environment)
 {
     std::stringstream wiss;
@@ -70,8 +77,8 @@ void CGI::makeHeader(Data &dataClient,bool eof)
         std::string header = dataClient.requeste->http_v;
         header.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
         if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
-            throw std::runtime_error("error");
-        dataClient.sendHeader = true;
+            throw std::runtime_error("error send");
+        sendHeader = true;
     }
     if(eof == true)
     {
@@ -81,30 +88,26 @@ void CGI::makeHeader(Data &dataClient,bool eof)
         header.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
         header.append(restRead);
         if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
-            throw std::runtime_error("error");
+            throw std::runtime_error("error send");
         dataClient.readyForClose = true;
     }
 }
 
 void   CGI::SendHeader(Data &dataClient)
 {
-    if(dataClient.isReadingCgi == false)
+    if(isReadingCgi == false)
     {
-        dataClient.fileFdCgi = open(cgiFile.c_str(),O_RDONLY);
-        if (dataClient.fileFdCgi == -1)
+        fileFdCgi = open(cgiFile.c_str(),O_RDONLY);
+        if (fileFdCgi == -1)
             throw std::runtime_error("error");
-        dataClient.isReadingCgi = true;
+        isReadingCgi = true;
         struct stat fileInfo;
         if(stat(cgiFile.c_str(),&fileInfo))
-        {
-            dataClient.statusCode = " 500 Internal Server Error";
-            dataClient.code = 500;
-            return;
-        }
+            throw std::runtime_error("error");
         lenghtFile = fileInfo.st_size;
     }
     char buffer[BUFFER_SIZE];
-    ssize_t byteRead = read (dataClient.fileFdCgi,buffer,BUFFER_SIZE );
+    ssize_t byteRead = read (fileFdCgi,buffer,BUFFER_SIZE );
     if(byteRead == 0)
     {
         makeHeader(dataClient,true);
@@ -120,7 +123,7 @@ void CGI::sendBody(Data &dataClient)
 {
     char buffer[BUFFER_SIZE];
     std::string httpResponse;
-    ssize_t byteRead = read (dataClient.fileFdCgi,buffer,BUFFER_SIZE);
+    ssize_t byteRead = read (fileFdCgi,buffer,BUFFER_SIZE);
     if(byteRead == -1)
         throw std::runtime_error("error");
     if(byteRead == 0)
@@ -128,26 +131,30 @@ void CGI::sendBody(Data &dataClient)
         if(!restRead.empty())
         {
             if(send(dataClient.fd, restRead.c_str(), restRead.size(),0) == -1)
-                throw std::runtime_error("error");
+                throw std::runtime_error("error send");
         }
-        close(dataClient.fileFdCgi);
+        close(fileFdCgi);
         dataClient.readyForClose = true;
-        unlink(cgiFile.c_str());
+        if(remove(cgiFile.c_str()) == -1)
+                throw std::runtime_error("error");
+            
     }
     else
     {
         restRead.append(buffer,byteRead);
         if(send(dataClient.fd, restRead.c_str(), restRead.size(),0) == -1)
-            throw std::runtime_error("error");
+            throw std::runtime_error("error send");
         restRead.clear();
     }
 }
 
 std::string CGI::getType(Data&dataClient,std::string &type)
 {
-    dataClient.isFork = true;
+    isFork = true;
+    struct timeval currentTime;
+    gettimeofday(&currentTime,NULL);
     std::ostringstream oss;
-    oss <<  dataClient.fd;
+    oss << currentTime.tv_sec <<"_"<<currentTime.tv_usec;
     cgiFile.append("file").append(oss.str());
     if(type == ".py" )
         return dataClient.requeste->Location_Server.cgi[".py"];
@@ -169,11 +176,11 @@ void CGI::executeScript(Data &dataClient,std::string &type)
     }
     env[environment.size()] = NULL;
     std::string interpreter = getType(dataClient,type);
-    dataClient.startTime = getCurrentTime();
-    dataClient.pid = fork();
-    if(dataClient.pid == -1)
+    startTime = getCurrentTime();
+    pid = fork();
+    if(pid == -1)
         throw std::runtime_error("error");
-    if (dataClient.pid == 0)
+    if (pid == 0)
     {
         int fd1 = open(cgiFile.c_str() ,O_WRONLY  | O_CREAT | O_TRUNC,0644);
         if (fd1 == -1)
@@ -198,37 +205,45 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
 {
     try
     {
-        if(dataClient.sendHeader == false)
+        if(sendHeader == false)
         {
             int status;
-            if(dataClient.isFork == false)
+            if(isFork == false)
                 executeScript(dataClient,type);
-            if(waitpid(dataClient.pid,&status,WNOHANG) == 0)
+            if(waitpid(pid,&status,WNOHANG) == 0)
             {
                 size_t n = dataClient.requeste->Server_Requeste.cgi_timeout;
-                if(getCurrentTime() - dataClient.startTime >= n)
+                if(getCurrentTime() - startTime >= n)
                 {
-                    if(kill(dataClient.pid,SIGTERM) == -1)
-                        throw std::runtime_error("kill error");
+                    kill(pid,SIGTERM);
                     dataClient.statusCode =" 504 Gateway Timeout"; 
                     dataClient.code = 504;
-                    if(unlink(cgiFile.c_str()) == -1)
-                        throw std::runtime_error("erroror unlink");
+                    if(std::remove(cgiFile.c_str()) == -1)
+                        throw std::runtime_error("error1"); 
                 }
             }
             else
             {
                 if(dataClient.requeste->method == "POST")
-                    unlink(dataClient.requeste->post->cgi_path.c_str());
+                {
+                    if(std::remove(dataClient.requeste->post->cgi_path.c_str()) == -1)
+                        throw std::runtime_error("error");
+                }
                 SendHeader(dataClient);
             }
         }
-        else if(dataClient.sendHeader == true)
+        else if(sendHeader == true)
             sendBody(dataClient);
     }
     catch(const std::exception& e)
     {
-        std::cerr << e.what() << '\n';
+        if(strcmp(e.what(),"error send") == 0)
+            dataClient.readyForClose = true;
+        else
+        {
+            dataClient.statusCode = " 500 Internal Server Error";
+            dataClient.code = 500;
+        }     
     }
     
 }
