@@ -36,7 +36,7 @@ void sendErrorResponse(Data &dataClient)
         }
         else
         {
-            ssize_t readByte = read(dataClient.errorFd,buffer,BUFFER_SIZE - 1);
+            ssize_t readByte = read(dataClient.errorFd,buffer,BUFFER_SIZE);
             if(readByte == 0)
             {
                 close(dataClient.errorFd);

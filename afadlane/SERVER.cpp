@@ -96,7 +96,7 @@ void multiplexing(ConfigFile &config)
     while (true)
     {
         int clientSocketFD;
-        int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,500);
+        int numEvent = epoll_wait(epollFD,events,MAX_EVENTS,-1);
         for (int i = 0; i < numEvent; ++i)
         {
             if(isServer(Servers,events[i].data.fd) == true)
@@ -107,7 +107,7 @@ void multiplexing(ConfigFile &config)
                     std::cerr << "Failed to accept connection ." << std::endl;
                     continue;
                 }
-                event.events = EPOLLIN | EPOLLOUT | EPOLLHUP ;
+                event.events = EPOLLIN | EPOLLOUT | EPOLLHUP |EPOLLERR;
                 event.data.fd = clientSocketFD;
                 if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
                 {
@@ -126,6 +126,13 @@ void multiplexing(ConfigFile &config)
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
                 }
+                else if(events[i].events & EPOLLERR)
+                {
+                    delete Clients[events[i].data.fd].data.requeste;
+                    Clients.erase(events[i].data.fd);
+                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                    close(events[i].data.fd);
+                }
                 else if(events[i].events & EPOLLIN && Clients[events[i].data.fd].data.isDone == false)
                 {
                     if(Clients[events[i].data.fd].data.AlreadyRequestHeader == false)
@@ -138,31 +145,26 @@ void multiplexing(ConfigFile &config)
                 }
                 else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
                 {
-                    if(Clients[events[i].data.fd].data.requeste->method == "GET")
+                    if(Clients[events[i].data.fd].data.code == 0)
                     {
-                        if(Clients[events[i].data.fd].data.code != 0)
-                            sendErrorResponse(Clients[events[i].data.fd].data);
-                        else
+                        if(Clients[events[i].data.fd].data.requeste->method == "GET" )
                             Clients[events[i].data.fd].data.OBJGET.getMethod(Clients[events[i].data.fd].data);
-                    }
-                    else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
-                    {
-                        if(Clients[events[i].data.fd].data.isDelete == false)
-                                Clients[events[i].data.fd].data.OBJDEL.deleteMethod(Clients[events[i].data.fd].data); 
-                    }
-                    else if(Clients[events[i].data.fd].data.requeste->method == "POST" )
-                    {
-                        if(Clients[events[i].data.fd].data.requeste->post->isCgi == true)
+                        else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
+                            Clients[events[i].data.fd].data.OBJDEL.deleteMethod(Clients[events[i].data.fd].data); 
+                        else if(Clients[events[i].data.fd].data.requeste->method == "POST" )
                         {
-                            std::string type = Clients[events[i].data.fd].data.requeste->post->cgi_extation;
-                            Clients[events[i].data.fd].data.OBJCGI.fastCGI(Clients[events[i].data.fd].data,type);
+                            if(Clients[events[i].data.fd].data.requeste->post->isCgi == true)
+                            {
+                                std::string type = Clients[events[i].data.fd].data.requeste->post->cgi_extation;
+                                Clients[events[i].data.fd].data.OBJCGI.fastCGI(Clients[events[i].data.fd].data,type);
+                            }
+                            else
+                                Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
                         }
                         else
                             Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
                     }
-                    else
-                        Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
-                    if(Clients[events[i].data.fd].data.code != 0)
+                    else if(Clients[events[i].data.fd].data.code != 0)
                         sendErrorResponse(Clients[events[i].data.fd].data);
                     if(Clients[events[i].data.fd].data.readyForClose == true)
                     {
