@@ -129,9 +129,7 @@ void multiplexing(ConfigFile &config)
                         throw std::runtime_error("error1"); 
                     kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGTERM);
                     if(epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL) == -1)
-                    {
                         perror("");
-                    }
                     close(events[i].data.fd);
                     delete Clients[events[i].data.fd].data.requeste;
                     Clients.erase(events[i].data.fd);

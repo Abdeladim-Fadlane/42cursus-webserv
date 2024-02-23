@@ -237,7 +237,6 @@ void GETMETHOD::getMethod(Data & dataClient)
     }
     catch (const std::exception &e)
     {
-        std::cout<<e.what()<<"\n";
         if(strcmp(e.what() ,"error send") == 0)
             dataClient.readyForClose = true;
         else
