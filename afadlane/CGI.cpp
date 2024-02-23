@@ -219,8 +219,7 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
                     dataClient.statusCode =" 504 Gateway Timeout"; 
                     dataClient.code = 504;
                     if(std::remove(cgiFile.c_str()) == -1)
-                        throw std::runtime_error("error1");
-                    
+                        throw std::runtime_error("error1"); 
                 }
             }
             else

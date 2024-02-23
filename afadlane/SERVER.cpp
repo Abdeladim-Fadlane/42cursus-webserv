@@ -48,6 +48,7 @@ void closeServers(std::vector<int> & Servers)
     }
 
 }
+#include <fcntl.h>
 void multiplexing(ConfigFile &config)
 {
     std::vector<int> Servers;
@@ -66,6 +67,7 @@ void multiplexing(ConfigFile &config)
         int reuse = 1;
         if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
         {
+            close(socketFD);
             throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
         }
         if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
@@ -100,14 +102,16 @@ void multiplexing(ConfigFile &config)
         for (int i = 0; i < numEvent; ++i)
         {
             if(isServer(Servers,events[i].data.fd) == true)
-            { 
-                clientSocketFD = accept(events[i].data.fd,NULL,NULL);
+            {
+                struct sockaddr_in address;
+                size_t addrlen = sizeof(address);
+                clientSocketFD = accept(events[i].data.fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
                 if(clientSocketFD == -1)
                 {
                     std::cerr << "Failed to accept connection ." << std::endl;
                     continue;
                 }
-                event.events = EPOLLIN | EPOLLOUT | EPOLLHUP |EPOLLERR;
+                event.events = EPOLLIN | EPOLLOUT | EPOLLHUP | EPOLLERR | EPOLLRDHUP ;
                 event.data.fd = clientSocketFD;
                 if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
                 {
@@ -119,19 +123,18 @@ void multiplexing(ConfigFile &config)
             } 
             else
             {
-                if(events[i].events & EPOLLHUP)
+                if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLERR || events[i].events & EPOLLERR)
                 {
+                    if(std::remove(Clients[events[i].data.fd].data.OBJCGI.cgiFile.c_str()) == -1)
+                        throw std::runtime_error("error1"); 
+                    kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGTERM);
+                    if(epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL) == -1)
+                    {
+                        perror("");
+                    }
+                    close(events[i].data.fd);
                     delete Clients[events[i].data.fd].data.requeste;
                     Clients.erase(events[i].data.fd);
-                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    close(events[i].data.fd);
-                }
-                else if(events[i].events & EPOLLERR)
-                {
-                    delete Clients[events[i].data.fd].data.requeste;
-                    Clients.erase(events[i].data.fd);
-                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    close(events[i].data.fd);
                 }
                 else if(events[i].events & EPOLLIN && Clients[events[i].data.fd].data.isDone == false)
                 {
@@ -168,10 +171,10 @@ void multiplexing(ConfigFile &config)
                         sendErrorResponse(Clients[events[i].data.fd].data);
                     if(Clients[events[i].data.fd].data.readyForClose == true)
                     {
+                        close(events[i].data.fd);
+                        epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                         delete Clients[events[i].data.fd].data.requeste;
                         Clients.erase(events[i].data.fd);
-                        epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                        close(events[i].data.fd);
                     }
                 }
             }

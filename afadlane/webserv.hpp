@@ -63,16 +63,16 @@ class GETMETHOD
 class CGI
 {
     private:
-        pid_t           pid;
         int             fileFdCgi;
         bool            isFork;
-        std::string     cgiFile;
         ssize_t         lenghtFile;
         std::string     restRead;
         double          startTime;
         bool            isReadingCgi;
         bool            sendHeader;
     public:
+        std::string     cgiFile;
+        pid_t           pid;
         CGI();
         void            sendBody(Data &);
         void            SendHeader(Data &);
