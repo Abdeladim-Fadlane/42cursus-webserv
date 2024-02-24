@@ -130,10 +130,9 @@ void multiplexing(ConfigFile &config)
                         int status;
                         std::remove(Clients[events[i].data.fd].data.OBJCGI.cgiFile.c_str());
                         kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);
-                        waitpid(Clients[events[i].data.fd].data.OBJCGI.pid,&status,0);
+                        waitpid(Clients[events[i].data.fd].data.OBJCGI.pid,&status,0);kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);
                     }
-                    if(epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL) == -1)
-                        perror("");
+                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
                     delete Clients[events[i].data.fd].data.requeste;
                     Clients.erase(events[i].data.fd);
