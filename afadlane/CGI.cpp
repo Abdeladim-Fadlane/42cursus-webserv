@@ -204,7 +204,6 @@ void CGI::executeScript(Data &dataClient,std::string &type)
 
 void CGI::fastCGI(Data &dataClient,std::string &type)
 {
-    std::cout<<"---------------------\n";
     try
     {
         if(sendHeader == false)
