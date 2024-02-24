@@ -5,6 +5,7 @@ CGI::CGI()
     isFork = false;
     sendHeader = false;
     isReadingCgi = false;
+    pid = -1;
 }
 
 void CGI::environmentStore(Data &dataClient, std::vector<std::string> &environment)
@@ -215,11 +216,12 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
                 size_t n = dataClient.requeste->Server_Requeste.cgi_timeout;
                 if(getCurrentTime() - startTime >= n)
                 {
-                    kill(pid,SIGTERM);
+                    kill(pid,SIGKILL);
+                    waitpid(pid,&status,0);
                     dataClient.statusCode =" 504 Gateway Timeout"; 
                     dataClient.code = 504;
                     if(std::remove(cgiFile.c_str()) == -1)
-                        throw std::runtime_error("error1"); 
+                        throw std::runtime_error("error"); 
                 }
             }
             else
