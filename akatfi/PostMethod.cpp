@@ -33,7 +33,6 @@ PostMethod::PostMethod(Requeste& r) : req(r)
     req.status_client = 201;
     if (req.Location_Server.cgi_allowed == "ON")
     {
-        std::cout << "running the cgi ... " << std::endl;
         cgi_file.open("/tmp/index_cgi", std::fstream::out);
         if (cgi_file.is_open() == false)
             std::cout << "can't opening file of cgi" << std::endl;
