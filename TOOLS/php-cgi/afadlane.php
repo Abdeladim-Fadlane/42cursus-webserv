@@ -53,7 +53,7 @@
 </head>
 <body>
     <div class="container">
-        <img src="afadlane1.jpeg" alt="Abdeladim Fadlane" class="profile-image">
+        <img src="afadlane.jpg" alt="Abdeladim Fadlane" class="profile-image">
         <h1>Welcome to my Portfolio</h1>
         <p>Hey there! I'm Abdeladim Fadlane, a dedicated and enthusiastic developer currently navigating the exciting world of programming as a student at 1337. My passion lies in the realms of C and C++, Linux, Docker, and the intricate symphony of commands in Bash.</p>
         <p>This is a perfect home page example with enhanced styling and features.</p>
