@@ -33,7 +33,7 @@ class PostMethod
         Requeste            &req;
         std::fstream        Postfile;
         std::string         content_type;
-        size_t              content_length;
+        long                content_length;
         std::string         Transfer_Encoding;
         bool                first_time;
         std::stringstream   ss;
@@ -41,7 +41,7 @@ class PostMethod
         struct timeval      Time;
         std::map<std::string, std::string>  map_extation;
         std::vector<std::string>    vector_files;
-        size_t              content_file;
+        long              content_file;
     public:
         std::string         path;
         std::string         cgi_path;
@@ -50,7 +50,7 @@ class PostMethod
         bool                isCgi;
         PostMethod(Requeste& r);
         void    PostingFileToServer(bool& isdone, bool); 
-        void    chunked(std::string &buffer, bool& isdone);   
+        void    chunked(std::string buffer, bool& isdone);   
         void    boundary(std::string buffer, bool& isdone);
         size_t getContentLength(void) const;
         const std::string& getContentType(void) const;
@@ -59,5 +59,6 @@ class PostMethod
         void    ft_prepar_cgi();
         ~PostMethod();
 };
+size_t hexStringToDecimal(const std::string hexString);
 
 #endif

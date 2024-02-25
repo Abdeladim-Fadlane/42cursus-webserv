@@ -115,7 +115,7 @@ void multiplexing(ConfigFile &config)
                 event.data.fd = clientSocketFD;
                 if(epoll_ctl(epollFD, EPOLL_CTL_ADD, clientSocketFD, &event) == -1)
                 {
-                    perror("error epoll_ctl ");
+                    std::cerr<<("error epoll_ctl ");
                     close(clientSocketFD);
                     continue;
                 }
@@ -123,13 +123,16 @@ void multiplexing(ConfigFile &config)
             } 
             else
             {
-                if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLERR || events[i].events & EPOLLERR)
+                if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
                 {
-                    if(std::remove(Clients[events[i].data.fd].data.OBJCGI.cgiFile.c_str()) == -1)
-                        throw std::runtime_error("error1"); 
-                    kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGTERM);
-                    if(epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL) == -1)
-                        perror("");
+                    if(Clients[events[i].data.fd].data.OBJCGI.pid != -1)
+                    {
+                        int status;
+                        std::remove(Clients[events[i].data.fd].data.OBJCGI.cgiFile.c_str());
+                        kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);
+                        waitpid(Clients[events[i].data.fd].data.OBJCGI.pid,&status,0);kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);
+                    }
+                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
                     delete Clients[events[i].data.fd].data.requeste;
                     Clients.erase(events[i].data.fd);
@@ -151,7 +154,10 @@ void multiplexing(ConfigFile &config)
                         if(Clients[events[i].data.fd].data.requeste->method == "GET" )
                             Clients[events[i].data.fd].data.OBJGET.getMethod(Clients[events[i].data.fd].data);
                         else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
-                            Clients[events[i].data.fd].data.OBJDEL.deleteMethod(Clients[events[i].data.fd].data); 
+                        {
+                            if(Clients[events[i].data.fd].data.isDelete == false)
+                                Clients[events[i].data.fd].data.OBJDEL.deleteMethod(Clients[events[i].data.fd].data); 
+                        }
                         else if(Clients[events[i].data.fd].data.requeste->method == "POST" )
                         {
                             if(Clients[events[i].data.fd].data.requeste->post->isCgi == true)
@@ -169,8 +175,8 @@ void multiplexing(ConfigFile &config)
                         sendErrorResponse(Clients[events[i].data.fd].data);
                     if(Clients[events[i].data.fd].data.readyForClose == true)
                     {
-                        close(events[i].data.fd);
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                        close(events[i].data.fd);
                         delete Clients[events[i].data.fd].data.requeste;
                         Clients.erase(events[i].data.fd);
                     }

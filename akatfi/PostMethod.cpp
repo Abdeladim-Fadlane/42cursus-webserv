@@ -16,7 +16,6 @@ PostMethod::PostMethod(Requeste& r) : req(r)
 {
     first_time = true;
     isCgi = false;
-    // std::cout << isCgi << "   hadi lawla" << std::endl;
     buffer_add = r.getBody();
     size = 0;
     content_file = 0;
@@ -78,12 +77,15 @@ void    PostMethod::ft_prepar_cgi()
         if (access(req.Location_Server.root.c_str(), X_OK) == -1)
         {
             req.Location_Server.cgi_allowed = "OFF";
-            // std::cout << "path is dienid : " << req.Location_Server.root << "::  " << isCgi << std::endl;
             return ;
         }
-        isCgi = true;
-        script_path = req.Location_Server.root;
-        cgi_extation = script_path.substr(script_path.rfind("."));
+        if (req.Location_Server.root.find(".php") != std::string::npos || req.Location_Server.root.find(".py") != std::string::npos 
+            || req.Location_Server.root.find(".pl") != std::string::npos)
+        {
+            isCgi = true;
+            script_path = req.Location_Server.root;
+            cgi_extation = script_path.substr(script_path.rfind("."));
+        }
     }
     if (script_path.empty())
         req.Location_Server.cgi_allowed = "OFF";
@@ -198,24 +200,18 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
     }
 }
 
+size_t hexStringToDecimal(const std::string hexString) {
+    size_t decimalValue = 0;
+    std::stringstream ss;
 
-int hexCharToDecimal(char hexChar) {
-    if (std::isdigit(hexChar))
-        return hexChar - '0';
-    else
-        return std::tolower(hexChar) - 'a' + 10;
-}
-
-int hexStringToDecimal(const std::string hexString) {
-    int decimalValue = 0;
-
-    for (size_t i = 0; i < hexString.length(); ++i) 
-        decimalValue = decimalValue * 16 + hexCharToDecimal(hexString[i]);
+    ss << std::hex << hexString;
+    ss >> decimalValue ;
     return decimalValue;
 }
 
-void PostMethod::chunked(std::string &buffer, bool& isdone)
+void PostMethod::chunked(std::string buffer, bool& isdone)
 {
+    std::string hex;
     buffer = buffer_add + buffer;
     buffer_add = "";
   
@@ -223,7 +219,8 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
     {
         if (buffer.find("\r\n") != std::string::npos)
         {
-            size = hexStringToDecimal(buffer.substr(0, buffer.find("\r\n")));
+            hex = buffer.substr(0, buffer.find("\r\n"));
+            size = hexStringToDecimal(hex);
             if (size == 0)
             {
                 Postfile.close();
@@ -239,25 +236,28 @@ void PostMethod::chunked(std::string &buffer, bool& isdone)
             return ;
         }
     }
-    if (size && size >= buffer.length())
+    if (buffer.length() != 0)
     {
-        if (isCgi == false)
-            Postfile << buffer;
-        else
-            cgi_file << buffer;
-        size -= buffer.length();
-        content_file += buffer.length();
-    }
-    else if (size)
-    {
-        if (isCgi == false)
-            Postfile << buffer.substr(0, size);
-        else
-            cgi_file << buffer.substr(0, size);
-        content_file += buffer.substr(0, size).length();
-        buffer = buffer.substr(buffer.find("\r\n") + 2);
-        size = 0;
-        chunked(buffer, isdone);
+        if (size && size >= buffer.length())
+        {
+            if (isCgi == false)
+                Postfile << buffer;
+            else
+                cgi_file << buffer;
+            size -= buffer.length();
+            content_file += buffer.length();
+        }
+        else if (size)
+        {
+            if (isCgi == false)
+                Postfile << buffer.substr(0, size);
+            else
+                cgi_file << buffer.substr(0, size);
+            content_file += buffer.substr(0, size).length();
+            buffer = buffer.substr(size + 2);
+            size = 0;
+            chunked(buffer, isdone);
+        }
     }
 }
 
@@ -267,13 +267,36 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
     char buffer_read[1024];
     int x;
 
-    if (req.get_time() - time_out > 30)
+    // if (req.get_time() - time_out > 30)
+    // {
+    //     Postfile.close();
+    //     unlink_all_file();
+    //     req.status_client = 408;
+    //     isdone = true;
+    //     req.headerResponse = "HTTP/1.1 408 Request Timeout\r\nContent-Type: text/html\r\n\r\n";
+    //     return ;
+    // }
+    if (access(req.Location_Server.root.c_str(), F_OK) == - 1)
+    {
+        req.status_client = 404;
+        isdone = true;
+        req.headerResponse = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n";
+        return ;
+    }
+    if (req.requeste_map.find("Content-Length") == req.requeste_map.end() && Transfer_Encoding.empty())
+    {
+        req.headerResponse = "HTTP/1.1 411 Length Required\r\nContent-Type: text/html\r\n\r\n";
+        req.status_client = 411;
+        isdone = true;
+        return ;
+    }
+    if (content_length < 0 || content_type.empty() || (content_file > content_length && Transfer_Encoding != "chunked"))
     {
         Postfile.close();
         unlink_all_file();
-        req.status_client = 408;
+        req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+        req.status_client = 400;
         isdone = true;
-        req.headerResponse = "HTTP/1.1 408 Request Timeout\r\nContent-Type: text/html\r\n\r\n";
         return ;
     }
     if (req.Location_Server.uploadfile == "OFF" && req.Location_Server.cgi_allowed == "OFF")
@@ -283,11 +306,12 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
         isdone = true;
         return ;
     }
-    if (Transfer_Encoding == "chunked" && content_type.substr(0, content_type.find(";")) == "multipart/form-data")
+    if ((Transfer_Encoding == "chunked" && content_type.substr(0, content_type.find(";")) == "multipart/form-data")
+        || (Transfer_Encoding.empty() == false && Transfer_Encoding != "chunked"))
     {
-        req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+        req.headerResponse = "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/html\r\n\r\n";
         isdone = true;
-        req.status_client = 400;
+        req.status_client = 501;
         return ;
     }
     if (readorno == true)

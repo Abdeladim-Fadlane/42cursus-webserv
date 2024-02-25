@@ -58,7 +58,7 @@ void    Requeste::set_status_client(bool &readyclose)
         readyclose = true;
     }
     else
-        write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length());  
+        write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length());
 }
 
 long    Requeste::get_time(void)
@@ -74,13 +74,13 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
     char buffer[1024];
     int x;
     memset(buffer,0, sizeof(buffer));
-    if (get_time() - time_out > 30)
-    {
-        status_client = 408;
-        isdone = true;
-        headerResponse = "HTTP/1.1 408 Request Timeout\r\nContent-Type: text/html\r\n\r\n";
-        return ;
-    }
+    // if (get_time() - time_out >2)
+    // {
+    //     status_client = 408;
+    //     isdone = true;
+    //     headerResponse = "HTTP/1.1 408 Request Timeout\r\nContent-Type: text/html\r\n\r\n";
+    //     return ;
+    // }
     if ((x = read(fd_socket, buffer, 1023)) == -1)
     {
         status_client = 500;
@@ -101,6 +101,13 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
         this->MakeMapOfHeader(isdone);
         this->get_infoConfig(isdone);
         flag = true;
+        if (method != "GET" && method != "POST" && method != "DELETE")
+        {
+            headerResponse = "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/html\r\n\r\n";
+            isdone = true;
+            status_client = 501;
+            return ;
+        }
         if (isdone == false && chose_location && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
         {
             status_client = 405;
@@ -113,7 +120,7 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
             post = new PostMethod(*this);
             post->PostingFileToServer(isdone, false);
         }
-        else if (isdone == false)
+        else if (isdone == false && (method == "GET" || method == "POST"))
         {
             isdone = true;
         }
@@ -128,6 +135,11 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
 
 std::string delete_slash_path(std::string& path, bool& slash)
 {
+    size_t pos;
+    std::stringstream str;
+    size_t p;
+    char new_value;
+
     while (path.size() > 0 && path[0] == '/')
         path = path.substr(1);
     while (path.size() > 0  && path[path.size() - 1] == '/')
@@ -137,7 +149,17 @@ std::string delete_slash_path(std::string& path, bool& slash)
     }
     if (slash == true)
         path += "/";
-    return ( "/" + path);
+    path = "/" + path;
+    while (path.find("%") != std::string::npos)
+    {
+        pos = path.find("%");
+        str << std::hex << path.substr(pos + 1 , 2);
+        str >> p;
+        new_value = static_cast<char>(p);
+        path.replace(pos, 3, std::string("") += new_value);
+        str.str("");
+    }
+    return (path);
 }
 
 void Requeste::get_infoConfig(bool& isdone)
@@ -145,6 +167,7 @@ void Requeste::get_infoConfig(bool& isdone)
     struct stat statbuf;
     bool slash = false;
     size_t length;
+    std::string str;
     std::stringstream ss;
 
 
@@ -160,7 +183,7 @@ void Requeste::get_infoConfig(bool& isdone)
                 length += 1;
             Location_Server.root  += path.substr(length);
             if (stat(Location_Server.root.c_str(), &statbuf) == 0 && 
-                S_ISDIR(statbuf.st_mode) == true &&  path.length() && path[path.length() - 1] != '/' && method != "DELETE")
+                S_ISDIR(statbuf.st_mode) == true &&  path.length() && path[path.length() - 1] != '/' && method == "GET")
             {
                 status_client = 0;
                 isdone = true;
@@ -180,8 +203,10 @@ void Requeste::get_infoConfig(bool& isdone)
             path = Server_Requeste.locations[0].location_name;
             Location_Server = Server_Requeste.locations[0];
             chose_location = true;
-            if (path.length() && path[path.length() - 1] != '/' && method != "DELETE")
+            if (path.length() && path[path.length() - 1] != '/' && method == "GET")
             {
+                // std::cout << "--->" << path << std::endl;
+                // std::cout << "meved " << std::endl;
                 status_client = 0;
                 isdone = true;
                 method =  "";
@@ -224,13 +249,18 @@ void Requeste::MakeMapOfHeader(bool& isdone)
     std::vector<std::string> line_request;
     std::vector<Server> s;
     
+
     body = head.substr(head.find("\r\n\r\n") + 4);
     head = head.substr(0, head.find("\r\n\r\n"));
-    line_request = split_line(head.substr(0, head.find("\r\n")));
-    method = line_request[0];
-    path = line_request[1];
-    http_v = line_request[2];
-    head = head.substr(head.find("\r\n") + 2).append("\r\n");
+    if (head.empty() == false)
+    {
+        line_request = split_line(head.substr(0, head.find("\r\n")));
+        method = line_request[0];
+        path = line_request[1];
+        http_v = line_request[2];
+        if (head.find("\r\n") != std::string::npos)
+            head = head.substr(head.find("\r\n") + 2).append("\r\n");
+    }
     while (head.length())
     {
         line = head.substr(0, head.find("\r\n"));
@@ -256,9 +286,8 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         query_str = path.substr(path.rfind("?") + 1);
         path = path.substr(0, path.rfind("?"));
     }
-    if (check_string(path, "[]{}|\\”%~#<>"))
+    if (check_string(path, "{}|\\^~[]`"))
     {
-        // std::cout << "done" << std::endl;
         status_client = 400;
         isdone = true;
         method = "";
@@ -276,7 +305,6 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         {
             port = atoi(host.substr(host.find(":") + 1).c_str());
             host = host.substr(0, host.find(":"));
-            // std::cout << port<<"::"<< host << std::endl;
             for (size_t j = 0; j < config.Servers.size(); j++)
                 if (config.Servers[j].listen == port)
                     s.push_back(config.Servers[j]);

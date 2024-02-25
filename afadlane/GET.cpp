@@ -133,7 +133,8 @@ void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
     }
     std::string httpResponse;
     httpResponse = dataClient.requeste->http_v.append(" 200 OK\r\nContent-Type: ");
-    httpResponse.append(contentType).append("\r\nTransfer-Encoding: chunked\r\n\r\n");
+    httpResponse.append(contentType).append("; charset=UTF-8");
+    httpResponse.append("\r\nTransfer-Encoding: chunked\r\n\r\n");
     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
         throw std::runtime_error("error send");
     
@@ -187,7 +188,7 @@ void GETMETHOD::sendListDir(Data & dataClient)
     std::ostringstream wiss;
     wiss << listDirectory.size();
     httpResponse = dataClient.requeste->http_v;
-    httpResponse.append(" 200 OK\r\nContent-Type: text/html\r\nContent-Lenght: ");
+    httpResponse.append(" 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Lenght: ");
     httpResponse.append(wiss.str()).append("\r\n\r\n").append(listDirectory);
     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
         throw std::runtime_error("error send");
@@ -207,7 +208,7 @@ void    GETMETHOD::openDirFIle(Data & dataClient)
             dataClient.statusCode = " 403 Forbidden";
             dataClient.code = 403;
         }
-        if(listingDirectory(dataClient) == 0)
+        else if(listingDirectory(dataClient) == 0)
             sendListDir(dataClient);
     }
     else if(i == 0)
