@@ -130,7 +130,7 @@ void multiplexing(ConfigFile &config)
                         int status;
                         std::remove(Clients[events[i].data.fd].data.OBJCGI.cgiFile.c_str());
                         kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);
-                        waitpid(Clients[events[i].data.fd].data.OBJCGI.pid,&status,0);kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);
+                        waitpid(Clients[events[i].data.fd].data.OBJCGI.pid,&status,0);
                     }
                     epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
                     close(events[i].data.fd);
@@ -145,10 +145,29 @@ void multiplexing(ConfigFile &config)
                         insialStruct(Clients[events[i].data.fd].data);
                     }
                     else if(Clients[events[i].data.fd].data.AlreadyRequestHeader  == true && Clients[events[i].data.fd].data.requeste->method == "POST")
+                    {
                         Clients[events[i].data.fd].data.requeste->post->PostingFileToServer(Clients[events[i].data.fd].data.isDone, true);
+                    }
+                }
+                else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 10 && 
+                    Clients[events[i].data.fd].data.requeste->skeeptime_out == false)
+                {
+                    std::cout <<Clients[events[i].data.fd].data.requeste->method  <<"$"<< Clients[events[i].data.fd].data.requeste->skeeptime_out << std::endl;
+                   
+                    Clients[events[i].data.fd].data.code = 408;
+                    Clients[events[i].data.fd].data.statusCode = " 408 Request Timeout";
+                    sendErrorResponse(Clients[events[i].data.fd].data);
+                    if(Clients[events[i].data.fd].data.readyForClose == true)
+                    {
+                        epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
+                        close(events[i].data.fd);
+                        delete Clients[events[i].data.fd].data.requeste;
+                        Clients.erase(events[i].data.fd);
+                    }
                 }
                 else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
                 {
+
                     if(Clients[events[i].data.fd].data.code == 0)
                     {
                         if(Clients[events[i].data.fd].data.requeste->method == "GET" )

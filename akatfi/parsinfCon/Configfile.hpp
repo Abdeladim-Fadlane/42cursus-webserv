@@ -15,6 +15,7 @@
 #include <fstream>
 #include <iostream>
 #include <dirent.h>
+#include <algorithm>
 #include <map>
 #include <vector>
 #include <unistd.h>
@@ -54,10 +55,11 @@ class Server
         size_t                              cgi_timeout;
         std::string                         server_name;
         std::map<long, std::string>  error_pages;
-        size_t                                max_body;
+        long                                max_body;
         std::vector<Location>               locations;
         bool                                close;
         bool                                port_chose;
+        std::vector<long>                   error_auth;
         Server();
         Server& operator=(const Server& obj);
         ~Server();

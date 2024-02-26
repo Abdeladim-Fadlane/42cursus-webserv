@@ -24,13 +24,19 @@ Server::Server()
 {
     port_chose = false;
     close = true;
+    long number_error;
     max_body = LONG_MAX;
     cgi_timeout = 10;
     DIR* dir_error = opendir("akatfi/parsinfCon/error");
     dirent* path;
     while ((path = readdir(dir_error)))
         if (path->d_name[0] != '.')
-            error_pages[init_numberError(std::string(path->d_name))] = std::string("akatfi/parsinfCon/error/").append(path->d_name);
+        {
+            number_error = init_numberError(std::string(path->d_name));
+            error_pages[number_error] = std::string("akatfi/parsinfCon/error/").append(path->d_name);
+            if (number_error != 201)
+                error_auth.push_back(number_error);
+        }
     closedir(dir_error);
 }
 
@@ -83,8 +89,8 @@ void    Server::init_data(std::fstream& os)
         }
         else if (!arg[0].compare("cgi_timeout") && arg.size() == 2 && !close)
         {
-            if (!check_digit(arg[1]))
-                throw std::runtime_error("Error : thee timeout will be a digit");
+            if (!check_digit(arg[1]) && (atoi(arg[1].c_str()) >= 1 && atoi(arg[1].c_str()) <= 30))
+                throw std::runtime_error("Error : thee timeout will be a digit and between 1 and 30");
             cgi_timeout = atoi(arg[1].c_str());
         }
         else if (!arg[0].compare("host") && arg.size() == 2 && !close && host.empty())
@@ -101,6 +107,8 @@ void    Server::init_data(std::fstream& os)
         {
             if (!check_digit(arg[1]))
                 throw std::runtime_error("Error : the number of error_page will be a digit");
+            if (std::find(error_auth.begin(), error_auth.end() ,atoi(arg[1].c_str())) == error_auth.end())
+                throw std::runtime_error("Error : the number " + arg[1] + " of error_page is not authorized in this configuration file");
             if (access(arg[2].c_str(), R_OK) == 0)
                 error_pages[atoi(arg[1].c_str())] = arg[2];
         }

@@ -208,7 +208,7 @@ void    GETMETHOD::openDirFIle(Data & dataClient)
             dataClient.statusCode = " 403 Forbidden";
             dataClient.code = 403;
         }
-        if(listingDirectory(dataClient) == 0)
+        else if(listingDirectory(dataClient) == 0)
             sendListDir(dataClient);
     }
     else if(i == 0)
