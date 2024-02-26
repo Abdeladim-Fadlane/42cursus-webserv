@@ -2,7 +2,7 @@ NAME = webserv
 # curl -X DELETE http://127.0.0.1:8082/dir/www/
 # wget 	http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
 # siege -c 225 -r 1 -b http://127.0.0.1:8082/dir/TOOLS/UTILS/phpinfo.php
-# printf "GET /dir/ HTTP/1.1\r\nHost: 127.0.0.1:8082\r\n\r\n" | nc 127.0.0.1 808
+# printf "GET /dir/ HTTP/1.1\r\nHost: 127.0.0.1:8082\r\n\r\n" | nc 127.0.0.1 8082
 CXXFLAGS =  -Wall -Wextra -Werror  -fsanitize=address -g
 
 CXX = c++

@@ -151,9 +151,7 @@ void multiplexing(ConfigFile &config)
                 }
                 else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 10 && 
                     Clients[events[i].data.fd].data.requeste->skeeptime_out == false)
-                {
-                    std::cout <<Clients[events[i].data.fd].data.requeste->method  <<"$"<< Clients[events[i].data.fd].data.requeste->skeeptime_out << std::endl;
-                   
+                {                   
                     Clients[events[i].data.fd].data.code = 408;
                     Clients[events[i].data.fd].data.statusCode = " 408 Request Timeout";
                     sendErrorResponse(Clients[events[i].data.fd].data);
@@ -167,7 +165,6 @@ void multiplexing(ConfigFile &config)
                 }
                 else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
                 {
-
                     if(Clients[events[i].data.fd].data.code == 0)
                     {
                         if(Clients[events[i].data.fd].data.requeste->method == "GET" )
