@@ -63,6 +63,28 @@ void sendErrorResponse(Data &dataClient)
     } 
 }
 
+void    inisialData(std::map<int,struct Webserv> &Clients ,ConfigFile &config,int &clientSocketFD)
+{
+    Webserv  Data;
+    Data.data.errorFd               =    -2;
+    Data.data.code                  =     0;
+    Data.data.readyForClose         = false;
+    Data.data.Alreadparce           = false;
+    Data.data.AlreadyRequestHeader  = false;
+    Data.data.isDone                = false;
+    Data.data.autoIndex             = false;
+    Data.data.isDelete              = false;
+    Data.data.fd                    = clientSocketFD;
+    Data.data.requeste              = new Requeste(clientSocketFD,config);
+    Clients[clientSocketFD]         = Data;
+}
+
+void    insialStruct(Data & datacleint)
+{
+    if(datacleint.requeste->Location_Server.autoindex == "ON")
+        datacleint.autoIndex = true;
+    datacleint.Path = datacleint.requeste->Location_Server.root;
+}
 bool checkPermission(Data &dataClient,int type)
 {
     if(access(dataClient.Path.c_str(),type) != 0 )
@@ -72,4 +94,29 @@ bool checkPermission(Data &dataClient,int type)
         return true;
     }
     return false;
+}
+
+double    getCurrentTime(void)
+{
+    struct timeval currentTime;
+    gettimeofday(&currentTime,NULL);
+    return ((currentTime.tv_sec) + (currentTime.tv_usec / 1000000));
+}
+
+bool isServer(std::vector<int> & Servers,int index)
+{
+    for(size_t i  = 0 ; i < Servers.size() ; i++)
+    {
+        if(Servers[i] == index)
+            return true;
+    }
+    return false;
+}
+
+void closeServers(std::vector<int> & Servers)
+{
+    for(size_t i  = 0 ; i < Servers.size() ; i++)
+    {
+        close(Servers[i]);
+    }
 }

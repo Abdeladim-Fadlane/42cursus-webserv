@@ -155,7 +155,7 @@ std::string CGI::getType(Data&dataClient,std::string &type)
     gettimeofday(&currentTime,NULL);
     std::ostringstream oss;
     oss << currentTime.tv_sec <<"_"<<currentTime.tv_usec;
-    cgiFile.append("file").append(oss.str());
+    cgiFile.append("TOOLS/file").append(oss.str());
     if(type == ".py" )
         return dataClient.requeste->Location_Server.cgi[".py"];
     else if(type == ".php")
