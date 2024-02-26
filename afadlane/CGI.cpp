@@ -137,8 +137,7 @@ void CGI::sendBody(Data &dataClient)
         close(fileFdCgi);
         dataClient.readyForClose = true;
         if(remove(cgiFile.c_str()) == -1)
-                throw std::runtime_error("error");
-            
+            throw std::runtime_error("error");      
     }
     else
     {
