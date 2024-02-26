@@ -82,10 +82,7 @@ void multiplexing(ConfigFile &config)
                         kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);
                         waitpid(Clients[events[i].data.fd].data.OBJCGI.pid,&status,0);
                     }
-                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    close(events[i].data.fd);
-                    delete Clients[events[i].data.fd].data.requeste;
-                    Clients.erase(events[i].data.fd);
+                    EpollCtrDEL(epollFD,events[i].data.fd,Clients);
                 }
                 else if(events[i].events & EPOLLIN && Clients[events[i].data.fd].data.isDone == false)
                 {
@@ -103,18 +100,14 @@ void multiplexing(ConfigFile &config)
                 }
                 else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 10 && 
                     Clients[events[i].data.fd].data.requeste->skeeptime_out == false)
-                {                   
+                {       
+                    std::cout<<"-----------dfgfd\n";            
                     Clients[events[i].data.fd].data.code = 408;
                     Clients[events[i].data.fd].data.statusCode = " 408 Request Timeout";
                     Clients[events[i].data.fd].data.requeste->post->unlink_all_file();
                     sendErrorResponse(Clients[events[i].data.fd].data);
                     if(Clients[events[i].data.fd].data.readyForClose == true)
-                    {
-                        epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                        close(events[i].data.fd);
-                        delete Clients[events[i].data.fd].data.requeste;
-                        Clients.erase(events[i].data.fd);
-                    }
+                        EpollCtrDEL(epollFD,events[i].data.fd,Clients);
                 }
                 else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
                 {
@@ -143,12 +136,7 @@ void multiplexing(ConfigFile &config)
                     else if(Clients[events[i].data.fd].data.code != 0)
                         sendErrorResponse(Clients[events[i].data.fd].data);
                     if(Clients[events[i].data.fd].data.readyForClose == true)
-                    {
-                        epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                        close(events[i].data.fd);
-                        delete Clients[events[i].data.fd].data.requeste;
-                        Clients.erase(events[i].data.fd);
-                    }
+                        EpollCtrDEL(epollFD,events[i].data.fd,Clients);
                 }
             }
         }

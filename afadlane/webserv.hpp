@@ -116,4 +116,5 @@ void    multiplexing(ConfigFile &);
 bool    checkPermission(Data &,int );
 void    closeServers(std::vector<int> &);
 bool    isServer(std::vector<int> & ,int );
+void    EpollCtrDEL(int ,int ,std::map<int,struct Webserv>&);
 void    inisialData(std::map<int,struct Webserv> & ,ConfigFile &,int &);
