@@ -31,9 +31,10 @@ class Requeste
         std::string                         body;
         ConfigFile                          &config;
         int                                 fdresponse;
-        long                                time_out;
         bool                                chose_location;
     public:
+        long                                time_out;
+        bool                                skeeptime_out;
         std::string                         headerResponse;
         Server                              Server_Requeste;
         Location                            Location_Server;

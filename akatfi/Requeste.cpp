@@ -18,6 +18,7 @@ Requeste::Requeste(int fd,ConfigFile &configfile) : config(configfile)
     fdresponse = -1;
     post = NULL;
     chose_location = false;
+    skeeptime_out = false;
     port = 0;
     time_out = get_time();
 }
@@ -38,6 +39,7 @@ std::pair<std::string, std::string> Requeste::MakePair(std::string& line)
 void    Requeste::set_status_client(bool &readyclose)
 {
     char buffer[1024];
+    int x;
 
     if (fdresponse == -1)
     {
@@ -52,13 +54,24 @@ void    Requeste::set_status_client(bool &readyclose)
     else if (status_client != 0)
         headerResponse = "";
     memset(buffer, 0, sizeof(buffer));
-    if (!read(fdresponse, buffer, 1023))
+    x = read(fdresponse, buffer, 1023);
+    if (x == -1)
+    {
+        status_client = 500;
+        headerResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n";
+        return ;
+    }
+    if (x == 0)
     {
         close(fdresponse);
         readyclose = true;
     }
     else
-        write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length());
+        if (write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length()) == -1)
+        {
+            readyclose = true;
+            return ;
+        }
 }
 
 long    Requeste::get_time(void)
@@ -74,13 +87,6 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
     char buffer[1024];
     int x;
     memset(buffer,0, sizeof(buffer));
-    // if (get_time() - time_out >2)
-    // {
-    //     status_client = 408;
-    //     isdone = true;
-    //     headerResponse = "HTTP/1.1 408 Request Timeout\r\nContent-Type: text/html\r\n\r\n";
-    //     return ;
-    // }
     if ((x = read(fd_socket, buffer, 1023)) == -1)
     {
         status_client = 500;
@@ -101,13 +107,6 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
         this->MakeMapOfHeader(isdone);
         this->get_infoConfig(isdone);
         flag = true;
-        if (method != "GET" && method != "POST" && method != "DELETE")
-        {
-            headerResponse = "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/html\r\n\r\n";
-            isdone = true;
-            status_client = 501;
-            return ;
-        }
         if (isdone == false && chose_location && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
         {
             status_client = 405;
@@ -120,9 +119,10 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
             post = new PostMethod(*this);
             post->PostingFileToServer(isdone, false);
         }
-        else if (isdone == false && (method == "GET" || method == "POST"))
+        else if (isdone == false)
         {
             isdone = true;
+            skeeptime_out = true;
         }
     }
     else if (head.length() == 0 && flag == false)
@@ -167,9 +167,9 @@ void Requeste::get_infoConfig(bool& isdone)
     struct stat statbuf;
     bool slash = false;
     size_t length;
-    std::string str;
+    char *pathreal = NULL;
     std::stringstream ss;
-
+    std::string root_path;
 
     path = delete_slash_path(path, slash);
     for (unsigned int i = 0; i < Server_Requeste.locations.size(); i++)
@@ -178,6 +178,7 @@ void Requeste::get_infoConfig(bool& isdone)
         {
             chose_location = true;
             Location_Server = Server_Requeste.locations[i];
+            root_path = Location_Server.root;
             length = Server_Requeste.locations[i].location_name.length();
             if (length > 1 && length + 1 <= path.length())
                 length += 1;
@@ -194,7 +195,9 @@ void Requeste::get_infoConfig(bool& isdone)
                 ss.str("");
             }
             if (Server_Requeste.locations[i].location_name == "/")
+            {
                 continue;
+            }
             else
                 break;
         }
@@ -202,11 +205,10 @@ void Requeste::get_infoConfig(bool& isdone)
         {
             path = Server_Requeste.locations[0].location_name;
             Location_Server = Server_Requeste.locations[0];
+            root_path = Location_Server.root;
             chose_location = true;
             if (path.length() && path[path.length() - 1] != '/' && method == "GET")
             {
-                // std::cout << "--->" << path << std::endl;
-                // std::cout << "meved " << std::endl;
                 status_client = 0;
                 isdone = true;
                 method =  "";
@@ -230,6 +232,16 @@ void Requeste::get_infoConfig(bool& isdone)
             + ss.str() + Location_Server.redirection + "\r\n\r\n";
         ss.str("");
     }
+    pathreal = realpath(Location_Server.root.c_str(), NULL);
+    if (pathreal && std::string(pathreal).append("/").find(root_path.c_str()) == std::string::npos)
+    {
+        method = "";
+        headerResponse = "HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\n\r\n";
+        status_client = 403;
+        isdone = true;
+    }
+    if (pathreal)
+        free(pathreal);
 }
 
 bool check_string(const std::string&  str1 , std::string  str2)
@@ -334,6 +346,14 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         isdone = true;
         method = "";
         headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+        return ;
+    }
+    if (method != "GET" && method != "POST" && method != "DELETE")
+    {
+        headerResponse = "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/html\r\n\r\n";
+        isdone = true;
+        status_client = 501;
+        return ;
     }
 }
 

@@ -26,7 +26,6 @@ class PostMethod
 {
     private:
         size_t              size;
-        size_t              time_out;
         std::string         boundary_separator;
         std::string         buffer_add;
         size_t              buffer_add_size;

@@ -1,54 +1,5 @@
 #include"webserv.hpp"
 
-void    inisialData(std::map<int,struct Webserv> &Clients ,ConfigFile &config,int &clientSocketFD)
-{
-    Webserv  Data;
-    Data.data.errorFd               =    -2;
-    Data.data.code                  =     0;
-    Data.data.readyForClose         = false;
-    Data.data.Alreadparce           = false;
-    Data.data.AlreadyRequestHeader  = false;
-    Data.data.isDone                = false;
-    Data.data.autoIndex             = false;
-    Data.data.isDelete              = false;
-    Data.data.fd                    = clientSocketFD;
-    Data.data.requeste              = new Requeste(clientSocketFD,config);
-    Clients[clientSocketFD]         = Data;
-}
-
-void    insialStruct(Data & datacleint)
-{
-    if(datacleint.requeste->Location_Server.autoindex == "ON")
-        datacleint.autoIndex = true;
-    datacleint.Path = datacleint.requeste->Location_Server.root;
-}
-
-double    getCurrentTime(void)
-{
-    struct timeval currentTime;
-    gettimeofday(&currentTime,NULL);
-    return ((currentTime.tv_sec) + (currentTime.tv_usec / 1000000));
-}
-
-bool isServer(std::vector<int> & Servers,int index)
-{
-    for(size_t i  = 0 ; i < Servers.size() ; i++)
-    {
-        if(Servers[i] == index)
-            return true;
-    }
-    return false;
-}
-
-void closeServers(std::vector<int> & Servers)
-{
-    for(size_t i  = 0 ; i < Servers.size() ; i++)
-    {
-        close(Servers[i]);
-    }
-
-}
-#include <fcntl.h>
 void multiplexing(ConfigFile &config)
 {
     std::vector<int> Servers;
@@ -68,7 +19,8 @@ void multiplexing(ConfigFile &config)
         if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
         {
             close(socketFD);
-            throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
+            std::cerr<<("setsockopt(SO_REUSEADDR) failed");
+            continue;
         }
         if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
         {
@@ -88,8 +40,8 @@ void multiplexing(ConfigFile &config)
         if(epoll_ctl(epollFD,EPOLL_CTL_ADD,socketFD,&event) == -1)
         {
             close(socketFD);
-            perror("Error add to epoll : ");
-            exit(EXIT_FAILURE);
+            std::cerr<<("Error add to epoll : ");
+            continue;
         }
         Servers.push_back(socketFD);
     }
@@ -103,9 +55,7 @@ void multiplexing(ConfigFile &config)
         {
             if(isServer(Servers,events[i].data.fd) == true)
             {
-                struct sockaddr_in address;
-                size_t addrlen = sizeof(address);
-                clientSocketFD = accept(events[i].data.fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+                clientSocketFD = accept(events[i].data.fd, NULL, NULL);
                 if(clientSocketFD == -1)
                 {
                     std::cerr << "Failed to accept connection ." << std::endl;
@@ -130,12 +80,9 @@ void multiplexing(ConfigFile &config)
                         int status;
                         std::remove(Clients[events[i].data.fd].data.OBJCGI.cgiFile.c_str());
                         kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);
-                        waitpid(Clients[events[i].data.fd].data.OBJCGI.pid,&status,0);kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);
+                        waitpid(Clients[events[i].data.fd].data.OBJCGI.pid,&status,0);
                     }
-                    epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                    close(events[i].data.fd);
-                    delete Clients[events[i].data.fd].data.requeste;
-                    Clients.erase(events[i].data.fd);
+                    EpollCtrDEL(epollFD,events[i].data.fd,Clients);
                 }
                 else if(events[i].events & EPOLLIN && Clients[events[i].data.fd].data.isDone == false)
                 {
@@ -144,8 +91,23 @@ void multiplexing(ConfigFile &config)
                         Clients[events[i].data.fd].data.requeste->readFromSocketFd(Clients[events[i].data.fd].data.isDone, Clients[events[i].data.fd].data.AlreadyRequestHeader);
                         insialStruct(Clients[events[i].data.fd].data);
                     }
-                    else if(Clients[events[i].data.fd].data.AlreadyRequestHeader  == true && Clients[events[i].data.fd].data.requeste->method == "POST")
+                    else if(Clients[events[i].data.fd].data.AlreadyRequestHeader  == true && 
+                        Clients[events[i].data.fd].data.requeste->method == "POST")
+                    {
+
                         Clients[events[i].data.fd].data.requeste->post->PostingFileToServer(Clients[events[i].data.fd].data.isDone, true);
+                    }
+                }
+                else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 10 && 
+                    Clients[events[i].data.fd].data.requeste->skeeptime_out == false)
+                {       
+                    std::cout<<"-----------dfgfd\n";            
+                    Clients[events[i].data.fd].data.code = 408;
+                    Clients[events[i].data.fd].data.statusCode = " 408 Request Timeout";
+                    Clients[events[i].data.fd].data.requeste->post->unlink_all_file();
+                    sendErrorResponse(Clients[events[i].data.fd].data);
+                    if(Clients[events[i].data.fd].data.readyForClose == true)
+                        EpollCtrDEL(epollFD,events[i].data.fd,Clients);
                 }
                 else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
                 {
@@ -174,12 +136,7 @@ void multiplexing(ConfigFile &config)
                     else if(Clients[events[i].data.fd].data.code != 0)
                         sendErrorResponse(Clients[events[i].data.fd].data);
                     if(Clients[events[i].data.fd].data.readyForClose == true)
-                    {
-                        epoll_ctl(epollFD, EPOLL_CTL_DEL, events[i].data.fd, NULL);
-                        close(events[i].data.fd);
-                        delete Clients[events[i].data.fd].data.requeste;
-                        Clients.erase(events[i].data.fd);
-                    }
+                        EpollCtrDEL(epollFD,events[i].data.fd,Clients);
                 }
             }
         }

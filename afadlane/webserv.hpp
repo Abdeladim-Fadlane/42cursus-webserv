@@ -77,11 +77,12 @@ class CGI
         void            sendBody(Data &);
         void            SendHeader(Data &);
         void            makeHeader(Data &,bool );
+        std::string     getType(Data&,std::string &);
         void            fastCGI(Data &,std::string &);
         void            executeScript(Data &,std::string &);
-        std::string     getType(Data&,std::string &);
         void            environmentStore(Data &, std::vector<std::string> &);
         std::string     fillMap(std::map<int,std::string>&,std::string,std::string);
+        
 };
 
 struct Data
@@ -109,6 +110,11 @@ struct Webserv
 };
 
 double  getCurrentTime(void);
+void    insialStruct(Data &  );
 void    sendErrorResponse(Data &);
 void    multiplexing(ConfigFile &);
 bool    checkPermission(Data &,int );
+void    closeServers(std::vector<int> &);
+bool    isServer(std::vector<int> & ,int );
+void    EpollCtrDEL(int ,int ,std::map<int,struct Webserv>&);
+void    inisialData(std::map<int,struct Webserv> & ,ConfigFile &,int &);
