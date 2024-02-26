@@ -162,6 +162,16 @@ std::string delete_slash_path(std::string& path, bool& slash)
     return (path);
 }
 
+bool check_string(const std::string&  str1 , std::string  str2)
+{
+    for (size_t i = 0; i <= str1.length() ; i++)
+    {
+        if (str2.find(str1[i]) != std::string::npos)
+            return true;
+    }
+    return (false);
+}
+
 void Requeste::get_infoConfig(bool& isdone)
 {
     struct stat statbuf;
@@ -172,6 +182,14 @@ void Requeste::get_infoConfig(bool& isdone)
     std::string root_path;
 
     path = delete_slash_path(path, slash);
+    if (check_string(path, "{}|\\^~[]`"))
+    {
+        status_client = 400;
+        isdone = true;
+        method = "";
+        headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+        return ;
+    }
     for (unsigned int i = 0; i < Server_Requeste.locations.size(); i++)
     {
         if (!strncmp(Server_Requeste.locations[i].location_name.c_str(),path.c_str(), Server_Requeste.locations[i].location_name.length()))
@@ -244,16 +262,6 @@ void Requeste::get_infoConfig(bool& isdone)
         free(pathreal);
 }
 
-bool check_string(const std::string&  str1 , std::string  str2)
-{
-    for (size_t i = 0; i <= str1.length() ; i++)
-    {
-        if (str2.find(str1[i]) != std::string::npos)
-            return true;
-    }
-    return (false);
-}
-
 void Requeste::MakeMapOfHeader(bool& isdone)
 {
     std::string     new_req;
@@ -297,14 +305,6 @@ void Requeste::MakeMapOfHeader(bool& isdone)
     {
         query_str = path.substr(path.rfind("?") + 1);
         path = path.substr(0, path.rfind("?"));
-    }
-    if (check_string(path, "{}|\\^~[]`"))
-    {
-        status_client = 400;
-        isdone = true;
-        method = "";
-        headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
-        return ;
     }
     if (requeste_map.find("Content-Type") != requeste_map.end())
         content_type = requeste_map.find("Content-Type")->second;

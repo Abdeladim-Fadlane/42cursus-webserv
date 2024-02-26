@@ -98,17 +98,17 @@ void multiplexing(ConfigFile &config)
                         Clients[events[i].data.fd].data.requeste->post->PostingFileToServer(Clients[events[i].data.fd].data.isDone, true);
                     }
                 }
-                else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 10 && 
-                    Clients[events[i].data.fd].data.requeste->skeeptime_out == false)
-                {       
-                    std::cout<<"-----------dfgfd\n";            
-                    Clients[events[i].data.fd].data.code = 408;
-                    Clients[events[i].data.fd].data.statusCode = " 408 Request Timeout";
-                    Clients[events[i].data.fd].data.requeste->post->unlink_all_file();
-                    sendErrorResponse(Clients[events[i].data.fd].data);
-                    if(Clients[events[i].data.fd].data.readyForClose == true)
-                        EpollCtrDEL(epollFD,events[i].data.fd,Clients);
-                }
+                // else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 10 && 
+                //     Clients[events[i].data.fd].data.requeste->skeeptime_out == false)
+                // {       
+                //     // std::cout<<"-----------dfgfd\n";            
+                //     Clients[events[i].data.fd].data.code = 408;
+                //     Clients[events[i].data.fd].data.statusCode = " 408 Request Timeout";
+                //     Clients[events[i].data.fd].data.requeste->post->unlink_all_file();
+                //     sendErrorResponse(Clients[events[i].data.fd].data);
+                //     if(Clients[events[i].data.fd].data.readyForClose == true)
+                //         EpollCtrDEL(epollFD,events[i].data.fd,Clients);
+                // }
                 else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
                 {
                     if(Clients[events[i].data.fd].data.code == 0)

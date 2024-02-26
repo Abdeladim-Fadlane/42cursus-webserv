@@ -86,10 +86,13 @@ void    PostMethod::ft_prepar_cgi()
             cgi_extation = script_path.substr(script_path.rfind("."));
         }
     }
+    // for (size_t i = 0; i < req.Location_Server.cgi.size(); i++)
+    // {
+    //     if ()
+    //     if (i + 1 == req.Location_Server.cgi.size())
+    // }
     if (script_path.empty())
-    {
         req.Location_Server.cgi_allowed = "OFF";
-    }
 }
 
 
@@ -149,6 +152,7 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
     if (buffer.find(boundary_separator + "--\r\n") != std::string::npos)
     {
         buffer = buffer.substr(0, buffer.find(boundary_separator + "--\r\n") - 2);
+        std::cout << "done with closed" << std::endl;
         buffer_add_size = 0;
         boundary(buffer, isdone);
         if (Postfile.is_open())
