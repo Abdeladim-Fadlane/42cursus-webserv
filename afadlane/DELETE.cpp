@@ -2,6 +2,8 @@
 
 void DELETE::IsFIle(Data &dataClient)
 {
+    if(checkPermission(dataClient,R_OK))
+        return ;
     if (std::remove(dataClient.Path.c_str()) == 0) 
     {
         dataClient.statusCode = " 204 No Content";
@@ -24,6 +26,7 @@ void DELETE::IsDir(Data &dataClient)
         return;
     }
     struct dirent * it;
+    bool canDelete = false;
     while ((it = readdir(dir)) != NULL) 
     {
         if (strcmp(it->d_name, ".") != 0 && strcmp(it->d_name, "..") != 0)
@@ -37,9 +40,11 @@ void DELETE::IsDir(Data &dataClient)
                     subDirData.Path = itPath + "/";
                     IsDir(subDirData); 
                 } 
-                else
+                else if (S_ISREG(statInfo.st_mode))
                 {
-                    if (std::remove(itPath.c_str()) != 0)
+                    if(access(itPath.c_str(),W_OK) != 0)
+                        canDelete = true;
+                    else if (std::remove(itPath.c_str()) != 0)
                     {
                         dataClient.statusCode = " 500 Internal Server Error";
                         dataClient.code = 500;
@@ -58,7 +63,7 @@ void DELETE::IsDir(Data &dataClient)
         }
     }
     closedir(dir);
-    if (rmdir(dataClient.Path.c_str()) == 0)
+    if (rmdir(dataClient.Path.c_str()) == 0 && canDelete == false)
     {    
         dataClient.statusCode = " 204 No Content";
         dataClient.code = 204;

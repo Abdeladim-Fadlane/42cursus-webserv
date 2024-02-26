@@ -103,9 +103,7 @@ void multiplexing(ConfigFile &config)
         {
             if(isServer(Servers,events[i].data.fd) == true)
             {
-                struct sockaddr_in address;
-                size_t addrlen = sizeof(address);
-                clientSocketFD = accept(events[i].data.fd, (struct sockaddr *)&address, (socklen_t*)&addrlen);
+                clientSocketFD = accept(events[i].data.fd, NULL, NULL);
                 if(clientSocketFD == -1)
                 {
                     std::cerr << "Failed to accept connection ." << std::endl;
@@ -145,9 +143,7 @@ void multiplexing(ConfigFile &config)
                         insialStruct(Clients[events[i].data.fd].data);
                     }
                     else if(Clients[events[i].data.fd].data.AlreadyRequestHeader  == true && Clients[events[i].data.fd].data.requeste->method == "POST")
-                    {
                         Clients[events[i].data.fd].data.requeste->post->PostingFileToServer(Clients[events[i].data.fd].data.isDone, true);
-                    }
                 }
                 else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 10 && 
                     Clients[events[i].data.fd].data.requeste->skeeptime_out == false)
