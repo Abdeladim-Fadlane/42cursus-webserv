@@ -95,13 +95,6 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
         this->MakeMapOfHeader(isdone);
         this->get_infoConfig(isdone);
         flag = true;
-        if (method != "GET" && method != "POST" && method != "DELETE")
-        {
-            headerResponse = "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/html\r\n\r\n";
-            isdone = true;
-            status_client = 501;
-            return ;
-        }
         if (isdone == false && chose_location && std::find(Location_Server.allowed_method.begin(), Location_Server.allowed_method.end(), method) == Location_Server.allowed_method.end())
         {
             status_client = 405;
@@ -114,7 +107,7 @@ void    Requeste::readFromSocketFd(bool &isdone, bool &flag)
             post = new PostMethod(*this);
             post->PostingFileToServer(isdone, false);
         }
-        else if (isdone == false && (method == "GET" || method == "POST"))
+        else if (isdone == false)
         {
             isdone = true;
             skeeptime_out = true;
@@ -329,6 +322,14 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         isdone = true;
         method = "";
         headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+        return;
+    }
+    if (method != "GET" && method != "POST" && method != "DELETE")
+    {
+        headerResponse = "HTTP/1.1 501 Not Implemented\r\nContent-Type: text/html\r\n\r\n";
+        isdone = true;
+        status_client = 501;
+        return ;
     }
 }
 
