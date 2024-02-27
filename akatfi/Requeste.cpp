@@ -37,7 +37,7 @@ std::pair<std::string, std::string> Requeste::MakePair(std::string& line)
     return (std::pair<std::string, std::string>(first, line));
 }
 
-void    Requeste::set_status_client(bool &readyclose)
+void Requeste::set_status_client(bool &readyclose)
 {
     char buffer[1024];
     int x;
@@ -45,42 +45,37 @@ void    Requeste::set_status_client(bool &readyclose)
     if (fdresponse == -1)
     {
         if (status_client == 0)
-        {
             readyclose  = true;
-            if (write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length()) == -1)
-            {
-                readyclose = true;
-                return ;
-            }
-            return ;
-        }
         else
         {
             file_name = Server_Requeste.error_pages[status_client];
             fdresponse = open(file_name.c_str(), O_RDONLY);
         }
     }
-    else if (status_client != 0)
-        headerResponse = "";
-    memset(buffer, 0, sizeof(buffer));
-    x = read(fdresponse, buffer, 1023);
-    if (x == -1)
-    {
-        status_client = 500;
-        headerResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n";
-        return ;
-    }
-    if (x == 0)
-    {
-        close(fdresponse);
-        readyclose = true;
-    }
     else
-        if (write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length()) == -1)
+        headerResponse = "";
+    if (status_client)
+    {
+        memset(buffer, 0, sizeof(buffer));
+        x = read(fdresponse, buffer, 1023);
+        if (x == -1)
         {
+            status_client = 500;
+            headerResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n";
+            return ;
+        }
+        if (x == 0)
+        {
+            close(fdresponse);
             readyclose = true;
             return ;
         }
+    }
+    if (write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length()) == -1)
+    {
+        readyclose = true;
+        return ;
+    }
 }
 
 long    Requeste::get_time(void)
