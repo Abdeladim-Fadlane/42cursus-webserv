@@ -17,6 +17,7 @@ Requeste::Requeste(int fd,ConfigFile &configfile) : config(configfile)
     fd_socket = fd;
     fdresponse = -1;
     post = NULL;
+    done = false;
     chose_location = false;
     skeeptime_out = false;
     port = 0;

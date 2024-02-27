@@ -1,5 +1,6 @@
 #include"webserv.hpp"
 
+
 void multiplexing(ConfigFile &config)
 {
     std::vector<int> Servers;
@@ -94,27 +95,37 @@ void multiplexing(ConfigFile &config)
                     else if(Clients[events[i].data.fd].data.AlreadyRequestHeader  == true && 
                         Clients[events[i].data.fd].data.requeste->method == "POST")
                     {
-
                         Clients[events[i].data.fd].data.requeste->post->PostingFileToServer(Clients[events[i].data.fd].data.isDone, true);
                     }
                 }
-                // else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 10 && 
-                //     Clients[events[i].data.fd].data.requeste->skeeptime_out == false)
-                // {       
-                //     // std::cout<<"-----------dfgfd\n";            
-                //     Clients[events[i].data.fd].data.code = 408;
-                //     Clients[events[i].data.fd].data.statusCode = " 408 Request Timeout";
-                //     Clients[events[i].data.fd].data.requeste->post->unlink_all_file();
-                //     sendErrorResponse(Clients[events[i].data.fd].data);
-                //     if(Clients[events[i].data.fd].data.readyForClose == true)
-                //         EpollCtrDEL(epollFD,events[i].data.fd,Clients);
-                // }
-                else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
+                else if(Clients[events[i].data.fd].data.isDone == false)
                 {
+                    // std::cout<<"<-----1------>\n";     
+                    if(Clients[events[i].data.fd].data.code != 0)
+                        sendErrorResponse(Clients[events[i].data.fd].data);
+                    if(Clients[events[i].data.fd].data.readyForClose == true)
+                    {
+                        EpollCtrDEL(epollFD,events[i].data.fd,Clients);
+                    }
+                    else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 5)
+                    {   
+                        // std::cout<<"<-----12------>\n";     
+                        Clients[events[i].data.fd].data.code = 408;
+                        Clients[events[i].data.fd].data.statusCode = " 408 Request Timeout";
+                        Clients[events[i].data.fd].data.requeste->done = true;
+                        // if ()
+                        // Clients[events[i].data.fd].data.requeste->post->unlink_all_file();
+                    }
+                }
+                else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
+                { 
                     if(Clients[events[i].data.fd].data.code == 0)
                     {
                         if(Clients[events[i].data.fd].data.requeste->method == "GET" )
+                        {
+                            
                             Clients[events[i].data.fd].data.OBJGET.getMethod(Clients[events[i].data.fd].data);
+                        }
                         else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
                         {
                             if(Clients[events[i].data.fd].data.isDelete == false)

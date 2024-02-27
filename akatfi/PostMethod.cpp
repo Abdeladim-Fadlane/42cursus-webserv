@@ -86,11 +86,6 @@ void    PostMethod::ft_prepar_cgi()
             cgi_extation = script_path.substr(script_path.rfind("."));
         }
     }
-    // for (size_t i = 0; i < req.Location_Server.cgi.size(); i++)
-    // {
-    //     if ()
-    //     if (i + 1 == req.Location_Server.cgi.size())
-    // }
     if (script_path.empty())
         req.Location_Server.cgi_allowed = "OFF";
 }
@@ -441,6 +436,6 @@ PostMethod::~PostMethod()
         cgi_file.close();
     if (Postfile.is_open())
         Postfile.close();
-    if (req.Location_Server.uploadfile == "OFF")
+    if (req.Location_Server.uploadfile == "OFF" || req.done == true)
         unlink_all_file();
 }

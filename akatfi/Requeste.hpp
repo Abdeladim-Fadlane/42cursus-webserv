@@ -50,6 +50,7 @@ class Requeste
         std::string                         method;
         std::map<std::string, std::string>  requeste_map;
         std::string                         file_name;
+        bool                                done;
         Requeste(int fd, ConfigFile &config);
         void    MakeMapOfHeader(bool& isdone);
         void set_status_client(bool&);

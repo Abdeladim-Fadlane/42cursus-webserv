@@ -120,7 +120,6 @@ void closeServers(std::vector<int> & Servers)
         close(Servers[i]);
     }
 }
-
 void EpollCtrDEL(int epollFD,int fd,std::map<int,struct Webserv>& Clients)
 {
     epoll_ctl(epollFD, EPOLL_CTL_DEL,fd, NULL);
