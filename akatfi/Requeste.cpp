@@ -227,7 +227,7 @@ void Requeste::get_infoConfig(bool& isdone)
                 method =  "";
                 ss << Server_Requeste.listen;
                 headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
-                    + ss.str() + path.append("/") + "\r\nContent-Type: text/html\r\n\r\n";
+                    + ss.str() + path.append("/") + "\r\n\r\n";
                 ss.str("");
                 return ;
             }

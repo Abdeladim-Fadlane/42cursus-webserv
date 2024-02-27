@@ -23,7 +23,6 @@ int main(int argc,char *argv[])
     {
         if(argc > 2)
             throw std::runtime_error("Error argments");
-        // LaunchingWebserver();
         if(argc == 1)
             argv[1] =const_cast<char*> ("file.config");
         ConfigFile config(argv[1]);

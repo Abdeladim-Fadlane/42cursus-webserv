@@ -16,6 +16,7 @@ PostMethod::PostMethod(Requeste& r) : req(r)
 {
     first_time = true;
     isCgi = false;
+    increment_body = true;
     buffer_add = r.getBody();
     size = 0;
     content_file = 0;
@@ -152,7 +153,10 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
     {
         cgi_file << buffer;
         if (buffer.find(boundary_separator + "--\r\n") != std::string::npos)
+        {
+            cgi_file.close();
             isdone = true;
+        }
         return ;
     }
     if (buffer.find(boundary_separator + "--\r\n") != std::string::npos)
@@ -290,7 +294,8 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
     }
     if (content_length < 0 || content_type.empty() || (content_file > content_length && Transfer_Encoding != "chunked"))
     {
-        Postfile.close();
+        if (Postfile.is_open())
+            Postfile.close();
         unlink_all_file();
         req.headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
         req.status_client = 400;
@@ -414,6 +419,8 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
     {
         if (Postfile.is_open())
             Postfile.close();
+        if (access(cgi_path.c_str(), F_OK) != -1)
+            remove(cgi_path.c_str());
         unlink_all_file();
         req.status_client = 413;
         isdone = true;

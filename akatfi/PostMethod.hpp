@@ -41,6 +41,7 @@ class PostMethod
         std::map<std::string, std::string>  map_extation;
         std::vector<std::string>    vector_files;
         long              content_file;
+        bool            increment_body;
     public:
         std::string         path;
         std::string         cgi_path;
