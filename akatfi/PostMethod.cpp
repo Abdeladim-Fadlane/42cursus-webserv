@@ -25,14 +25,18 @@ PostMethod::PostMethod(Requeste& r) : req(r)
     if (req.requeste_map.find("Content-Type") != req.requeste_map.end())
         content_type = this->req.requeste_map.find("Content-Type")->second;
     if (req.requeste_map.find("Content-Length") != req.requeste_map.end())
-        content_length = atoi((this->req.requeste_map.find("Content-Length")->second).c_str());
+    {
+        if (check_digit(req.requeste_map.find("Content-Length")->second) == false)
+            content_length  = -1;
+        else
+            content_length = atoi((this->req.requeste_map.find("Content-Length")->second).c_str());
+    }
     if (req.requeste_map.find("Transfer-Encoding") != req.requeste_map.end())
         Transfer_Encoding = this->req.requeste_map.find("Transfer-Encoding")->second;
     req.headerResponse = "HTTP/1.1 201 Created\r\nContent-Type: text/html\r\n\r\n";
     req.status_client = 201;
     if (req.Location_Server.cgi_allowed == "ON")
     {
-        // std::cout << "running the cgi ... " << std::endl;
         cgi_file.open("/tmp/index_cgi", std::fstream::out);
         cgi_path = "/tmp/index_cgi";
         ft_prepar_cgi();
@@ -144,16 +148,20 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
         }
         buffer_add_size = (boundary_separator + "\r\n").length();
     }
+    if (isCgi == true)
+    {
+        cgi_file << buffer;
+        if (buffer.find(boundary_separator + "--\r\n") != std::string::npos)
+            isdone = true;
+        return ;
+    }
     if (buffer.find(boundary_separator + "--\r\n") != std::string::npos)
     {
         buffer = buffer.substr(0, buffer.find(boundary_separator + "--\r\n") - 2);
-        std::cout << "done with closed" << std::endl;
         buffer_add_size = 0;
         boundary(buffer, isdone);
         if (Postfile.is_open())
             Postfile.close();
-        if (cgi_file.is_open())
-            cgi_file.close();
         req.skeeptime_out = true;
         isdone = true;
     }
@@ -161,10 +169,7 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
     {
         if (Postfile.is_open() == true)
         {
-            if (isCgi == false)
-                Postfile << buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2);
-            else
-                cgi_file << buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2);
+            Postfile << buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2);
             content_file += buffer.substr(0, buffer.find(boundary_separator + "\r\n") - 2).length();
             Postfile.close();
             buffer = buffer.substr(buffer.find(boundary_separator + "\r\n"));
@@ -175,21 +180,18 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
             return ;
         }
         type = init_contentType(buffer);
-        if (isCgi == false)
+        if (type.empty() == true)
         {
-            if (type.empty() == true)
-            {
-                req.status_client = 415;
-                req.headerResponse = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Type: text/html\r\n\r\n";
-                isdone = true;
-                return ;
-            }
-            gettimeofday(&Time, NULL);
-            ss << Time.tv_sec << "-" << Time.tv_usec;
-            vector_files.push_back(req.Location_Server.upload_location + "/index" + ss.str() + type);
-            Postfile.open((std::string(req.Location_Server.upload_location).append("/index") + ss.str() + type).c_str() , std::fstream::out);
-            ss.str("");
+            req.status_client = 415;
+            req.headerResponse = "HTTP/1.1 415 Unsupported Media Type\r\nContent-Type: text/html\r\n\r\n";
+            isdone = true;
+            return ;
         }
+        gettimeofday(&Time, NULL);
+        ss << Time.tv_sec << "-" << Time.tv_usec;
+        vector_files.push_back(req.Location_Server.upload_location + "/index" + ss.str() + type);
+        Postfile.open((std::string(req.Location_Server.upload_location).append("/index") + ss.str() + type).c_str() , std::fstream::out);
+        ss.str("");
         boundary(buffer, isdone);
     }
     else
@@ -198,10 +200,7 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
             index = buffer.length() - buffer_add_size;
         else
             index = buffer.length();
-        if (isCgi == false)
-            Postfile << buffer.substr(0, index);
-        else
-            cgi_file << buffer.substr(0, index);
+        Postfile << buffer.substr(0, index);
         content_file += buffer.substr(0, index).length();
         buffer_add = buffer.substr(index);
     }

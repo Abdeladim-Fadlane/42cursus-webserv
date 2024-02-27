@@ -1,5 +1,21 @@
 #include"webserv.hpp"
-#include "../akatfi/parsinfCon/Configfile.hpp"
+
+void LaunchingWebserver()
+{
+    const char* movements[] = {"... ", " .. ", ". ..", ".. ."};
+    int i = 0;
+    while (true)
+    {
+        std::cout << "\r";
+        std::cout << "\033[1m\033[32mLaunching Webserver\033[0m";
+        std::cout << movements[i % 4] << std::flush;
+        usleep(200000);
+        if( i == 20)
+            break;
+        i++;
+    }
+    std::cout << "\r";
+}
 
 int main(int argc,char *argv[])
 {
@@ -7,6 +23,7 @@ int main(int argc,char *argv[])
     {
         if(argc > 2)
             throw std::runtime_error("Error argments");
+        // LaunchingWebserver();
         if(argc == 1)
             argv[1] =const_cast<char*> ("file.config");
         ConfigFile config(argv[1]);

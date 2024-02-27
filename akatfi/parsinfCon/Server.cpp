@@ -101,7 +101,11 @@ void    Server::init_data(std::fstream& os)
             ss << arg[1];
             while (std::getline(ss, p, '.'))
                 if (check_digit(p))
+                {
+                    if (!(atoi(p.c_str()) >= 0 && atoi(p.c_str()) <= 256))
+                        break ;
                     number.push_back(p);
+                }
             if (number.size() != 4)
                 throw std::runtime_error("Error : the host is nont valid");
             host = arg[1];

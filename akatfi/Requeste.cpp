@@ -40,7 +40,7 @@ std::pair<std::string, std::string> Requeste::MakePair(std::string& line)
 void    Requeste::set_status_client(bool &readyclose)
 {
     char buffer[1024];
-    int x;
+    memset(buffer, 0, sizeof(buffer));
 
     if (fdresponse == -1)
     {
@@ -52,27 +52,21 @@ void    Requeste::set_status_client(bool &readyclose)
             fdresponse = open(file_name.c_str(), O_RDONLY);
         }
     }
-    else if (status_client != 0)
-        headerResponse = "";
-    memset(buffer, 0, sizeof(buffer));
-    x = read(fdresponse, buffer, 1023);
-    if (x == -1)
-    {
-        status_client = 500;
-        headerResponse = "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n";
-        return ;
-    }
-    if (x == 0)
-    {
-        close(fdresponse);
-        readyclose = true;
-    }
     else
-        if (write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length()) == -1)
+        headerResponse = "";
+    if (status_client != 0)
+    {
+        if (read(fdresponse, buffer, 1023) == 0)
         {
-            readyclose = true;
+            readyclose  = true;
             return ;
         }
+    }
+    if (write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length()) == -1)
+    {
+        readyclose  = true;
+        return ;
+    }       
 }
 
 long    Requeste::get_time(void)
@@ -233,8 +227,9 @@ void Requeste::get_infoConfig(bool& isdone)
                 method =  "";
                 ss << Server_Requeste.listen;
                 headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
-                    + ss.str() + path.append("/") + "\r\n\r\n";
+                    + ss.str() + path.append("/") + "\r\nContent-Type: text/html\r\n\r\n";
                 ss.str("");
+                return ;
             }
             break;
         }
@@ -247,9 +242,9 @@ void Requeste::get_infoConfig(bool& isdone)
         isdone = true;
         method =  "";
         ss << Server_Requeste.listen;
-        headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: http://" + Server_Requeste.host.append(":") 
-            + ss.str() + Location_Server.redirection + "\r\n\r\n";
+        headerResponse = "HTTP/1.1 301 Moved Permanently\r\nLocation: " + Location_Server.redirection + "\r\n\r\n";
         ss.str("");
+        return ;
     }
     pathreal = realpath(Location_Server.root.c_str(), NULL);
     if (pathreal && std::string(pathreal).append("/").find(root_path.c_str()) == std::string::npos)
