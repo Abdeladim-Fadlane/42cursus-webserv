@@ -109,8 +109,12 @@ void    ConfigFile::parceConfig()
                 if (it->host.empty() || !it->port_chose)
                     throw std::runtime_error("Error : the server need host and post");
                 for (size_t i = 0; i < Servers.size() - 1; i++)
+                {
                     if (Servers[i].host == it->host && Servers[i].listen == it->listen && Servers[i].server_name == it->server_name)
-                        throw std::runtime_error("Error : one or more server hve the same port, host and server name");
+                        throw std::runtime_error("Error : one or more server has the same port, host and server name");
+                    else if (Servers[i].host == it->host && Servers[i].listen == it->listen && it->server_name.empty())
+                        throw std::runtime_error("Error : you can't match this server without server name");
+                }
             }
             catch(const std::exception& e)
             {

@@ -1,6 +1,5 @@
 #include"webserv.hpp"
 
-
 void multiplexing(ConfigFile &config)
 {
     std::vector<int> Servers;
@@ -14,7 +13,7 @@ void multiplexing(ConfigFile &config)
             throw std::runtime_error("Cannot create socket");
         sockaddr_in serverAdress;
         serverAdress.sin_family = AF_INET;
-        serverAdress.sin_addr.s_addr = INADDR_ANY;
+        serverAdress.sin_addr.s_addr = inet_addr(config.Servers[i].host.c_str());
         serverAdress.sin_port = htons(config.Servers[i].listen);
         int reuse = 1;
         if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0)
@@ -23,7 +22,7 @@ void multiplexing(ConfigFile &config)
             std::cerr<<("setsockopt(SO_REUSEADDR) failed");
             continue;
         }
-        if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) != 0)
+        if(bind(socketFD,(struct sockaddr*)&serverAdress,sizeof(serverAdress)) == -1)
         {
             close(socketFD);
             std::cerr<<"Cannot bind to port : "<<config.Servers[i].listen << std::endl ;
@@ -99,22 +98,16 @@ void multiplexing(ConfigFile &config)
                     }
                 }
                 else if(Clients[events[i].data.fd].data.isDone == false)
-                {
-                    // std::cout<<"<-----1------>\n";     
+                {   
                     if(Clients[events[i].data.fd].data.code != 0)
                         sendErrorResponse(Clients[events[i].data.fd].data);
                     if(Clients[events[i].data.fd].data.readyForClose == true)
-                    {
                         EpollCtrDEL(epollFD,events[i].data.fd,Clients);
-                    }
                     else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 5)
-                    {   
-                        // std::cout<<"<-----12------>\n";     
+                    {      
                         Clients[events[i].data.fd].data.code = 408;
                         Clients[events[i].data.fd].data.statusCode = " 408 Request Timeout";
                         Clients[events[i].data.fd].data.requeste->done = true;
-                        // if ()
-                        // Clients[events[i].data.fd].data.requeste->post->unlink_all_file();
                     }
                 }
                 else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
@@ -122,10 +115,7 @@ void multiplexing(ConfigFile &config)
                     if(Clients[events[i].data.fd].data.code == 0)
                     {
                         if(Clients[events[i].data.fd].data.requeste->method == "GET" )
-                        {
-                            
                             Clients[events[i].data.fd].data.OBJGET.getMethod(Clients[events[i].data.fd].data);
-                        }
                         else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
                         {
                             if(Clients[events[i].data.fd].data.isDelete == false)

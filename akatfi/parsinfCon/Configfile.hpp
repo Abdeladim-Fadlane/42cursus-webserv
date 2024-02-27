@@ -24,6 +24,8 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <string>
+
 
 class Location
 {

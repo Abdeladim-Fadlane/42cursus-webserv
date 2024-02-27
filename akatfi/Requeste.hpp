@@ -22,7 +22,6 @@
 #include <sys/time.h>
 #include <algorithm>
 #include "parsinfCon/Configfile.hpp"
-
 class PostMethod;
 class Requeste
 {
@@ -51,7 +50,7 @@ class Requeste
         std::string                         method;
         std::map<std::string, std::string>  requeste_map;
         std::string                         file_name;
-        bool done;
+        bool                                done;
         Requeste(int fd, ConfigFile &config);
         void    MakeMapOfHeader(bool& isdone);
         void set_status_client(bool&);

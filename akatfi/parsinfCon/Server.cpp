@@ -59,6 +59,9 @@ void    Server::init_data(std::fstream& os)
     std::string input;
     std::vector<std::string> arg;
     std::vector<Location>::iterator it;
+    std::vector<std::string> number;
+    std::stringstream   ss;
+    std::string         p;
 
     while (getlineFromFile(os, input) && input != "server")
     {
@@ -94,7 +97,15 @@ void    Server::init_data(std::fstream& os)
             cgi_timeout = atoi(arg[1].c_str());
         }
         else if (!arg[0].compare("host") && arg.size() == 2 && !close && host.empty())
+        {
+            ss << arg[1];
+            while (std::getline(ss, p, '.'))
+                if (check_digit(p))
+                    number.push_back(p);
+            if (number.size() != 4)
+                throw std::runtime_error("Error : the host is nont valid");
             host = arg[1];
+        }
         else if (!arg[0].compare("server_name") && arg.size() == 2 && !close && server_name.empty())
             server_name = arg[1];
         else if (!arg[0].compare("max_body_Size") && arg.size() == 2 && !close)
