@@ -417,6 +417,10 @@ PostMethod::~PostMethod()
 {
     cgi_file.close();
     Postfile.close();
-    if (req.Location_Server.uploadfile == "OFF")
+    // std::cout << "akakkaka::" << done << std::endl;
+    if (req.Location_Server.uploadfile == "OFF" || req.done == true)
+    {
+        std::cout<<"heeeeeeeeee\r";
         unlink_all_file();
+    }
 }
