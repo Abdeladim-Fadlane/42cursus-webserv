@@ -137,6 +137,7 @@ void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
     httpResponse.append("\r\nTransfer-Encoding: chunked\r\n\r\n");
     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
         throw std::runtime_error("error send");
+    
 }
 
 void GETMETHOD::serveFIle(Data& dataClient)
@@ -187,8 +188,7 @@ void GETMETHOD::sendListDir(Data & dataClient)
     std::ostringstream wiss;
     wiss << listDirectory.size();
     httpResponse = dataClient.requeste->http_v;
-    httpResponse.append(" 200 OK\r\nContent-Type: text/html;");
-    httpResponse.append(" charset=UTF-8\r\nContent-Lenght: ");
+    httpResponse.append(" 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Lenght: ");
     httpResponse.append(wiss.str()).append("\r\n\r\n").append(listDirectory);
     if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
         throw std::runtime_error("error send");
