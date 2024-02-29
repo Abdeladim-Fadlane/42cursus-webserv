@@ -23,7 +23,7 @@ void sendErrorResponse(Data &dataClient)
             htttpresponce = dataClient.requeste->http_v;
             htttpresponce.append(dataClient.statusCode).append("\r\nContent-Type: text/html\r\n");
             htttpresponce.append("Content-Lenght: ").append(wiss.str()).append("\r\n\r\n");
-            if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) <=0)
+            if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) <= 0)
             {
                 dataClient.readyForClose = true;
                 std::runtime_error("error send");
