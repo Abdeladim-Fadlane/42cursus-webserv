@@ -38,8 +38,8 @@ PostMethod::PostMethod(Requeste& r) : req(r)
     req.status_client = 201;
     if (req.Location_Server.cgi_allowed == "ON")
     {
-        cgi_file.open("/tmp/index_cgi", std::fstream::out);
-        cgi_path = "/tmp/index_cgi";
+        cgi_file.open("/nfs/homes/afadlane/webserv/index_cgi", std::fstream::out);
+        cgi_path = "/nfs/homes/afadlane/webserv/index_cgi";
         ft_prepar_cgi();
     }
 }

@@ -45,7 +45,7 @@ void multiplexing(ConfigFile &config)
         }
         Servers.push_back(socketFD);
     }
-    std::map<int,struct Webserv> Clients;
+    std::map<int,Client *> Clients;
     epoll_event events[MAX_EVENTS];
     while (true)
     {
@@ -75,68 +75,68 @@ void multiplexing(ConfigFile &config)
             {
                 if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLHUP || events[i].events & EPOLLERR)
                 {
-                    if(Clients[events[i].data.fd].data.OBJCGI.pid != -1)
+                    if(Clients[events[i].data.fd]->data.OBJCGI.pid != -1)
                     {
                         int status;
-                        std::remove(Clients[events[i].data.fd].data.OBJCGI.cgiFile.c_str());
-                        kill(Clients[events[i].data.fd].data.OBJCGI.pid,SIGKILL);
-                        waitpid(Clients[events[i].data.fd].data.OBJCGI.pid,&status,0);
+                        std::remove(Clients[events[i].data.fd]->data.OBJCGI.cgiFile.c_str());
+                        kill(Clients[events[i].data.fd]->data.OBJCGI.pid,SIGKILL);
+                        waitpid(Clients[events[i].data.fd]->data.OBJCGI.pid,&status,0);
                     }
                     EpollCtrDEL(epollFD,events[i].data.fd,Clients);
                 }
-                else if(events[i].events & EPOLLIN && Clients[events[i].data.fd].data.isDone == false)
+                else if(events[i].events & EPOLLIN && Clients[events[i].data.fd]->data.isDone == false)
                 {
-                    if(Clients[events[i].data.fd].data.AlreadyRequestHeader == false)
+                    if(Clients[events[i].data.fd]->data.AlreadyRequestHeader == false)
                     {
-                        Clients[events[i].data.fd].data.requeste->readFromSocketFd(Clients[events[i].data.fd].data.isDone, Clients[events[i].data.fd].data.AlreadyRequestHeader);
-                        insialStruct(Clients[events[i].data.fd].data);
+                        Clients[events[i].data.fd]->data.requeste->readFromSocketFd(Clients[events[i].data.fd]->data.isDone, Clients[events[i].data.fd]->data.AlreadyRequestHeader);
+                        insialStruct(Clients[events[i].data.fd]->data);
                     }
-                    else if(Clients[events[i].data.fd].data.AlreadyRequestHeader  == true && 
-                        Clients[events[i].data.fd].data.requeste->method == "POST")
+                    else if(Clients[events[i].data.fd]->data.AlreadyRequestHeader  == true && 
+                        Clients[events[i].data.fd]->data.requeste->method == "POST")
                     {
-                        Clients[events[i].data.fd].data.requeste->post->PostingFileToServer(Clients[events[i].data.fd].data.isDone, true);
+                        Clients[events[i].data.fd]->data.requeste->post->PostingFileToServer(Clients[events[i].data.fd]->data.isDone, true);
                     }
                 }
-                else if(Clients[events[i].data.fd].data.isDone == false)
+                else if(Clients[events[i].data.fd]->data.isDone == false)
                 {   
-                    if(Clients[events[i].data.fd].data.code != 0)
-                        sendErrorResponse(Clients[events[i].data.fd].data);
-                    if(Clients[events[i].data.fd].data.readyForClose == true)
+                    if(Clients[events[i].data.fd]->data.code != 0)
+                        sendErrorResponse(Clients[events[i].data.fd]->data);
+                    if(Clients[events[i].data.fd]->data.readyForClose == true)
                         EpollCtrDEL(epollFD,events[i].data.fd,Clients);
-                    else if(getCurrentTime() - Clients[events[i].data.fd].data.requeste->time_out > 5)
+                    else if(getCurrentTime() - Clients[events[i].data.fd]->data.requeste->time_out > 5)
                     {      
-                        Clients[events[i].data.fd].data.code = 408;
-                        Clients[events[i].data.fd].data.statusCode = " 408 Request Timeout";
-                        Clients[events[i].data.fd].data.requeste->done = true;
+                        Clients[events[i].data.fd]->data.code = 408;
+                        Clients[events[i].data.fd]->data.statusCode = " 408 Request Timeout";
+                        Clients[events[i].data.fd]->data.requeste->done = true;
                     }
                 }
-                else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd].data.isDone == true)
+                else if (events[i].events & EPOLLOUT && Clients[events[i].data.fd]->data.isDone == true)
                 { 
-                    if(Clients[events[i].data.fd].data.code == 0)
+                    if(Clients[events[i].data.fd]->data.code == 0)
                     {
-                        if(Clients[events[i].data.fd].data.requeste->method == "GET" )
-                            Clients[events[i].data.fd].data.OBJGET.getMethod(Clients[events[i].data.fd].data);
-                        else if(Clients[events[i].data.fd].data.requeste->method == "DELETE")
+                        if(Clients[events[i].data.fd]->data.requeste->method == "GET" )
+                            Clients[events[i].data.fd]->data.OBJGET.getMethod(Clients[events[i].data.fd]->data);
+                        else if(Clients[events[i].data.fd]->data.requeste->method == "DELETE")
                         {
-                            if(Clients[events[i].data.fd].data.isDelete == false)
-                                Clients[events[i].data.fd].data.OBJDEL.deleteMethod(Clients[events[i].data.fd].data); 
+                            if(Clients[events[i].data.fd]->data.isDelete == false)
+                                Clients[events[i].data.fd]->data.OBJDEL.deleteMethod(Clients[events[i].data.fd]->data); 
                         }
-                        else if(Clients[events[i].data.fd].data.requeste->method == "POST" )
+                        else if(Clients[events[i].data.fd]->data.requeste->method == "POST" )
                         {
-                            if(Clients[events[i].data.fd].data.requeste->post->isCgi == true)
+                            if(Clients[events[i].data.fd]->data.requeste->post->isCgi == true)
                             {
-                                std::string type = Clients[events[i].data.fd].data.requeste->post->cgi_extation;
-                                Clients[events[i].data.fd].data.OBJCGI.fastCGI(Clients[events[i].data.fd].data,type);
+                                std::string type = Clients[events[i].data.fd]->data.requeste->post->cgi_extation;
+                                Clients[events[i].data.fd]->data.OBJCGI.fastCGI(Clients[events[i].data.fd]->data,type);
                             }
                             else
-                                Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
+                                Clients[events[i].data.fd]->data.requeste->set_status_client(Clients[events[i].data.fd]->data.readyForClose);
                         }
                         else
-                            Clients[events[i].data.fd].data.requeste->set_status_client(Clients[events[i].data.fd].data.readyForClose);
+                            Clients[events[i].data.fd]->data.requeste->set_status_client(Clients[events[i].data.fd]->data.readyForClose);
                     }
-                    else if(Clients[events[i].data.fd].data.code != 0)
-                        sendErrorResponse(Clients[events[i].data.fd].data);
-                    if(Clients[events[i].data.fd].data.readyForClose == true)
+                    else if(Clients[events[i].data.fd]->data.code != 0)
+                        sendErrorResponse(Clients[events[i].data.fd]->data);
+                    if(Clients[events[i].data.fd]->data.readyForClose == true)
                         EpollCtrDEL(epollFD,events[i].data.fd,Clients);
                 }
             }

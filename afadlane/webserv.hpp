@@ -25,7 +25,7 @@
 
 #define  MAX_EVENTS 1024
 #define  BUFFER_SIZE 1024
-struct Data;
+class Data;
 
 class DELETE
 {
@@ -41,16 +41,16 @@ class DELETE
 class GETMETHOD
 {
     private :
-        int             fileFd;
+        std::ifstream   *fdFile;
         bool            isReading;
         bool            Alreadyopen;
         bool            modeAutoIndex;
         std::string     listDirectory;
     public:
         GETMETHOD();
+        ~GETMETHOD();
         std::string     getContentType(Data &);
         void            getMethod(Data &);
-        void            sendChunk(int , std::string &);
         void            openFileAndSendHeader(Data& );
         int             checkFileDirPermission(Data &);
         void            openDirFIle(Data & );
@@ -64,16 +64,18 @@ class CGI
 {
     private:
         bool            isFork;
+        std::ifstream   *fdFile; 
         ssize_t         lenghtFile;
         std::string     restRead;
         double          startTime;
         bool            isReadingCgi;
         bool            sendHeader;
-        FILE* fdFile;
+
     public:
         std::string     cgiFile;
         pid_t           pid;
         CGI();
+        ~CGI();
         void            sendBody(Data &);
         void            SendHeader(Data &);
         void            makeHeader(Data &,bool );
@@ -85,28 +87,32 @@ class CGI
         
 };
 
-struct Data
-{  
-    int fd ;
-    long code;
-    CGI OBJCGI;
-    int errorFd;
-    bool  isDone;
-    DELETE OBJDEL;
-    bool isDelete ;
-    bool autoIndex;
-    std::string Path;
-    bool Alreadparce;
-    GETMETHOD OBJGET;
-    Requeste *requeste ;
-    bool readyForClose;
-    std::string statusCode;
-    bool AlreadyRequestHeader;
+class Data
+{
+    public:
+        int fd ;
+        long code;
+        CGI OBJCGI;
+        int errorFd;
+        bool  isDone;
+        DELETE OBJDEL;
+        bool isDelete ;
+        bool autoIndex;
+        std::string Path;
+        bool Alreadparce;
+        GETMETHOD OBJGET;
+        Requeste *requeste ;
+        bool readyForClose;
+        std::string statusCode;
+        bool AlreadyRequestHeader;
+        Data();
+        ~Data();
 };
 
-struct Webserv
+class Client
 {
-    Data data;
+    public:
+        Data data;
 };
 
 double  getCurrentTime(void);
@@ -116,5 +122,6 @@ void    multiplexing(ConfigFile &);
 bool    checkPermission(Data &,int );
 void    closeServers(std::vector<int> &);
 bool    isServer(std::vector<int> & ,int );
-void    EpollCtrDEL(int ,int ,std::map<int,struct Webserv>&);
-void    inisialData(std::map<int,struct Webserv> & ,ConfigFile &,int &);
+void    sendResponce(Data &,std::string &);
+void    EpollCtrDEL(int ,int ,std::map<int,Client * >&);
+void    inisialData(std::map<int,Client *> & ,ConfigFile &,int &);
