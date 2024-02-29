@@ -135,10 +135,10 @@ void   CGI::SendHeader(Data &dataClient)
 void CGI::sendBody(Data &dataClient)
 {
     char buffer[BUFFER_SIZE];
-    std::streamsize bytesRead;
     fdFile->read(buffer,BUFFER_SIZE);
     if(fdFile->bad())
         throw std::runtime_error("error");
+    std::streamsize bytesRead  = fdFile->gcount();
     if(bytesRead == 0)
     {
         if(!restRead.empty())
@@ -147,7 +147,6 @@ void CGI::sendBody(Data &dataClient)
     }
     else
     {
-        bytesRead = fdFile->gcount();
         std::string httpresponse(buffer,bytesRead);
         restRead.append(httpresponse);
         sendResponce(dataClient,restRead);
@@ -193,7 +192,11 @@ void CGI::executeScript(Data &dataClient,std::string &type)
         if(dataClient.requeste->method == "POST")
             std::freopen(dataClient.requeste->post->cgi_path.c_str(), "r", stdin);
         const char *args[] = {interpreter.c_str(), dataClient.Path.c_str(), NULL};
-        if(execve(interpreter.c_str(), const_cast<char* const*>(args), env) == -1)
+        size_t pos = dataClient.Path.find_last_of("/");
+        std::string strpwd;
+        if(pos != std::string::npos)
+            strpwd = dataClient.Path.substr(0,pos);
+        if(chdir(strpwd.c_str()) == -1 || execve(interpreter.c_str(), const_cast<char* const*>(args), env) == -1)
             exit(1);
     }
 }
