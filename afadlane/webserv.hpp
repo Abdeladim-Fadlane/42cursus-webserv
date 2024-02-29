@@ -93,7 +93,7 @@ class Data
         int fd ;
         long code;
         CGI OBJCGI;
-        int errorFd;
+        bool sendHeader;
         bool  isDone;
         DELETE OBJDEL;
         bool isDelete ;
@@ -104,6 +104,7 @@ class Data
         Requeste *requeste ;
         bool readyForClose;
         std::string statusCode;
+        std::ifstream   *fdFile;
         bool AlreadyRequestHeader;
         Data();
         ~Data();

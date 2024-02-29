@@ -14,8 +14,8 @@ CGI::~CGI()
 {
     if(fdFile->is_open())
         fdFile->close();
-    // if(!cgiFile.empty())
-    //     std::remove(cgiFile.c_str());
+    if(!cgiFile.empty())
+        std::remove(cgiFile.c_str());
     delete fdFile;
 }
 
@@ -118,9 +118,9 @@ void   CGI::SendHeader(Data &dataClient)
     }
     char buffer[BUFFER_SIZE];
     fdFile->read(buffer,BUFFER_SIZE);
-    std::streamsize bytesRead = fdFile->gcount();
     if(fdFile->bad())
         throw std::runtime_error("error");
+    std::streamsize bytesRead = fdFile->gcount();
     if(bytesRead == 0)
     {
         makeHeader(dataClient,true);
@@ -200,7 +200,6 @@ void CGI::executeScript(Data &dataClient,std::string &type)
 
 void CGI::fastCGI(Data &dataClient,std::string &type)
 {
-    std::cout<<"hererererer\n";
     try
     {
         if(sendHeader == false)
