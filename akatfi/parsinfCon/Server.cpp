@@ -44,7 +44,7 @@ Server& Server::operator=(const Server& obj)
 {
     listen = obj.listen;
     host = obj.host;
-    server_name = obj.server_name;
+    server_names = obj.server_names;
     error_pages = obj.error_pages;
     max_body = obj.max_body;
     locations = obj.locations;
@@ -110,8 +110,11 @@ void    Server::init_data(std::fstream& os)
                 throw std::runtime_error("Error : the host is nont valid");
             host = arg[1];
         }
-        else if (!arg[0].compare("server_name") && arg.size() == 2 && !close && server_name.empty())
-            server_name = arg[1];
+        else if (!arg[0].compare("server_names")  && !close && server_names.size() == 0)
+        {
+            for (size_t i = 1; i < arg.size(); i++)
+                server_names.push_back(arg[i]);
+        }
         else if (!arg[0].compare("max_body_Size") && arg.size() == 2 && !close)
         {
             if (!check_digit(arg[1]) || !(atoi(arg[1].c_str()) > 0 && atoi(arg[1].c_str()) <= 2147483647))
@@ -132,6 +135,9 @@ void    Server::init_data(std::fstream& os)
             locations.push_back(Location(arg[1]));
             it = locations.end() - 1;
             it->add_location(os);
+            for (size_t i = 0; i < locations.size() - 1; i++)
+                if (locations[i].location_name == it->location_name)
+                    throw std::runtime_error("Error : there is two or more location have the same name");
         }
         else
             throw std::runtime_error("Error : line have dosen't folow rules or duplicated");

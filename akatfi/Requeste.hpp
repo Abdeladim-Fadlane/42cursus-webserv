@@ -31,6 +31,7 @@ class Requeste
         std::string                         body;
         ConfigFile                          &config;
         int                                 fdresponse;
+        std::ifstream                        response;
         bool                                chose_location;
     public:
         long                                time_out;

@@ -38,8 +38,8 @@ PostMethod::PostMethod(Requeste& r) : req(r)
     req.status_client = 201;
     if (req.Location_Server.cgi_allowed == "ON")
     {
-        cgi_file.open("/nfs/homes/afadlane/webserv/index_cgi", std::fstream::out);
-        cgi_path = "/nfs/homes/afadlane/webserv/index_cgi";
+        cgi_file.open("/tmp/index_cgi", std::fstream::out);
+        cgi_path = "/tmp/index_cgi";
         ft_prepar_cgi();
     }
 }
@@ -151,10 +151,22 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
     }
     if (isCgi == true)
     {
+        content_file += buffer.length();
+        if (content_file > req.Server_Requeste.max_body)
+        {
+            isCgi = false;
+            if (access(cgi_path.c_str(), F_OK) != -1)
+                remove(cgi_path.c_str());
+            req.status_client = 413;
+            isdone = true;
+            req.headerResponse = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n";
+            return ;
+        }
         cgi_file << buffer;
         if (buffer.find(boundary_separator + "--\r\n") != std::string::npos)
         {
-            cgi_file.close();
+            if (cgi_file.is_open())
+                cgi_file.close();
             isdone = true;
         }
         return ;
@@ -166,7 +178,6 @@ void PostMethod::boundary(std::string buffer, bool& isdone)
         boundary(buffer, isdone);
         if (Postfile.is_open())
             Postfile.close();
-        req.skeeptime_out = true;
         isdone = true;
     }
     else if (buffer.find(boundary_separator + "\r\n") != std::string::npos)
@@ -363,7 +374,9 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
         chunked(buffer, isdone);
     }
     else if (content_type.substr(0, content_type.find(";")) == "multipart/form-data")
+    {
         boundary(buffer, isdone);
+    }
     else
     {
         if (first_time && isCgi == false)
@@ -417,6 +430,8 @@ void    PostMethod::PostingFileToServer(bool& isdone, bool readorno)
     }
     if (content_file > req.Server_Requeste.max_body)
     {
+        if (content_type.substr(0, content_type.find(";")) == "multipart/form-data" && isCgi == true)
+            return ;
         if (Postfile.is_open())
             Postfile.close();
         if (access(cgi_path.c_str(), F_OK) != -1)
