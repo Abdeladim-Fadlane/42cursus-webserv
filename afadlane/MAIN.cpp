@@ -26,7 +26,7 @@ int main(int argc,char *argv[])
         if(argc == 1)
             argv[1] =const_cast<char*> ("file.conf");
         ConfigFile config(argv[1]);
-        // LaunchingWebserver();
+        LaunchingWebserver();
         config.parceConfig();
         multiplexing(config);
     }
