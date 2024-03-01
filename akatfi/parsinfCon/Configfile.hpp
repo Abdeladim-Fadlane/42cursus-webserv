@@ -55,8 +55,8 @@ class Server
         long                                listen;
         std::string                         host;
         size_t                              cgi_timeout;
-        std::string                         server_name;
-        std::map<long, std::string>  error_pages;
+        std::vector<std::string>            server_names;
+        std::map<long, std::string>         error_pages;
         long                                max_body;
         std::vector<Location>               locations;
         bool                                close;

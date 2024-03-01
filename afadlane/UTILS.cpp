@@ -1,5 +1,11 @@
 #include"webserv.hpp"
 
+void sendResponce(Data &dataClient,std::string &data)
+{
+    if(send(dataClient.fd,data.c_str(),data.size(),0) <= 0)
+        throw std::runtime_error("error send");
+}
+
 void sendErrorResponse(Data &dataClient)
 {
     try
@@ -17,7 +23,7 @@ void sendErrorResponse(Data &dataClient)
             htttpresponce = dataClient.requeste->http_v;
             htttpresponce.append(dataClient.statusCode).append("\r\nContent-Type: text/html\r\n");
             htttpresponce.append("Content-Lenght: ").append(wiss.str()).append("\r\n\r\n");
-            if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
+            if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) <= 0)
             {
                 dataClient.readyForClose = true;
                 std::runtime_error("error send");
@@ -50,7 +56,7 @@ void sendErrorResponse(Data &dataClient)
                 return;
             }
             std::string htttpresponce(buffer,readByte);
-            if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) == -1)
+            if(send(dataClient.fd,htttpresponce.c_str(),htttpresponce.size(),0) <= 0)
             {
                 throw std::runtime_error("error send");
                 dataClient.readyForClose = true;
@@ -63,19 +69,11 @@ void sendErrorResponse(Data &dataClient)
     } 
 }
 
-void    inisialData(std::map<int,struct Webserv> &Clients ,ConfigFile &config,int &clientSocketFD)
+void    inisialData(std::map<int,Client * > &Clients ,ConfigFile &config,int &clientSocketFD)
 {
-    Webserv  Data;
-    Data.data.errorFd               =    -2;
-    Data.data.code                  =     0;
-    Data.data.readyForClose         = false;
-    Data.data.Alreadparce           = false;
-    Data.data.AlreadyRequestHeader  = false;
-    Data.data.isDone                = false;
-    Data.data.autoIndex             = false;
-    Data.data.isDelete              = false;
-    Data.data.fd                    = clientSocketFD;
-    Data.data.requeste              = new Requeste(clientSocketFD,config);
+    Client  *Data                = new Client();
+    Data->data.fd                = clientSocketFD;
+    Data->data.requeste              = new Requeste(clientSocketFD,config);
     Clients[clientSocketFD]         = Data;
 }
 
@@ -120,10 +118,28 @@ void closeServers(std::vector<int> & Servers)
         close(Servers[i]);
     }
 }
-void EpollCtrDEL(int epollFD,int fd,std::map<int,struct Webserv>& Clients)
+
+void EpollCtrDEL(int epollFD,int fd,std::map<int,Client *>& Clients)
 {
     epoll_ctl(epollFD, EPOLL_CTL_DEL,fd, NULL);
     close(fd);
-    delete Clients[fd].data.requeste;
+    delete Clients[fd];
     Clients.erase(fd);
+}
+
+Data::Data()
+{
+    errorFd               =    -2;
+    code                  =     0;
+    isDone                = false;
+    isDelete              = false;
+    autoIndex             = false;
+    Alreadparce           = false;
+    readyForClose         = false;
+    AlreadyRequestHeader  = false;
+}
+
+Data::~Data()
+{
+    delete requeste;
 }

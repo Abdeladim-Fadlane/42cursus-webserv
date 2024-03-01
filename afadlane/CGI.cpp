@@ -2,10 +2,21 @@
 
 CGI::CGI()
 {
+    cgiFile = "";
+    pid = -1;
     isFork = false;
     sendHeader = false;
     isReadingCgi = false;
-    pid = -1;
+    fdFile         =   new std::ifstream();
+}
+
+CGI::~CGI()
+{
+    if(fdFile->is_open())
+        fdFile->close();
+    // if(!cgiFile.empty())
+    //     std::remove(cgiFile.c_str());
+    delete fdFile;
 }
 
 void CGI::environmentStore(Data &dataClient, std::vector<std::string> &environment)
@@ -77,8 +88,7 @@ void CGI::makeHeader(Data &dataClient,bool eof)
         ss << bodyLenght;
         std::string header = dataClient.requeste->http_v;
         header.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
-        if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
-            throw std::runtime_error("error send");
+        sendResponce(dataClient,header);
         sendHeader = true;
     }
     if(eof == true)
@@ -88,8 +98,7 @@ void CGI::makeHeader(Data &dataClient,bool eof)
         std::string header = dataClient.requeste->http_v;
         header.append(fillMap(headerMap,ss.str(),tmp).append("\r\n\r\n"));
         header.append(restRead);
-        if(send(dataClient.fd,header.c_str(),header.size(),0) == -1)
-            throw std::runtime_error("error send");
+        sendResponce(dataClient,header);
         dataClient.readyForClose = true;
     }
 }
@@ -98,8 +107,8 @@ void   CGI::SendHeader(Data &dataClient)
 {
     if(isReadingCgi == false)
     {
-        fileFdCgi = open(cgiFile.c_str(),O_RDONLY);
-        if (fileFdCgi == -1)
+        fdFile->open(cgiFile.c_str());
+        if(!fdFile->is_open())
             throw std::runtime_error("error");
         isReadingCgi = true;
         struct stat fileInfo;
@@ -108,42 +117,40 @@ void   CGI::SendHeader(Data &dataClient)
         lenghtFile = fileInfo.st_size;
     }
     char buffer[BUFFER_SIZE];
-    ssize_t byteRead = read (fileFdCgi,buffer,BUFFER_SIZE );
-    if(byteRead == 0)
+    fdFile->read(buffer,BUFFER_SIZE);
+    std::streamsize bytesRead = fdFile->gcount();
+    if(fdFile->bad())
+        throw std::runtime_error("error");
+    if(bytesRead == 0)
     {
         makeHeader(dataClient,true);
         return ;
     }
-    if(byteRead == -1)
-        throw std::runtime_error("error");
-    restRead.append(std::string(buffer,byteRead));
+    std::string httpresponse(buffer,bytesRead);
+    restRead.append(httpresponse);
     makeHeader(dataClient,false);
+    
 }
 
 void CGI::sendBody(Data &dataClient)
 {
     char buffer[BUFFER_SIZE];
-    std::string httpResponse;
-    ssize_t byteRead = read (fileFdCgi,buffer,BUFFER_SIZE);
-    if(byteRead == -1)
+    fdFile->read(buffer,BUFFER_SIZE);
+    if(fdFile->bad())
         throw std::runtime_error("error");
-    if(byteRead == 0)
+    std::streamsize bytesRead = fdFile->gcount();
+    if(bytesRead == 0)
     {
         if(!restRead.empty())
-        {
-            if(send(dataClient.fd, restRead.c_str(), restRead.size(),0) == -1)
-                throw std::runtime_error("error send");
-        }
-        close(fileFdCgi);
-        dataClient.readyForClose = true;
-        if(remove(cgiFile.c_str()) == -1)
-            throw std::runtime_error("error");      
+            sendResponce(dataClient,restRead);
+        dataClient.readyForClose = true;     
     }
     else
     {
-        restRead.append(buffer,byteRead);
-        if(send(dataClient.fd, restRead.c_str(), restRead.size(),0) == -1)
-            throw std::runtime_error("error send");
+        
+        std::string httpresponse(buffer,bytesRead);
+        restRead.append(httpresponse);
+        sendResponce(dataClient,restRead);
         restRead.clear();
     }
 }
@@ -154,8 +161,8 @@ std::string CGI::getType(Data&dataClient,std::string &type)
     struct timeval currentTime;
     gettimeofday(&currentTime,NULL);
     std::ostringstream oss;
-    oss << currentTime.tv_sec <<"_"<<currentTime.tv_usec;
-    cgiFile.append("/tmp/file").append(oss.str());
+    oss << currentTime.tv_usec;
+    cgiFile.append("TOOLS/UTILS/file").append(oss.str());
     if(type == ".py" )
         return dataClient.requeste->Location_Server.cgi[".py"];
     else if(type == ".php")
@@ -170,7 +177,7 @@ void CGI::executeScript(Data &dataClient,std::string &type)
     std::vector<std::string> environment;
     environmentStore(dataClient,environment);
     char* env[environment.size() + 1]; 
-    for(size_t i = 0; i< environment.size();i++)
+    for(size_t i = 0; i < environment.size();i++)
     {
         env[i] = const_cast<char*>(environment[i].c_str());
     }
@@ -182,27 +189,18 @@ void CGI::executeScript(Data &dataClient,std::string &type)
         throw std::runtime_error("error");
     if (pid == 0)
     {
-        int fd1 = open(cgiFile.c_str() ,O_WRONLY  | O_CREAT | O_TRUNC,0644);
-        if (fd1 == -1)
-            throw std::runtime_error ("error");
+        std::freopen(cgiFile.c_str() , "w", stdout);
         if(dataClient.requeste->method == "POST")
-        {
-            int fd = open(dataClient.requeste->post->cgi_path.c_str(),O_RDONLY);
-            if (fd == -1)
-                throw std::runtime_error ("error");
-            dup2(fd,0);
-            close(fd);
-        }
-        dup2(fd1, 1);
-        close(fd1);
+            std::freopen(dataClient.requeste->post->cgi_path.c_str(), "r", stdin);
         const char *args[] = {interpreter.c_str(), dataClient.Path.c_str(), NULL};
         if(execve(interpreter.c_str(), const_cast<char* const*>(args), env) == -1)
-            throw std::runtime_error ("error");
+            exit(1);
     }
 }
 
 void CGI::fastCGI(Data &dataClient,std::string &type)
 {
+    // std::cout<<"hererererer\n" << c;
     try
     {
         if(sendHeader == false)
@@ -219,12 +217,16 @@ void CGI::fastCGI(Data &dataClient,std::string &type)
                     waitpid(pid,&status,0);
                     dataClient.statusCode =" 504 Gateway Timeout"; 
                     dataClient.code = 504;
-                    if(std::remove(cgiFile.c_str()) == -1)
-                        throw std::runtime_error("error"); 
                 }
             }
             else
             {
+                if (WEXITSTATUS(status) == 1)
+                {
+                    if(dataClient.requeste->method == "POST")
+                        std::remove(dataClient.requeste->post->cgi_path.c_str());
+                    throw std::runtime_error("error");
+                }
                 if(dataClient.requeste->method == "POST")
                 {
                     if(std::remove(dataClient.requeste->post->cgi_path.c_str()) == -1)

@@ -41,6 +41,8 @@ void    Requeste::set_status_client(bool &readyclose)
 {
     char buffer[1024];
     memset(buffer, 0, sizeof(buffer));
+    struct stat fileStat;
+    std::stringstream ss;
 
     if (fdresponse == -1)
     {
@@ -49,21 +51,33 @@ void    Requeste::set_status_client(bool &readyclose)
         else
         {
             file_name = Server_Requeste.error_pages[status_client];
-            fdresponse = open(file_name.c_str(), O_RDONLY);
+            response.open(file_name.c_str());
+            fdresponse = 1;
+            if (fdresponse != -1)
+            {
+                stat(file_name.c_str(), &fileStat);
+                ss << fileStat.st_size;
+                headerResponse = headerResponse.substr(0, headerResponse.find("\r\n") + 2) + "Content-Length: " + ss.str() + "\r\n"
+                   + headerResponse.substr(headerResponse.find("\r\n")  + 2);
+                ss.str("");
+            }
         }
     }
     else
         headerResponse = "";
     if (status_client != 0)
     {
-        if (read(fdresponse, buffer, 1023) == 0)
+        response.read(buffer, 1023);
+        if (std::string(buffer).length() == 0)
         {
+            response.close();
             readyclose  = true;
             return ;
         }
     }
-    if (write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length()) == -1)
+    if (write(fd_socket, headerResponse.append(buffer).c_str(), headerResponse.length()) <= 0)
     {
+        response.close();
         readyclose  = true;
         return ;
     }       
@@ -167,6 +181,13 @@ bool check_string(const std::string&  str1 , std::string  str2)
     return (false);
 }
 
+bool compre_location(Location& l1, Location& l2)
+{
+    if (l1.location_name.length() > l2.location_name.length())
+        return true;
+    return false;
+}
+
 void Requeste::get_infoConfig(bool& isdone)
 {
     struct stat statbuf;
@@ -175,6 +196,7 @@ void Requeste::get_infoConfig(bool& isdone)
     char *pathreal = NULL;
     std::stringstream ss;
     std::string root_path;
+
 
     path = delete_slash_path(path, slash);
     if (check_string(path, "{}|\\^~[]`"))
@@ -185,6 +207,7 @@ void Requeste::get_infoConfig(bool& isdone)
         headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
         return ;
     }
+    std::sort(Server_Requeste.locations.begin() , Server_Requeste.locations.end(), compre_location);
     for (unsigned int i = 0; i < Server_Requeste.locations.size(); i++)
     {
         if (!strncmp(Server_Requeste.locations[i].location_name.c_str(),path.c_str(), Server_Requeste.locations[i].location_name.length()))
@@ -207,12 +230,7 @@ void Requeste::get_infoConfig(bool& isdone)
                     + ss.str() + path.append("/") + "\r\n\r\n";
                 ss.str("");
             }
-            if (Server_Requeste.locations[i].location_name == "/")
-            {
-                continue;
-            }
-            else
-                break;
+            break ;
         }
         else if (path == "/" && Server_Requeste.locations.size() - 1 == i && chose_location == false)
         {
@@ -233,6 +251,14 @@ void Requeste::get_infoConfig(bool& isdone)
             }
             break;
         }
+    }
+    if (chose_location == false)
+    {
+        method = "";
+        headerResponse = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n";
+        status_client = 404;
+        isdone = true;
+        return ;
     }
     if (Location_Server.upload_location.empty())
         Location_Server.upload_location = Location_Server.root;
@@ -323,7 +349,7 @@ void Requeste::MakeMapOfHeader(bool& isdone)
                     Server_Requeste = s[i];
                     break ;
                 }
-                if (s[i].server_name == host)
+                if (std::find(s[i].server_names.begin(), s[i].server_names.end(), host) != s[i].server_names.end())
                 {
                     Server_Requeste = s[i];
                     break ;

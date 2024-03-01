@@ -7,7 +7,7 @@ bool checkIsCgi(std::string &contentType)
     return false;
 }
 
-bool checkCgi(Data &dataClient ,std::string &contentType)
+bool checkCgiExtention(Data &dataClient ,std::string &contentType)
 {
     if(dataClient.requeste->Location_Server.cgi.find(contentType.c_str()) != dataClient.requeste->Location_Server.cgi.end())
         return true;
@@ -30,9 +30,17 @@ bool GETMETHOD::getAutoFile(Data & dataClient,char * path)
 
 GETMETHOD::GETMETHOD()
 {
+    fdFile         =   new std::ifstream();
     isReading = false;
     Alreadyopen = false;
     modeAutoIndex = false;
+}
+
+GETMETHOD::~GETMETHOD()
+{
+    if(fdFile->is_open())
+        fdFile->close();
+    delete fdFile;
 }
 
 std::string    GETMETHOD::getContentType(Data &dataClient)
@@ -97,26 +105,12 @@ int    GETMETHOD::listingDirectory(Data &dataClient)
     return(0);
 }
 
-void GETMETHOD::sendChunk(int clientSocket, std::string &data)
-{
-    std::string totalChuncked ;
-    std::stringstream chunkHeader;
-    chunkHeader << std::hex << data.size() << "\r\n";
-    std::string chunkHeaderStr = chunkHeader.str();
-    totalChuncked = chunkHeaderStr.append(data).append("\r\n");
-    if (send(clientSocket, totalChuncked.c_str(), totalChuncked.size(),0) ==  -1)
-    {
-        close(fileFd);
-        throw std::runtime_error("error send");
-    }
-}
-
 void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
 {
     std::string contentType = getContentType(dataClient);
     if(checkIsCgi(contentType) == true && dataClient.requeste->Location_Server.cgi_allowed == "ON")
     {
-        if(checkCgi(dataClient,contentType) == true)
+        if(checkCgiExtention(dataClient,contentType) == true)
         {
             dataClient.OBJCGI.fastCGI(dataClient,contentType);
             return ;
@@ -125,42 +119,31 @@ void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
     if(checkPermission(dataClient,R_OK) == true)
         return;
     isReading = true;
-    fileFd = open(dataClient.Path.c_str(), O_RDONLY);
-    if (fileFd == -1)
-    {
-        close(fileFd);
+    fdFile->open(dataClient.Path.c_str());
+    if(!fdFile->is_open())
         throw std::runtime_error("error");
-    }
     std::string httpResponse;
+    struct stat fileInfo;
+    if(stat(dataClient.Path.c_str(),&fileInfo))
+        throw std::runtime_error("error");
+    std::stringstream ss;
+    ss <<fileInfo.st_size ;
     httpResponse = dataClient.requeste->http_v.append(" 200 OK\r\nContent-Type: ");
-    httpResponse.append(contentType).append("; charset=UTF-8");
-    httpResponse.append("\r\nTransfer-Encoding: chunked\r\n\r\n");
-    if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-        throw std::runtime_error("error send");
-    
+    httpResponse.append(contentType).append("; charset=UTF-8\r\nContent-Lenght: ");
+    httpResponse.append(ss.str()).append("\r\n\r\n");
+    sendResponce(dataClient,httpResponse);
 }
 
 void GETMETHOD::serveFIle(Data& dataClient)
 {
     char buffer[BUFFER_SIZE];
-    ssize_t byteRead = read (fileFd,buffer,BUFFER_SIZE);
-    if(byteRead == -1)
-    {
-        close(fileFd);
-        throw std::runtime_error("error");
-    }
-    if(byteRead == 0)
-    {
-        close(fileFd);
+    fdFile->read(buffer,BUFFER_SIZE);
+    std::streamsize bytesRead = fdFile->gcount();
+    std::string httpresponse(buffer,bytesRead);
+    if(bytesRead == 0 || fdFile->bad())
         dataClient.readyForClose = true;
-        if(send(dataClient.fd, "0\r\n\r\n", sizeof("0\r\n\r\n") - 1,0) == -1)
-            throw std::runtime_error("error send");
-    }
     else
-    {
-        std::string httpresponse(buffer,byteRead);
-        sendChunk(dataClient.fd,httpresponse);  
-    }
+        sendResponce(dataClient,httpresponse);
 }
 
 int GETMETHOD::checkFileDirPermission(Data &dataClient)
@@ -190,8 +173,7 @@ void GETMETHOD::sendListDir(Data & dataClient)
     httpResponse = dataClient.requeste->http_v;
     httpResponse.append(" 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Lenght: ");
     httpResponse.append(wiss.str()).append("\r\n\r\n").append(listDirectory);
-    if(send(dataClient.fd, httpResponse.c_str(), httpResponse.size(),0) == -1)
-        throw std::runtime_error("error send");
+    sendResponce(dataClient,httpResponse);
     listDirectory.clear(); 
     dataClient.readyForClose = true;
 }
