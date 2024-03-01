@@ -2,12 +2,12 @@
 
 CGI::CGI()
 {
-    cgiFile = "";
-    pid = -1;
-    isFork = false;
-    sendHeader = false;
-    isReadingCgi = false;
-    fdFile         =   new std::ifstream();
+    cgiFile         = "";
+    pid             = -1;
+    isFork          = false;
+    sendHeader      = false;
+    isReadingCgi    = false;
+    fdFile          =   new std::ifstream();
 }
 
 CGI::~CGI()
