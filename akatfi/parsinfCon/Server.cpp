@@ -110,7 +110,7 @@ void    Server::init_data(std::fstream& os)
                 throw std::runtime_error("Error : the host is nont valid");
             host = arg[1];
         }
-        else if (!arg[0].compare("server_names")  && !close && server_names.size() == 0)
+        else if (!arg[0].compare("server_names") && arg.size() >= 2  && !close && server_names.size() == 0)
         {
             for (size_t i = 1; i < arg.size(); i++)
                 server_names.push_back(arg[i]);
