@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Get the username and password from the form
     $username = $_POST["username"];
     $password = $_POST["password"];
-
+    
     // Check if the username exists in the user credentials array
     if (array_key_exists($username, $userCredentials)) {
         // Check if the password matches the correct password for the given username

@@ -71,10 +71,34 @@ std::string    GETMETHOD::getContentType(Data &dataClient)
     return "application/json";
 }
 
-int    GETMETHOD::listingDirectory(Data &dataClient)
+void  makeTableStyle(std::stringstream &list)
+{
+    list << "<html><head><title>Directory Listing</title>";
+    list << "<style>";
+    list << "table {";
+    list << "    font-family: Arial, sans-serif;";
+    list << "    border-collapse: collapse;";
+    list << "    width: 100%;";
+    list << "}";
+    list << "td, th {";
+    list << "    border: 1px solid #dddddd;";
+    list << "    text-align: left;";
+    list << "    padding: 8px;";
+    list << "}";
+    list << "tr:nth-child(even) {";
+    list << "    background-color: #f2f2f2;";
+    list << "}";
+    list << "h1 {";
+    list << "    font-family: Arial, sans-serif;";
+    list << "}";
+    list << "</style>";
+    list << "</head><body>";
+}
+
+int GETMETHOD::listingDirectory(Data &dataClient)
 {
     std::stringstream list;
-    list << "<html><head><title>Directory Listing</title></head><body>";
+    makeTableStyle(list);
     list << "<h1>Index of: " << dataClient.requeste->path << "</h1><table><tr>";
     std::string directoryPath = dataClient.Path ;
     DIR *dir =  opendir(directoryPath.c_str());
@@ -91,6 +115,7 @@ int    GETMETHOD::listingDirectory(Data &dataClient)
             return (1);
         else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
         {
+            list << "<tr>";
             if (S_ISREG(statInfo.st_mode))
                 list << "<td>"<< "<a href='" << dataClient.requeste->path +  std::string(it->d_name) << "'>" << it->d_name << "</a></td>";
             if (S_ISDIR(statInfo.st_mode))
@@ -104,6 +129,7 @@ int    GETMETHOD::listingDirectory(Data &dataClient)
     listDirectory =  list.str();
     return(0);
 }
+
 
 void    GETMETHOD::openFileAndSendHeader(Data& dataClient)
 {

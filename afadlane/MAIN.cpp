@@ -27,7 +27,7 @@ int main(int argc,char *argv[])
             argv[1] =const_cast<char*> ("file.conf");
         ConfigFile config(argv[1]);
         config.parceConfig();
-        LaunchingWebserver();
+        // LaunchingWebserver();
         multiplexing(config);
     }
     catch(const std::exception& e)

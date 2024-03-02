@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Upload</title>
+</head>
+<body>
+<h2>Upload a File</h2>
+<input type="file" id="fileInput"><br>
+<button onclick="uploadFile()">Upload File</button>
+
+<script>
+function uploadFile() {
+    var fileInput = document.getElementById('fileInput');
+    var file = fileInput.files[0];
+    
+    if (file) {
+        var formData = new FormData();
+        formData.append('file', file);
+        
+        // Create a new XMLHttpRequest object
+        var xhr = new XMLHttpRequest();
+        
+        // Set up the request
+        xhr.open('POST', 'http://127.0.0.1:8080/akatfi/', true);
+        
+        // Set up a handler for when the request is completed
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                console.log('File uploaded successfully.');
+                console.log(xhr.responseText); // Response from the server
+            } else {
+                console.error('Error:', xhr.statusText);
+            }
+        };
+        
+        // Set up a handler for network errors
+        xhr.onerror = function () {
+            console.error('Network error occurred.');
+        };
+        
+        // Send the request with the form data
+        xhr.send(formData);
+    } else {
+        console.log('No file selected.');
+    }
+}
+</script>
+</body>
+</html>

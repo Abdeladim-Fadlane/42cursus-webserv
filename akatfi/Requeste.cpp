@@ -199,7 +199,7 @@ void Requeste::get_infoConfig(bool& isdone)
 
 
     path = delete_slash_path(path, slash);
-    if (check_string(path, "{}|\\^~[]`"))
+    if (check_string(path, "{}|\\^~[]`") && isdone == false)
     {
         status_client = 400;
         isdone = true;
@@ -252,7 +252,7 @@ void Requeste::get_infoConfig(bool& isdone)
             break;
         }
     }
-    if (chose_location == false)
+    if (chose_location == false && isdone == false)
     {
         method = "";
         headerResponse = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\n\r\n";
@@ -262,7 +262,7 @@ void Requeste::get_infoConfig(bool& isdone)
     }
     if (Location_Server.upload_location.empty())
         Location_Server.upload_location = Location_Server.root;
-    if (Location_Server.redirection.empty() == false)
+    if (Location_Server.redirection.empty() == false && isdone == false)
     {
         status_client = 0;
         isdone = true;
@@ -273,7 +273,7 @@ void Requeste::get_infoConfig(bool& isdone)
         return ;
     }
     pathreal = realpath(Location_Server.root.c_str(), NULL);
-    if (pathreal && std::string(pathreal).append("/").find(root_path.c_str()) == std::string::npos)
+    if (pathreal && std::string(pathreal).append("/").find(root_path.c_str()) == std::string::npos && isdone == false)
     {
         method = "";
         headerResponse = "HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\n\r\n";
@@ -315,6 +315,7 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         isdone = true;
         method = "";
         headerResponse = "HTTP/1.1 505 HTTP Version Not Supported\r\nContent-Type: text/html\r\n\r\n";
+        return ;
     }
     if (path.length() > 2048)
     {
@@ -322,6 +323,7 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         isdone = true;
         method =  "";
         headerResponse = "HTTP/1.1 414 URI Too Long\r\nContent-Type: text/html\r\n\r\n";
+        return ;
     }
     if (path.find("?") != std::string::npos)
     {
@@ -332,7 +334,7 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         content_type = requeste_map.find("Content-Type")->second;
     if (requeste_map.find("Content-Length") != requeste_map.end())
         content_length = requeste_map.find("Content-Length")->second;
-    if (requeste_map.find("Host") != requeste_map.end())
+      if (requeste_map.find("Host") != requeste_map.end())
     {
         host = requeste_map.find("Host")->second;
         if (host.find(":") != std::string::npos)
