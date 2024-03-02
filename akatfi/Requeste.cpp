@@ -334,7 +334,7 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         content_type = requeste_map.find("Content-Type")->second;
     if (requeste_map.find("Content-Length") != requeste_map.end())
         content_length = requeste_map.find("Content-Length")->second;
-    if (requeste_map.find("Host") != requeste_map.end())
+      if (requeste_map.find("Host") != requeste_map.end())
     {
         host = requeste_map.find("Host")->second;
         if (host.find(":") != std::string::npos)
@@ -344,15 +344,9 @@ void Requeste::MakeMapOfHeader(bool& isdone)
             for (size_t j = 0; j < config.Servers.size(); j++)
                 if (config.Servers[j].listen == port)
                     s.push_back(config.Servers[j]);
-            for (size_t i = 0; i < s.sizf (i + 1 == s.size() && host.empty() == false)
-                {
-                    Server_Requeste = s[0];
-                    break ;
-                }
-            }
-        }
-    }
-    if (host.empt)
+            for (size_t i = 0; i < s.size(); i++)
+            {
+                if (s[i].host == host)
                 {
                     Server_Requeste = s[i];
                     break ;

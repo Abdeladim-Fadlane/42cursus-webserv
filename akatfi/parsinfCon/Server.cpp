@@ -28,6 +28,8 @@ Server::Server()
     max_body = LONG_MAX;
     cgi_timeout = 10;
     DIR* dir_error = opendir("akatfi/parsinfCon/error");
+    if (!dir_error)
+        throw std::runtime_error("Error : the path of page error not found");
     dirent* path;
     while ((path = readdir(dir_error)))
         if (path->d_name[0] != '.')
