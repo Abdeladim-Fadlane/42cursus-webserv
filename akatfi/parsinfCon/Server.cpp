@@ -94,8 +94,8 @@ void    Server::init_data(std::fstream& os)
         }
         else if (!arg[0].compare("cgi_timeout") && arg.size() == 2 && !close)
         {
-            if (!check_digit(arg[1]) && (atoi(arg[1].c_str()) >= 1 && atoi(arg[1].c_str()) <= 30))
-                throw std::runtime_error("Error : thee timeout will be a digit and between 1 and 30");
+            if (!check_digit(arg[1]) && !(atoi(arg[1].c_str()) >= 1 && atoi(arg[1].c_str()) <= 30))
+                throw std::runtime_error("Error : the timeout will be a digit and between 1 and 30");
             cgi_timeout = atoi(arg[1].c_str());
         }
         else if (!arg[0].compare("host") && arg.size() == 2 && !close && host.empty())
@@ -142,10 +142,12 @@ void    Server::init_data(std::fstream& os)
                     throw std::runtime_error("Error : there is two or more location have the same name");
         }
         else
-            throw std::runtime_error("Error : line have dosen't folow rules or duplicated");
+            throw std::runtime_error("Error : the Server have dosen't follow rules or duplicated");
     }
     if (!close)
         throw std::runtime_error("Error : The brackets of server dosen't closed");
+    if (locations.size() == 0)
+        throw std::runtime_error("Error : the Server dosen't has any location");
 }
 
 Server::~Server()

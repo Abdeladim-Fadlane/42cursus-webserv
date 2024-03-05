@@ -130,6 +130,8 @@ void    ConfigFile::parceConfig()
             close_and_throw("Error : line have dosen't follow rule");
     }
     config.close();
+    if (Servers.size() == 0)
+        throw std::runtime_error("Error : the configuration file do not has any Server to run");
 }
 
 ConfigFile::~ConfigFile()
