@@ -6,6 +6,8 @@ void multiplexing(ConfigFile &config)
     int epollFD = epoll_create(1024);
     epoll_event event;
     int socketFD ;
+    if(config.Servers.size() < 1)
+        throw std::runtime_error("error");
     for(size_t i = 0 ;i < config.Servers.size(); i++)
     {
         socketFD = socket(AF_INET,SOCK_STREAM,0);

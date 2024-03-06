@@ -12,9 +12,23 @@
 
 #include "Configfile.hpp"
 
+bool check_location_name(std::string& name_location)
+{
+    std::stringstream ss;
+    std::string spl;
+    
+    ss << name_location;
+    while (std::getline(ss, spl, '/'))
+        if (spl == "..")
+            return true;
+    return false;
+}
+
 Location::Location(std::string&  location)
 {
     this->location_name = delete_Or_add_slash(location, true, false);
+    if (check_location_name(location))
+        throw std::runtime_error("Error : the location " + location  + " is not allowed in config file");
     close = true;
     uploadfile = "OFF";
     cgi_allowed = "OFF";
@@ -61,7 +75,7 @@ void    Location::add_location(std::fstream& os)
             input = input.substr(0, input.length() - 1);
         }
         arg = split_line(input);
-        if (!arg[0].compare("{") && close)
+        if (!arg[0].compare("{") &&  close)
             close = false;
         else if (!arg[0].compare("}") && !close)
         {
@@ -82,12 +96,13 @@ void    Location::add_location(std::fstream& os)
                 throw std::runtime_error("Error : the autoindex will has ON or OFF parameter");
             autoindex = arg[1];
         }
-        else if (!arg[0].compare("index"))
+        else if (!arg[0].compare("index") && arg.size() != 1)
         {
-            for (std::vector<std::string>::iterator it = arg.begin() + 1; it != arg.end(); it++)
-                indexs.push_back(*it);
+            if (arg.size() > 2)
+                throw std::runtime_error("Error : the index attribut can store one index no more");
+            indexs.push_back(arg[1]);
         }
-        else if (!arg[0].compare("allowed_methods"))
+        else if (!arg[0].compare("allowed_methods") && arg.size() != 1)
         {
             for (unsigned int i = 1; i < arg.size(); i++)
             {
@@ -119,7 +134,7 @@ void    Location::add_location(std::fstream& os)
         else if (!arg[0].compare("cgi") && arg.size() == 3)
         {
             if (access(arg[1].c_str(), X_OK) == -1)
-                throw std::runtime_error(std::string("Error : can't execute file's of '").append(arg[2]) + "' extation with this path");
+                throw std::runtime_error(std::string("Error : can't execute file's of '").append(arg[2]) + "' extation with this path '" + arg[1] + "'");
             if (arg[2] != ".php" && arg[2] != ".py" && arg[2] != ".pl")
                 throw std::runtime_error("Error : the server not support this '" + arg[2] + "' extation in cgi");
             cgi[arg[2]] = arg[1];
@@ -130,7 +145,7 @@ void    Location::add_location(std::fstream& os)
     if (!close)
         throw std::runtime_error("Error : The brackets of location dosen't closed");
     if (this->root.empty())
-        throw std::runtime_error("Error : the location need root and exit");
+        throw std::runtime_error("Error : set up root for every location");
 }
 
 Location::~Location()

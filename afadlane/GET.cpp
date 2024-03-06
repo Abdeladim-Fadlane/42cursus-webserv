@@ -16,14 +16,13 @@ bool checkCgiExtention(Data &dataClient ,std::string &contentType)
 
 bool GETMETHOD::getAutoFile(Data & dataClient,char * path)
 {
-    for(size_t i = 0;i < dataClient.requeste->Location_Server.indexs.size(); i++)
+    if(dataClient.requeste->Location_Server.indexs.size() == 0)
+        throw std::runtime_error("error");
+    if(strcmp(path,dataClient.requeste->Location_Server.indexs[0].c_str()) == 0)
     {
-        if(strcmp(path,dataClient.requeste->Location_Server.indexs[i].c_str()) == 0)
-        {
-            dataClient.Path = dataClient.Path + "/" + dataClient.requeste->Location_Server.indexs[i];
-            modeAutoIndex = true;
-            return true ;
-        }
+        dataClient.Path = dataClient.Path + "/" + dataClient.requeste->Location_Server.indexs[0];
+        modeAutoIndex = true;
+        return true ;
     }
     return false;
 }
@@ -211,13 +210,16 @@ void    GETMETHOD::openDirFIle(Data & dataClient)
         return;
     if(i == 2)
     {
-        if(dataClient.autoIndex == false)
+        if(listingDirectory(dataClient) == 0)
         {
-            dataClient.statusCode = " 403 Forbidden";
-            dataClient.code = 403;
+            if(dataClient.autoIndex == false)
+            {
+                dataClient.statusCode = " 403 Forbidden";
+                dataClient.code = 403;
+            }
+            else
+                sendListDir(dataClient);
         }
-        else if(listingDirectory(dataClient) == 0)
-            sendListDir(dataClient);
     }
     else if(i == 0)
     {

@@ -334,7 +334,7 @@ void Requeste::MakeMapOfHeader(bool& isdone)
         content_type = requeste_map.find("Content-Type")->second;
     if (requeste_map.find("Content-Length") != requeste_map.end())
         content_length = requeste_map.find("Content-Length")->second;
-      if (requeste_map.find("Host") != requeste_map.end())
+    if (requeste_map.find("Host") != requeste_map.end())
     {
         host = requeste_map.find("Host")->second;
         if (host.find(":") != std::string::npos)
