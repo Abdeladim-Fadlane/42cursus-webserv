@@ -43,7 +43,7 @@ Location& Location::operator=(const Location& obj)
     location_name = obj.location_name;
     root = obj.root;
     autoindex = obj.autoindex;
-    indexs = obj.indexs;
+    index = obj.index;
     allowed_method = obj.allowed_method;
     uploadfile = obj.uploadfile;
     upload_location = obj.upload_location;
@@ -100,7 +100,7 @@ void    Location::add_location(std::fstream& os)
         {
             if (arg.size() > 2)
                 throw std::runtime_error("Error : the index attribut can store one index no more");
-            indexs.push_back(arg[1]);
+            index = arg[1];
         }
         else if (!arg[0].compare("allowed_methods") && arg.size() != 1)
         {

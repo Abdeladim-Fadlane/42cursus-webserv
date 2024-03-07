@@ -16,11 +16,9 @@ bool checkCgiExtention(Data &dataClient ,std::string &contentType)
 
 bool GETMETHOD::getAutoFile(Data & dataClient,char * path)
 {
-    if(dataClient.requeste->Location_Server.indexs.size() == 0)
-        throw std::runtime_error("error");
-    if(strcmp(path,dataClient.requeste->Location_Server.indexs[0].c_str()) == 0)
+    if(strcmp(path,dataClient.requeste->Location_Server.index.c_str()) == 0)
     {
-        dataClient.Path = dataClient.Path + "/" + dataClient.requeste->Location_Server.indexs[0];
+        dataClient.Path = dataClient.Path + "/" + dataClient.requeste->Location_Server.index;
         modeAutoIndex = true;
         return true ;
     }

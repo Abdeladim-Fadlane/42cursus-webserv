@@ -49,17 +49,16 @@ void    PostMethod::ft_prepar_cgi()
     struct stat stat_buffer;
     DIR *dir;
     struct dirent* dirent;
-    std::vector<std::string> scripts;
+    std::string scripts;
 
     if (stat(req.Location_Server.root.c_str(), &stat_buffer) == 0 && S_ISDIR(stat_buffer.st_mode))
     {
-        for (std::vector<std::string>::iterator it = req.Location_Server.indexs.begin(); it != req.Location_Server.indexs.end(); it++)
-            if (it->find(".php") != std::string::npos || it->find(".py")  != std::string::npos || it->find(".pl")  != std::string::npos)
-                scripts.push_back(*it);
+        if (req.Location_Server.index.rfind(".php") != std::string::npos || req.Location_Server.index.rfind(".py")  != std::string::npos || req.Location_Server.index.rfind(".pl")  != std::string::npos)
+            scripts = req.Location_Server.index;
         dir = opendir(req.Location_Server.root.c_str());
         while ((dirent = readdir(dir)) != NULL)
         {
-            if (std::find(scripts.begin(),scripts.end(), dirent->d_name) != scripts.end() &&
+            if (std::string(dirent->d_name) == scripts &&
                 access((req.Location_Server.root + dirent->d_name).c_str(), X_OK) == 0)
             {
                 script_path = req.Location_Server.root;

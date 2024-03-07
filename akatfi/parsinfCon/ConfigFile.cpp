@@ -111,7 +111,7 @@ void    ConfigFile::parceConfig()
                 for (size_t i = 0; i < Servers.size() - 1; i++)
                 {
                     if (Servers[i].host == it->host && Servers[i].listen == it->listen && it->server_names.size() == 0)
-                        throw std::runtime_error("Error : two server or more have the same name and the same port and dosen't have the server names");
+                        throw std::runtime_error("Error : two server pr more have the same name and the same port and dosen't have the server names");
                     else if (Servers[i].host == it->host && Servers[i].listen == it->listen)
                     {
                         for (size_t j = 0; j < it->server_names.size(); j++)

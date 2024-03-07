@@ -89,12 +89,12 @@ void    Server::init_data(std::fstream& os)
                 throw std::runtime_error("Error : thee port will be a digit");
             listen = atoi(arg[1].c_str());
             port_chose = true;
-            if (!(listen >= 1 && listen <= 65535))
+            if (!(listen >= 0 && listen <= 65535))
                 throw std::runtime_error("Error : the port is not available");
         }
         else if (!arg[0].compare("cgi_timeout") && arg.size() == 2 && !close)
         {
-            if (!check_digit(arg[1]) || atoi(arg[1].c_str()) < 1 || atoi(arg[1].c_str()) > 30)
+            if (!check_digit(arg[1]) && !(atoi(arg[1].c_str()) >= 1 && atoi(arg[1].c_str()) <= 30))
                 throw std::runtime_error("Error : the timeout will be a digit and between 1 and 30");
             cgi_timeout = atoi(arg[1].c_str());
         }
