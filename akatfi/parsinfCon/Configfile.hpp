@@ -33,7 +33,7 @@ class Location
         std::string                 location_name;
         std::string                 root;
         std::string                 autoindex;
-        std::vector<std::string>    indexs;
+        std::string                 index;
         std::vector<std::string>    allowed_method;
         std::string                 uploadfile;
         std::string                 upload_location;
