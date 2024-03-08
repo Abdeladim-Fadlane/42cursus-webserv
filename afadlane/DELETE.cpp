@@ -16,9 +16,10 @@ void DELETE::IsFIle(Data &dataClient)
     }
 }
 
-void DELETE::IsDir(Data &dataClient)
+void DELETE::IsDir(Data &dataClient,std::string Path)
 {
-    DIR *dir = opendir(dataClient.Path.c_str());
+    
+    DIR *dir = opendir(Path.c_str());
     if (!dir) 
     {
         dataClient.statusCode = " 403 Forbidden";
@@ -31,14 +32,13 @@ void DELETE::IsDir(Data &dataClient)
     {
         if (strcmp(it->d_name, ".") != 0 && strcmp(it->d_name, "..") != 0)
         {
-            std::string itPath = dataClient.Path + it->d_name;
+            std::string itPath = Path + it->d_name;
             if (stat(itPath.c_str(), &statInfo) == 0)
             {
                 if (S_ISDIR(statInfo.st_mode))
                 {
-                    Data subDirData = dataClient;
-                    subDirData.Path = itPath + "/";
-                    IsDir(subDirData); 
+                    std::string tmpPath = itPath + "/";
+                    IsDir(dataClient,tmpPath);
                 } 
                 else if (S_ISREG(statInfo.st_mode))
                 {
@@ -63,7 +63,7 @@ void DELETE::IsDir(Data &dataClient)
         }
     }
     closedir(dir);
-    if (rmdir(dataClient.Path.c_str()) == 0 && canDelete == false)
+    if (rmdir(Path.c_str()) == 0 && canDelete == false)
     {    
         dataClient.statusCode = " 204 No Content";
         dataClient.code = 204;
@@ -114,7 +114,7 @@ void    DELETE::deleteMethod(Data &dataClient)
             dataClient.code = 409;
         }
         else
-            IsDir(dataClient);
+            IsDir(dataClient,dataClient.Path);
     } 
     else if (S_ISREG(statInfo.st_mode)) 
         IsFIle(dataClient);

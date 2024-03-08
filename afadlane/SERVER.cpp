@@ -71,7 +71,7 @@ void multiplexing(ConfigFile &config)
                     close(clientSocketFD);
                     continue;
                 }
-                inisialData(Clients,config,clientSocketFD);
+                createData(Clients,config,clientSocketFD);
             } 
             else
             {

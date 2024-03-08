@@ -32,10 +32,10 @@ class DELETE
     private:
         struct stat statInfo;
     public:
-        void  IsDir(Data &);
         void  IsFIle(Data &);
         void  deleteMethod(Data &);
         void  checkErrnoStat(Data &);
+        void  IsDir(Data &,std::string);
 };
 
 class GETMETHOD
@@ -106,7 +106,7 @@ class Data
         std::string statusCode;
         std::ifstream   *fdFile;
         bool AlreadyRequestHeader;
-        Data();
+        Data(int &,ConfigFile &);
         ~Data();
 };
 
@@ -114,6 +114,7 @@ class Client
 {
     public:
         Data data;
+    Client(int & fd ,ConfigFile &con) : data(fd,con) {}
 };
 
 double  getCurrentTime(void);
@@ -125,4 +126,4 @@ void    closeServers(std::vector<int> &);
 bool    isServer(std::vector<int> & ,int );
 void    sendResponce(Data &,std::string &);
 void    EpollCtrDEL(int ,int ,std::map<int,Client * >&);
-void    inisialData(std::map<int,Client *> & ,ConfigFile &,int &);
+void    createData(std::map<int,Client *> & ,ConfigFile &,int &);

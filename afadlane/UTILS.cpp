@@ -61,11 +61,9 @@ void sendErrorResponse(Data &dataClient)
     } 
 }
 
-void    inisialData(std::map<int,Client * > &Clients ,ConfigFile &config,int &clientSocketFD)
+void    createData(std::map<int,Client * > &Clients ,ConfigFile &config,int &clientSocketFD)
 {
-    Client  *Data                = new Client();
-    Data->data.fd                = clientSocketFD;
-    Data->data.requeste          = new Requeste(clientSocketFD,config);
+    Client  *Data                = new Client(clientSocketFD,config);
     Clients[clientSocketFD]      = Data;
 }
 
@@ -120,7 +118,7 @@ void EpollCtrDEL(int epollFD,int fd,std::map<int,Client *>& Clients)
     Clients.erase(fd);
 }
 
-Data::Data()
+Data::Data(int &clientSocketFD,ConfigFile &config)
 {
     code                  =     0;
     isDone                = false;
@@ -130,7 +128,9 @@ Data::Data()
     Alreadparce           = false;
     readyForClose         = false;
     AlreadyRequestHeader  = false;
+    fd                    = clientSocketFD;
     fdFile                = new std::ifstream();
+    requeste              = new Requeste(clientSocketFD,config);
 }
 
 Data::~Data()
