@@ -114,7 +114,7 @@ class Client
 {
     public:
         Data data;
-    Client(int & fd ,ConfigFile &con) : data(fd,con) {}
+        Client(int & fd ,ConfigFile &con) : data(fd,con) {}
 };
 
 double  getCurrentTime(void);
