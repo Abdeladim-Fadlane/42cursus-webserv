@@ -112,7 +112,6 @@ int GETMETHOD::listingDirectory(Data &dataClient)
             return (1);
         else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
         {
-            list << "<tr>";
             if (S_ISREG(statInfo.st_mode))
                 list << "<td>"<< "<a href='" << dataClient.requeste->path +  std::string(it->d_name) << "'>" << it->d_name << "</a></td>";
             if (S_ISDIR(statInfo.st_mode))
