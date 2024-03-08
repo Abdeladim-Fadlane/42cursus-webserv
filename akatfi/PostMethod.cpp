@@ -230,16 +230,7 @@ size_t hexStringToDecimal(const std::string hexString) {
 }
 
 void PostMethod::chunked(std::string buffer, bool& isdone)
-{  if (content_file > req.Server_Requeste.max_body)
-        {
-            isCgi = false;
-            if (access(cgi_path.c_str(), F_OK) != -1)
-                remove(cgi_path.c_str());
-            req.status_client = 413;
-            isdone = true;
-            req.headerResponse = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n";
-            return ;
-        }
+{
     std::string hex;
     buffer = buffer_add + buffer;
     buffer_add = "";
@@ -269,30 +260,12 @@ void PostMethod::chunked(std::string buffer, bool& isdone)
     if (buffer.length() != 0)
     {
         if (size && size >= buffer.length())
-        {  if (content_file > req.Server_Requeste.max_body)
         {
-            isCgi = false;
-            if (access(cgi_path.c_str(), F_OK) != -1)
-                remove(cgi_path.c_str());
-            req.status_client = 413;
-            isdone = true;
-            req.headerResponse = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n";
-            return ;
-        }
             if (isCgi == false)
                 Postfile << buffer;
             else
                 cgi_file << buffer;
-            size -= buffer.length();  if (content_file > req.Server_Requeste.max_body)
-        {
-            isCgi = false;
-            if (access(cgi_path.c_str(), F_OK) != -1)
-                remove(cgi_path.c_str());
-            req.status_client = 413;
-            isdone = true;
-            req.headerResponse = "HTTP/1.1 413 Payload Too Large\r\nContent-Type: text/html\r\n\r\n";
-            return ;
-        }
+            size -= buffer.length();  
             content_file += buffer.length();
         }
         else if (size)
