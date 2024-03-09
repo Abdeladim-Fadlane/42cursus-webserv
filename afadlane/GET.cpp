@@ -109,7 +109,10 @@ int GETMETHOD::listingDirectory(Data &dataClient)
         if(strcmp(it->d_name , ".") == 0 || strcmp(it->d_name , "..") == 0)
             continue;
         if(getAutoFile(dataClient,it->d_name) == true)
+        {
+            closedir(dir);
             return (1);
+        }
         else if (stat(directoryChildPath .c_str(), &statInfo) == 0)
         {
             if (S_ISREG(statInfo.st_mode))
