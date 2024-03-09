@@ -56,6 +56,11 @@ void    PostMethod::ft_prepar_cgi()
         if (req.Location_Server.index.rfind(".php") != std::string::npos || req.Location_Server.index.rfind(".py")  != std::string::npos || req.Location_Server.index.rfind(".pl")  != std::string::npos)
             scripts = req.Location_Server.index;
         dir = opendir(req.Location_Server.root.c_str());
+        if (!dir)
+        {
+            req.Location_Server.cgi_allowed = "OFF";
+            return ;
+        }
         while ((dirent = readdir(dir)) != NULL)
         {
             if (std::string(dirent->d_name) == scripts &&
@@ -243,8 +248,10 @@ void PostMethod::chunked(std::string buffer, bool& isdone)
             size = hexStringToDecimal(hex);
             if (size == 0)
             {
-                Postfile.close();
-                cgi_file.close();
+                if (Postfile.is_open())
+                    Postfile.close();
+                if (cgi_file.is_open())
+                    cgi_file.close();
                 isdone = true;
                 req.skeeptime_out = true;
                 return ;
