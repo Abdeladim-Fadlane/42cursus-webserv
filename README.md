@@ -4,7 +4,7 @@
 
 ## Resources
 
-[webserv raod map](https://www.figma.com/file/tQJOYxzFdxYkPYrPIv18kg/webserv-Flow?type=design&node-id=0-1&mode=design)
+[Webserv raod map](https://www.figma.com/file/tQJOYxzFdxYkPYrPIv18kg/webserv-Flow?type=design&node-id=0-1&mode=design)
 
 ### Server setup
 
@@ -23,7 +23,7 @@
 [HTTP Header Break Style](https://stackoverflow.com/questions/5757290/http-header-line-break-style)
 
 ### Epoll and non-blocking
-[Epoll](https://medium.com/@avocadi/what-is-epoll-9bbc74272f7c).
+[Epoll](https://medium.com/@avocadi/what-is-epoll-9bbc74272f7c)
 [Non Blocking Server](https://www.geeksforgeeks.org/non-blocking-server-in-java-nio/?ref=header_search)
 
 ### CGI
