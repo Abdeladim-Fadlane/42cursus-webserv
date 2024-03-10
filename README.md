@@ -6,6 +6,8 @@
 
 [Webserv raod map](https://www.figma.com/file/tQJOYxzFdxYkPYrPIv18kg/webserv-Flow?type=design&node-id=0-1&mode=design)
 
+[Websocket](https://ipwithease.com/what-is-a-websocket/)
+
 ### Server setup
 
 [How to build a simple HTTP server](https://medium.com/from-the-scratch/http-server-what-do-you-need-to-know-to-build-a-simple-http-server-from-scratch-d1ef8945e4fa)
