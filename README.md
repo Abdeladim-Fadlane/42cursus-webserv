@@ -28,7 +28,7 @@
 
 [Epoll](https://medium.com/@avocadi/what-is-epoll-9bbc74272f7c)
 
-![How epoll work](TOOLS/UTILS/lrYLy.png)
+[How epoll work](TOOLS/UTILS/lrYLy.png)
 
 [Non Blocking Server](https://www.geeksforgeeks.org/non-blocking-server-in-java-nio/?ref=header_search)
 
