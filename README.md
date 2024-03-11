@@ -53,17 +53,17 @@ In the Webserv project at 42, you're tasked with creating your own web server in
       git clone https://github.com/Abdeladim-Fadlane/webserv.git
     
 2. Navigate to the cloned directory:
-      ```bash 
-      cd webserv
+    ```bash 
+    cd webserv
 3. Build the project
-      ```bash 
-      make
-4. Run the server 
-       ```bash
-      ./webserv
+    ```bash 
+    make
+4. Run the server
+    ```bash
+    ./webserv
 5. Try on browser
-      ```bash
-      http://localhost:8082/
+    ```bash
+    http://localhost:8082/
 ### Contributors
 - [Abdeladim Fadlane](https://github.com/Abdeladim-Fadlane)
 - [Ayoub Katfi](https://github.com/ayyoubkatfi)
