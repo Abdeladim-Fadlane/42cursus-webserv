@@ -39,7 +39,7 @@ In the Webserv project at 42, you're tasked with creating your own web server in
 
 [Epoll](https://medium.com/@avocadi/what-is-epoll-9bbc74272f7c)
 
-[How epoll work](TOOLS/UTILS/lrYLy.png)
+[How epoll work](Server/UTILS/lrYLy.png)
 
 [Non Blocking Server](https://www.geeksforgeeks.org/non-blocking-server-in-java-nio/?ref=header_search)
 
@@ -55,13 +55,13 @@ In the Webserv project at 42, you're tasked with creating your own web server in
 2. Navigate to the cloned directory:
     ```bash 
     cd webserv
-3. Build the project
+3. Build the project:
     ```bash 
     make
-4. Run the server
+4. Run the server:
     ```bash
     ./webserv
-5. Try on browser
+5. Try on browser:
     ```bash
     http://localhost:8082/
 ### Contributors
