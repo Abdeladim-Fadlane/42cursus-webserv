@@ -46,17 +46,23 @@ In the Webserv project at 42, you're tasked with creating your own web server in
 ### CGI
 [CGI Programming](https://forhjy.medium.com/42-webserv-cgi-programming-66d63c3b22db)
 
-## 3. Installation
+## 3. Installation & Usage
 
    1. Clone the repository:
       ```bash
       git clone https://github.com/Abdeladim-Fadlane/webserv.git
-   2 . 
-     ```bash cd webserv```
-     ```bash make```
+      
+   2. Navigate to the cloned directory:
+      ```bash 
+      cd webserv
+        
+   3. Build the projec
+      ```bash 
+      make
    
-   3 . run the server 
-       ```bash ./webserv ```
+   4. run the server 
+       ```bash
+      ./webserv
     
 ### Contributors
 - [Abdeladim Fadlane](https://github.com/Abdeladim-Fadlane)
