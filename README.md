@@ -56,7 +56,7 @@ In the Webserv project at 42, you're tasked with creating your own web server in
       ```bash 
       cd webserv
    
-   3. Build the projec
+   3. Build the project
       ```bash 
       make
    
