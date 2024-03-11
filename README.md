@@ -55,7 +55,7 @@ In the Webserv project at 42, you're tasked with creating your own web server in
    2. Navigate to the cloned directory:
       ```bash 
       cd webserv
-        
+   
    3. Build the projec
       ```bash 
       make
