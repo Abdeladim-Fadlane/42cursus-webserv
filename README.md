@@ -35,13 +35,13 @@ In the Webserv project at 42, you're tasked with creating your own web server in
 
 [HTTP Header Break Style](https://stackoverflow.com/questions/5757290/http-header-line-break-style)
 
-### Epoll and non-blocking
+### Epoll and non-blocking I/O
 
 [Epoll](https://medium.com/@avocadi/what-is-epoll-9bbc74272f7c)
 
 [Non Blocking Server](https://www.geeksforgeeks.org/non-blocking-server-in-java-nio/?ref=header_search)
 
-[How to use epoll ](Server/UTILS/lrYLy.png)
+[How to use epoll on web server](Server/UTILS/lrYLy.png)
 
 ### CGI
 [CGI Programming](https://forhjy.medium.com/42-webserv-cgi-programming-66d63c3b22db)
