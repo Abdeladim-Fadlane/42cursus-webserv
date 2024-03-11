@@ -14,6 +14,7 @@ In the Webserv project at 42, you're tasked with creating your own web server in
 - **Testing and Debugging**: Thoroughly test and debug your server to ensure proper functionality.
 
 ## 2 . Resources
+[Building an HTTP Server From Scratch in C++](https://osasazamegbe.medium.com/showing-building-an-http-server-from-scratch-in-c-2da7c0db6cb7)
 
 [Webserv raod map](https://www.figma.com/file/tQJOYxzFdxYkPYrPIv18kg/webserv-Flow?type=design&node-id=0-1&mode=design)
 
