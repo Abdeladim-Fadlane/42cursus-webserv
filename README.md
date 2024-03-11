@@ -2,7 +2,7 @@
 
 In the Webserv project at 42, you're tasked with creating your own web server in C++. This involves understanding the HTTP protocol, socket programming, request handling, response generation, configuration file parsing, multiplexing, error handling, testing, and debugging.
 
-## Key Aspects
+### Key Aspects
 
 - **HTTP Protocol**: Understanding HTTP methods, headers, status codes, and the request-response cycle is crucial.
 - **Socket Programming**: Implementing web server functionality involves working with sockets to establish connections and handle requests.
@@ -48,14 +48,16 @@ In the Webserv project at 42, you're tasked with creating your own web server in
 
 ## 3. Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Abdeladim-Fadlane/webserv.git
-2 . 
-  cd webserv
-  make
-3 . run the server 
-    ./webserv 
+   1. Clone the repository:
+      ```bash
+      git clone https://github.com/Abdeladim-Fadlane/webserv.git
+   2 . 
+     ```bash cd webserv```
+     ```bash make```
+   
+   3 . run the server 
+       ```bash ./webserv ```
+    
 ### Contributors
 - [Abdeladim Fadlane](https://github.com/Abdeladim-Fadlane)
 - [Ayoub Katfi](https://github.com/ayyoubkatfi)
