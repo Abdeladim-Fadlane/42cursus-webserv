@@ -39,9 +39,9 @@ In the Webserv project at 42, you're tasked with creating your own web server in
 
 [Epoll](https://medium.com/@avocadi/what-is-epoll-9bbc74272f7c)
 
-[How epoll work](Server/UTILS/lrYLy.png)
-
 [Non Blocking Server](https://www.geeksforgeeks.org/non-blocking-server-in-java-nio/?ref=header_search)
+
+[How to use epoll ](Server/UTILS/lrYLy.png)
 
 ### CGI
 [CGI Programming](https://forhjy.medium.com/42-webserv-cgi-programming-66d63c3b22db)
