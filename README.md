@@ -63,7 +63,9 @@ In the Webserv project at 42, you're tasked with creating your own web server in
    4. run the server 
        ```bash
       ./webserv
-    
+   5. Try on browser
+      ```bash
+      http://localhost:8082/
 ### Contributors
 - [Abdeladim Fadlane](https://github.com/Abdeladim-Fadlane)
 - [Ayoub Katfi](https://github.com/ayyoubkatfi)
