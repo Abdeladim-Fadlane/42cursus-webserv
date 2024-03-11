@@ -48,22 +48,19 @@ In the Webserv project at 42, you're tasked with creating your own web server in
 
 ## 3. Installation & Usage
 
-   1. Clone the repository:
+    1. Clone the repository:
       ```bash
       git clone https://github.com/Abdeladim-Fadlane/webserv.git
-      
-   2. Navigate to the cloned directory:
+    2. Navigate to the cloned directory:
       ```bash 
       cd webserv
-   
-   3. Build the project
+    3. Build the project
       ```bash 
       make
-   
-   4. run the server 
+    4. Run the server 
        ```bash
       ./webserv
-   5. Try on browser
+    5. Try on browser
       ```bash
       http://localhost:8082/
 ### Contributors
