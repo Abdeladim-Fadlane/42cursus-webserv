@@ -1,6 +1,6 @@
 ## 1. Introduction
 
-In the Webserv project at 42, you're tasked with creating your own web server in C++. This involves understanding the HTTP protocol, socket programming, request handling, response generation, configuration file parsing, multiplexing, error handling, testing, and debugging.
+In the Webserv project at 42, you're tasked with creating your own web server From Scratch in C++. This involves understanding the HTTP protocol, socket programming, request handling, response generation, configuration file parsing, multiplexing, error handling, testing, and debugging.
 
 ### Key Aspects
 
