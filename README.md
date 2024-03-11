@@ -5,11 +5,11 @@ In the Webserv project at 42, you're tasked with creating your own web server in
 ### Key Aspects
 
 - **HTTP Protocol**: Understanding HTTP methods, headers, status codes, and the request-response cycle is crucial.
+- **Configuration Files**: Implement parsing logic to read and apply configuration settings from files.
 - **Socket Programming**: Implementing web server functionality involves working with sockets to establish connections and handle requests.
+- **Multiplexing**: Implement concurrency mechanisms such as asynchronous I/O to handle multiple client connections simultaneously.
 - **Request Handling**: Your server must receive and parse HTTP requests from clients, extracting important information.
 - **Response Generation**: After processing requests, your server must generate appropriate HTTP responses.
-- **Configuration Files**: Implement parsing logic to read and apply configuration settings from files.
-- **Multiplexing**: Implement concurrency mechanisms such as asynchronous I/O to handle multiple client connections simultaneously.
 - **Error Handling**: Gracefully handle errors including invalid requests and network errors.
 - **Testing and Debugging**: Thoroughly test and debug your server to ensure proper functionality.
 
