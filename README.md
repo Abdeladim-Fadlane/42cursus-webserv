@@ -51,7 +51,6 @@ In the Webserv project at 42, you're tasked with creating your own web server in
 1. Clone the repository:
       ```bash
       git clone https://github.com/Abdeladim-Fadlane/webserv.git
-    
 2. Navigate to the cloned directory:
     ```bash 
     cd webserv
