@@ -1,8 +1,19 @@
-# webserv
+## 1. Introduction
 
-42 project, recoding our own web server in C++. A program capable of running an HTTP server, handling requests, and parsing configuration files.
+In the Webserv project at 42, you're tasked with creating your own web server in C++. This involves understanding the HTTP protocol, socket programming, request handling, response generation, configuration file parsing, multiplexing, error handling, testing, and debugging.
 
-## Resources
+## Key Aspects
+
+- **HTTP Protocol**: Understanding HTTP methods, headers, status codes, and the request-response cycle is crucial.
+- **Socket Programming**: Implementing web server functionality involves working with sockets to establish connections and handle requests.
+- **Request Handling**: Your server must receive and parse HTTP requests from clients, extracting important information.
+- **Response Generation**: After processing requests, your server must generate appropriate HTTP responses.
+- **Configuration Files**: Implement parsing logic to read and apply configuration settings from files.
+- **Multiplexing**: Implement concurrency mechanisms such as asynchronous I/O to handle multiple client connections simultaneously.
+- **Error Handling**: Gracefully handle errors including invalid requests and network errors.
+- **Testing and Debugging**: Thoroughly test and debug your server to ensure proper functionality.
+
+## 2 . Resources
 
 [Webserv raod map](https://www.figma.com/file/tQJOYxzFdxYkPYrPIv18kg/webserv-Flow?type=design&node-id=0-1&mode=design)
 
@@ -34,4 +45,18 @@
 
 ### CGI
 [CGI Programming](https://forhjy.medium.com/42-webserv-cgi-programming-66d63c3b22db)
+
+## 3. Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Abdeladim-Fadlane/webserv.git
+2 . 
+  cd webserv
+  make
+3 . run the server 
+    ./webserv 
+### Contributors
+- [Abdeladim Fadlane](https://github.com/Abdeladim-Fadlane)
+- [Ayoub Katfi](https://github.com/ayyoubkatfi)
 
