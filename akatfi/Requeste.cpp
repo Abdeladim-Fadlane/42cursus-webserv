@@ -297,11 +297,22 @@ void Requeste::MakeMapOfHeader(bool& isdone)
     if (head.empty() == false)
     {
         line_request = split_line(head.substr(0, head.find("\r\n")));
-        method = line_request[0];
-        path = line_request[1];
-        http_v = line_request[2];
+        if (line_request.size() == 3)
+        {
+            method = line_request[0];
+            path = line_request[1];
+            http_v = line_request[2];
+        }
         if (head.find("\r\n") != std::string::npos)
             head = head.substr(head.find("\r\n") + 2).append("\r\n");
+    }
+    if (method.empty() || path.empty() || http_v.empty())
+    {
+        status_client = 400;
+        isdone = true;
+        method = "";
+        headerResponse = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n";
+        return ;
     }
     while (head.length())
     {
